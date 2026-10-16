@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { AgentInfo } from '../models/agent.model';
+import { AgentInfo, AgentExecutionStatus } from '../models/agent.model';
 
 @Injectable({
   providedIn: 'root'
@@ -141,6 +141,19 @@ export class HarnessDataService {
     }
   ];
 
+  // Pipeline sequence of the 6 live phases (skipping medallion upcoming)
+  private pipelineSequence: string[] = [
+    'constraint-agent',
+    'discovery-agent',
+    'assessment-agent',
+    'evaluation-agent',
+    'migration-generator-agent',
+    'artifacts-generator'
+  ];
+
+  private currentSequenceIndex = -1;
+  private pipelineTimer: any = null;
+
   private agents$ = new BehaviorSubject<AgentInfo[]>(this.agentsList);
   agentsObservable$: Observable<AgentInfo[]> = this.agents$.asObservable();
 
@@ -151,7 +164,7 @@ export class HarnessDataService {
   pipelineStateObservable$: Observable<'idle' | 'running' | 'completed'> = this.pipelineState$.asObservable();
 
   constructor() {
-    // Completely idle. No automatic execution or background timers.
+    // Starts completely idle. Does NOT run automatically on load.
   }
 
   getAgents(): AgentInfo[] {
@@ -175,19 +188,95 @@ export class HarnessDataService {
   }
 
   /**
-   * Start conversation placeholder - does not execute pipeline.
-   * Teammate will hook in real chatbot implementation here.
+   * Runs the sequence and highlights the running agent when user clicks 'Start conversation'.
    */
-  startPipelineFrom(_agentId?: string): void {
-    // No-op: start conversation logic will be attached by teammate
+  startPipelineFrom(agentId?: string): void {
+    if (this.pipelineTimer) {
+      clearTimeout(this.pipelineTimer);
+    }
+
+    let targetIdx = 0;
+    if (agentId) {
+      const idx = this.pipelineSequence.indexOf(agentId);
+      if (idx !== -1) {
+        targetIdx = idx;
+      }
+    }
+
+    this.currentSequenceIndex = targetIdx;
+    this.pipelineState$.next('running');
+    this.runCurrentPhase();
   }
 
-  runSpecificAgent(_agentId: string): void {
-    // No-op: start conversation logic will be attached by teammate
+  runSpecificAgent(agentId: string): void {
+    this.startPipelineFrom(agentId);
+  }
+
+  private runCurrentPhase(): void {
+    if (this.currentSequenceIndex >= this.pipelineSequence.length) {
+      this.pipelineState$.next('completed');
+      this.runningAgentId$.next(null);
+      this.updateAllCompleted();
+      return;
+    }
+
+    const currentAgentId = this.pipelineSequence[this.currentSequenceIndex];
+    this.runningAgentId$.next(currentAgentId);
+    this.updateAgentStatuses(this.currentSequenceIndex);
+
+    // After 4.5 seconds, automatically advances to the next phase
+    this.pipelineTimer = setTimeout(() => {
+      this.currentSequenceIndex++;
+      this.runCurrentPhase();
+    }, 4500);
+  }
+
+  private updateAgentStatuses(activeIdx: number): void {
+    const updated = this.agentsList.map(agent => {
+      if (agent.status === 'upcoming') {
+        return { ...agent, executionStatus: 'upcoming' as AgentExecutionStatus };
+      }
+      const seqIdx = this.pipelineSequence.indexOf(agent.id);
+      if (seqIdx === activeIdx) {
+        return { ...agent, executionStatus: 'running' as AgentExecutionStatus };
+      } else if (seqIdx < activeIdx) {
+        return { ...agent, executionStatus: 'completed' as AgentExecutionStatus };
+      } else {
+        return { ...agent, executionStatus: 'idle' as AgentExecutionStatus };
+      }
+    });
+
+    this.agentsList = updated;
+    this.agents$.next(updated);
+  }
+
+  private updateAllCompleted(): void {
+    const updated = this.agentsList.map(agent => {
+      if (agent.status === 'upcoming') {
+        return { ...agent, executionStatus: 'upcoming' as AgentExecutionStatus };
+      }
+      return { ...agent, executionStatus: 'completed' as AgentExecutionStatus };
+    });
+
+    this.agentsList = updated;
+    this.agents$.next(updated);
   }
 
   resetPipeline(): void {
+    if (this.pipelineTimer) {
+      clearTimeout(this.pipelineTimer);
+      this.pipelineTimer = null;
+    }
+    this.currentSequenceIndex = -1;
     this.runningAgentId$.next(null);
     this.pipelineState$.next('idle');
+
+    const updated = this.agentsList.map(agent => ({
+      ...agent,
+      executionStatus: (agent.status === 'upcoming' ? 'upcoming' : 'idle') as AgentExecutionStatus
+    }));
+
+    this.agentsList = updated;
+    this.agents$.next(updated);
   }
 }

@@ -25,6 +25,6 @@ export class HarnessHomeComponent {
 
   onStartConversationClick(agent: AgentInfo): void {
     if (agent.status === 'upcoming') return;
-    // Teammate integration point: Add chatbot conversation functionality here
+    this.harnessDataService.startPipelineFrom(agent.id);
   }
 }
