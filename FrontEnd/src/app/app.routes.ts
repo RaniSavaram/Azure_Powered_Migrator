@@ -2,8 +2,17 @@ import { Routes } from '@angular/router';
 
 import { HarnessLayoutComponent } from '../migration-harness/layouts/harness-layout.component';
 import { HarnessHomeComponent } from '../migration-harness/pages/home/harness-home.component';
-import { AgentDetailComponent } from '../migration-harness/pages/agent-detail/agent-detail.component';
 
+// 7 Dedicated Agent Components
+import { ConstraintAgentComponent } from '../migration-harness/agents/constraint-agent/constraint-agent.component';
+import { DiscoveryAgentComponent } from '../migration-harness/agents/discovery-agent/discovery-agent.component';
+import { AssessmentAgentComponent } from '../migration-harness/agents/assessment-agent/assessment-agent.component';
+import { EvaluationAgentComponent } from '../migration-harness/agents/evaluation-agent/evaluation-agent.component';
+import { MigrationGeneratorAgentComponent } from '../migration-harness/agents/migration-generator-agent/migration-generator-agent.component';
+import { MedallionGenerationAgentComponent } from '../migration-harness/agents/medallion-generation-agent/medallion-generation-agent.component';
+import { ArtifactsGeneratorComponent } from '../migration-harness/agents/artifacts-generator/artifacts-generator.component';
+
+// Other POCs & Classic views
 import { MainLayoutComponent } from './layouts/main-layout/main-layout';
 import { HomeComponent } from './pages/home/home';
 import { DbScannerComponent } from './pages/db-scanner/db-scanner';
@@ -19,10 +28,36 @@ export const routes: Routes = [
         path: '',
         component: HarnessHomeComponent
       },
+      // 7 Dedicated Agent Routes
       {
-        path: 'agent/:id',
-        component: AgentDetailComponent
+        path: 'agents/constraint',
+        component: ConstraintAgentComponent
       },
+      {
+        path: 'agents/discovery',
+        component: DiscoveryAgentComponent
+      },
+      {
+        path: 'agents/assessment',
+        component: AssessmentAgentComponent
+      },
+      {
+        path: 'agents/evaluation',
+        component: EvaluationAgentComponent
+      },
+      {
+        path: 'agents/migration-generator',
+        component: MigrationGeneratorAgentComponent
+      },
+      {
+        path: 'agents/medallion-generation',
+        component: MedallionGenerationAgentComponent
+      },
+      {
+        path: 'agents/artifacts-generator',
+        component: ArtifactsGeneratorComponent
+      },
+      // Other POCs
       {
         path: 'dbscanner',
         component: DbScannerComponent
@@ -51,4 +86,4 @@ export const routes: Routes = [
     path: '**',
     redirectTo: ''
   }
-];
+];

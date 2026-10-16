@@ -1,11 +1,3 @@
-export interface HarnessCheck {
-  name: string;
-  completed_name: string;
-  rule: string;
-  status: 'passed' | 'warning' | 'info';
-  info_text?: string;
-}
-
 export interface AgentInfo {
   id: string;
   phase: number;
@@ -18,13 +10,8 @@ export interface AgentInfo {
   accentBorder: string;
   bgTint: string;
   icon: string;
-  status: 'live' | 'coming_soon';
+  status: 'live' | 'upcoming';
   badgeText: string;
   description: string;
-  harnessLayerTitle: string;
-  harnessLayerType: 'layer1' | 'layer2' | 'layer3';
-  harnessDescription: string;
-  harnessChecks: HarnessCheck[];
-  sampleLogs: string[];
-  capabilities: string[];
+  route: string;
 }

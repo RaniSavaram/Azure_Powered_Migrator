@@ -1,0 +1,44 @@
+<div class="agent-workspace-container">
+  <!-- Breadcrumb -->
+  <div class="workspace-breadcrumb">
+    <a routerLink="/" class="crumb-link"><i class="bi bi-house"></i> Home</a>
+    <span class="crumb-sep">/</span>
+    <span class="crumb-text">Agents</span>
+    <span class="crumb-sep">/</span>
+    <span class="crumb-active">Constraint Agent</span>
+  </div>
+
+  <!-- Agent Header -->
+  <div class="workspace-header orange-accent">
+    <div class="header-left">
+      <div class="agent-icon-box orange-box">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <div>
+        <div class="phase-tag orange-tag">{{ phase }}</div>
+        <h1 class="workspace-title">{{ agentName }}</h1>
+        <p class="workspace-subtitle">
+          Enforces source constraints, validates primary and foreign key preservation, detects unsupported schema constructs, and applies enterprise governance guardrails.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Integration Canvas -->
+  <div class="workspace-canvas">
+    <!-- ========================================================================= -->
+    <!-- TEAMMATE INTEGRATION POINT:                                               -->
+    <!-- Attach your working chatbot, console, or conversational workflow here.    -->
+    <!-- ========================================================================= -->
+    <div class="integration-placeholder-card">
+      <div class="placeholder-icon">
+        <i class="bi bi-chat-dots-fill"></i>
+      </div>
+      <h3>Constraint Agent Chatbot & Workflow</h3>
+      <p>
+        This workspace is ready for team members to plug in the working interactive chatbot and constraint evaluation engine.
+      </p>
+      <div class="placeholder-badge">Integration Ready</div>
+    </div>
+  </div>
+</div>

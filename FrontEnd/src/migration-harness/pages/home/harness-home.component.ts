@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { HarnessDataService } from '../../services/harness-data.service';
 import { AgentInfo } from '../../models/agent.model';
 
@@ -13,28 +13,24 @@ import { AgentInfo } from '../../models/agent.model';
 })
 export class HarnessHomeComponent {
   private harnessDataService = inject(HarnessDataService);
-  private router = inject(Router);
 
   agents: AgentInfo[] = this.harnessDataService.getAgents();
+  liveCount: number = this.harnessDataService.getLiveCount();
+  upcomingCount: number = this.harnessDataService.getUpcomingCount();
 
-  openHarnessLayer(agent: AgentInfo, event?: MouseEvent): void {
-    if (event) {
-      event.stopPropagation();
-      event.preventDefault();
-    }
-    this.harnessDataService.openHarnessModal(agent);
+  /**
+   * Placeholder for teammate to attach Harness Layer working functionality.
+   * Actions intentionally removed as requested.
+   */
+  onHarnessClick(agent: AgentInfo): void {
+    // Teammate integration point: Add harness layer functionality here
   }
 
-  startConversation(agent: AgentInfo, event?: MouseEvent): void {
-    if (event) {
-      event.stopPropagation();
-      event.preventDefault();
-    }
-    if (agent.id === 'discovery-agent') {
-      // Direct navigation to DB Scanner for discovery workflows
-      this.router.navigate(['/dbscanner']);
-    } else {
-      this.router.navigate(['/agent', agent.id]);
-    }
+  /**
+   * Placeholder for teammate to attach Chatbot working functionality.
+   * Actions intentionally removed as requested.
+   */
+  onStartConversationClick(agent: AgentInfo): void {
+    // Teammate integration point: Add working chatbot functionality here
   }
 }

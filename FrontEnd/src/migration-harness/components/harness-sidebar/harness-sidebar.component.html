@@ -11,7 +11,7 @@
     </div>
     <div class="header-text-container">
       <div class="header-brand-title">APEXON</div>
-      <div class="header-brand-subtitle">MIGRATION HARNESS</div>
+      <div class="header-brand-subtitle">MIGRATION PLATFORM</div>
     </div>
   </div>
 
@@ -43,12 +43,12 @@
     <div class="nav-section-group">
       <div class="section-label-row">
         <span class="section-label">AGENTS</span>
-        <span class="agent-count-badge">7 LIVE</span>
+        <span class="agent-count-badge">{{ liveCount }} LIVE</span>
       </div>
 
       <div class="agents-nav-list">
         @for (agent of agents; track agent.id) {
-          <a [routerLink]="['/agent', agent.id]" 
+          <a [routerLink]="agent.route" 
              routerLinkActive="active"
              class="nav-item agent-item"
              [title]="agent.name + ' - ' + agent.sidebarSubtext">
@@ -63,14 +63,18 @@
             </div>
 
             <div class="nav-status-col">
-              <span class="live-indicator-dot" title="Live Agent Active"></span>
+              @if (agent.status === 'live') {
+                <span class="live-indicator-dot" title="Live Agent Active"></span>
+              } @else {
+                <span class="soon-indicator-pill" title="Upcoming Agent">SOON</span>
+              }
             </div>
           </a>
         }
       </div>
     </div>
 
-    <!-- OTHER POCS Section (Requirement 2) -->
+    <!-- OTHER POCS Section -->
     <div class="nav-section-group">
       <div class="section-label">OTHER POCS</div>
 
@@ -111,7 +115,7 @@
 
     <div class="footer-version-tag">
       <i class="bi bi-hdd-stack"></i>
-      <span>v1.0 · Phases 1-7 Live · Harness Active</span>
+      <span>v1.0 · 6 Live · 1 Upcoming</span>
     </div>
   </div>
 </aside>

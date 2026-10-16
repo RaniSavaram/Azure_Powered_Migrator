@@ -15,11 +15,6 @@ export class HarnessSidebarComponent {
   private harnessDataService = inject(HarnessDataService);
   
   agents: AgentInfo[] = this.harnessDataService.getAgents();
+  liveCount: number = this.harnessDataService.getLiveCount();
   isCollapsed$ = this.harnessDataService.sidebarCollapsed$;
-
-  openHarness(agent: AgentInfo, event: MouseEvent): void {
-    event.stopPropagation();
-    event.preventDefault();
-    this.harnessDataService.openHarnessModal(agent);
-  }
 }
