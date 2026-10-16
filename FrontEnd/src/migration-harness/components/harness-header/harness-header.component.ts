@@ -13,14 +13,7 @@ import { HarnessDataService } from '../../services/harness-data.service';
 export class HarnessHeaderComponent {
   private harnessDataService = inject(HarnessDataService);
 
-  pipelineState$ = this.harnessDataService.pipelineStateObservable$;
-  runningAgentId$ = this.harnessDataService.activeRunningAgentId$;
-
   toggleSidebar(): void {
     this.harnessDataService.toggleSidebar();
-  }
-
-  restartPipeline(): void {
-    this.harnessDataService.startPipeline();
   }
 }

@@ -51,7 +51,6 @@
              [class.completed-agent]="agent.executionStatus === 'completed'"
              [class.upcoming-agent]="agent.executionStatus === 'upcoming'"
              [style.--agent-accent]="agent.color"
-             (click)="onAgentClick(agent)"
              [title]="agent.name + ' - ' + agent.sidebarSubtext">
             
             <div class="nav-icon-box agent-icon" [style.color]="agent.executionStatus === 'running' ? agent.color : null">

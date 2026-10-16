@@ -17,9 +17,4 @@ export class HarnessSidebarComponent {
   agents$ = this.harnessDataService.agentsObservable$;
   liveCount: number = this.harnessDataService.getLiveCount();
   isCollapsed$ = this.harnessDataService.sidebarCollapsed$;
-
-  onAgentClick(agent: AgentInfo): void {
-    // If user clicks on an agent in sidebar, they can also trigger running that agent
-    this.harnessDataService.runSpecificAgent(agent.id);
-  }
 }

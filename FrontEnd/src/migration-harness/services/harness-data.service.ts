@@ -110,7 +110,7 @@ export class HarnessDataService {
       category: 'Lakehouse Design',
       color: '#0d9488',
       accentBorder: '#0d9488',
-      bgTint: 'rgba(139, 92, 246, 0.1)',
+      bgTint: 'rgba(13, 148, 136, 0.1)',
       icon: 'bi-layers',
       status: 'upcoming',
       executionStatus: 'upcoming',
@@ -161,10 +161,8 @@ export class HarnessDataService {
   pipelineStateObservable$: Observable<'idle' | 'running' | 'completed'> = this.pipelineState$.asObservable();
 
   constructor() {
-    // Automatically trigger initial Phase 1 execution after short startup delay so user sees live animation
-    setTimeout(() => {
-      this.startPipeline();
-    }, 1200);
+    // Initial state is idle. Does NOT run automatically on page load.
+    // It only runs when user clicks 'Start conversation' button.
   }
 
   getAgents(): AgentInfo[] {
@@ -188,27 +186,33 @@ export class HarnessDataService {
   }
 
   /**
-   * Starts or resumes sequential execution of agents: Phase 1 -> Phase 2 -> ... -> Phase 7
+   * Triggered ONLY when user clicks 'Start conversation' button.
+   * If agentId is passed, starts from that agent or starts phase 1.
    */
-  startPipeline(): void {
+  startPipelineFrom(agentId?: string): void {
     if (this.pipelineTimer) {
       clearTimeout(this.pipelineTimer);
     }
 
-    this.pipelineState$.next('running');
-
-    if (this.currentSequenceIndex < 0 || this.currentSequenceIndex >= this.pipelineSequence.length) {
-      // Reset to beginning (Phase 1)
-      this.currentSequenceIndex = 0;
-      this.updateAgentStatuses(0);
+    let targetIdx = 0;
+    if (agentId) {
+      const idx = this.pipelineSequence.indexOf(agentId);
+      if (idx !== -1) {
+        targetIdx = idx;
+      }
     }
 
+    this.currentSequenceIndex = targetIdx;
+    this.pipelineState$.next('running');
     this.runCurrentPhase();
+  }
+
+  runSpecificAgent(agentId: string): void {
+    this.startPipelineFrom(agentId);
   }
 
   private runCurrentPhase(): void {
     if (this.currentSequenceIndex >= this.pipelineSequence.length) {
-      // All live phases completed
       this.pipelineState$.next('completed');
       this.runningAgentId$.next(null);
       this.updateAllCompleted();
@@ -219,12 +223,11 @@ export class HarnessDataService {
     this.runningAgentId$.next(currentAgentId);
     this.updateAgentStatuses(this.currentSequenceIndex);
 
-    // Each phase runs for ~4 seconds, then automatically progresses to the next phase
+    // Each phase runs, then automatically transitions to the next phase
     this.pipelineTimer = setTimeout(() => {
-      // Mark current as completed and advance index
       this.currentSequenceIndex++;
       this.runCurrentPhase();
-    }, 4200);
+    }, 4500);
   }
 
   private updateAgentStatuses(activeIdx: number): void {
@@ -258,9 +261,6 @@ export class HarnessDataService {
     this.agents$.next(updated);
   }
 
-  /**
-   * Reset pipeline back to initial state
-   */
   resetPipeline(): void {
     if (this.pipelineTimer) {
       clearTimeout(this.pipelineTimer);
@@ -277,20 +277,5 @@ export class HarnessDataService {
 
     this.agentsList = updated;
     this.agents$.next(updated);
-  }
-
-  /**
-   * Run a specific agent manually
-   */
-  runSpecificAgent(agentId: string): void {
-    const idx = this.pipelineSequence.indexOf(agentId);
-    if (idx !== -1) {
-      if (this.pipelineTimer) {
-        clearTimeout(this.pipelineTimer);
-      }
-      this.currentSequenceIndex = idx;
-      this.pipelineState$.next('running');
-      this.runCurrentPhase();
-    }
   }
 }

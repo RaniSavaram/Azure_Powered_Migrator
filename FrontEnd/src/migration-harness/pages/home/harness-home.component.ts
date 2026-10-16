@@ -17,22 +17,15 @@ export class HarnessHomeComponent {
   agents$ = this.harnessDataService.agentsObservable$;
   liveCount: number = this.harnessDataService.getLiveCount();
   upcomingCount: number = this.harnessDataService.getUpcomingCount();
-  pipelineState$ = this.harnessDataService.pipelineStateObservable$;
-  activeRunningAgentId$ = this.harnessDataService.activeRunningAgentId$;
-
-  startPipeline(): void {
-    this.harnessDataService.startPipeline();
-  }
-
-  resetPipeline(): void {
-    this.harnessDataService.resetPipeline();
-  }
 
   onHarnessClick(agent: AgentInfo): void {
     // Teammate integration point: Add harness layer functionality here
   }
 
+  /**
+   * Runs the agent sequence starting from this agent when user clicks 'Start conversation'.
+   */
   onStartConversationClick(agent: AgentInfo): void {
-    // Teammate integration point: Add working chatbot functionality here
+    this.harnessDataService.startPipelineFrom(agent.id);
   }
 }

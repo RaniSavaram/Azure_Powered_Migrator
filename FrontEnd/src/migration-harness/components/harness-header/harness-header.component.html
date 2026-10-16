@@ -17,26 +17,6 @@
   </div>
 
   <div class="header-right">
-    <!-- Pipeline Status & Execution Indicator -->
-    @if (pipelineState$ | async; as state) {
-      <div class="pipeline-status-badge" [ngClass]="state">
-        @if (state === 'running') {
-          <span class="status-radar-pulse"></span>
-          <span class="status-msg">
-            Pipeline Active · <strong>Phase Running</strong>
-          </span>
-        } @else if (state === 'completed') {
-          <span class="status-check-icon"><i class="bi bi-check-circle-fill"></i></span>
-          <span class="status-msg">Pipeline Completed</span>
-        } @else {
-          <span class="status-dot-idle"></span>
-          <span class="status-msg">Pipeline Ready</span>
-        }
-
-        <button class="btn-replay-pipeline" (click)="restartPipeline()" title="Restart Agent Sequential Run">
-          <i class="bi bi-arrow-repeat"></i>
-        </button>
-      </div>
-    }
+    <!-- Clean header without user login or unwanted status badges -->
   </div>
 </header>
