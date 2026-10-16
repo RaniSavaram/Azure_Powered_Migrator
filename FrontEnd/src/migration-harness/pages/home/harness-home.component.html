@@ -44,7 +44,7 @@
     @for (agent of agents$ | async; track agent.id) {
       <div class="agent-card" 
            [class.upcoming-card]="agent.status === 'upcoming'"
-           [style.border-top-color]="agent.accentBorder">
+           [style.border-top-color]="agent.status === 'upcoming' ? '#94a3b8' : agent.accentBorder">
         
         <!-- Card Top Row -->
         <div class="card-top-row">
@@ -76,6 +76,8 @@
         <div class="card-actions-row">
           <!-- Button 1: HARNESS LAYER -->
           <button class="btn-harness-layer" 
+                  [class.disabled-btn]="agent.status === 'upcoming'"
+                  [disabled]="agent.status === 'upcoming'"
                   type="button"
                   (click)="onHarnessClick(agent)"
                   title="Harness Layer">
@@ -83,14 +85,24 @@
             <span>Harness Layer</span>
           </button>
 
-          <!-- Button 2: Start conversation (Starts agent running in sidebar) -->
-          <button class="btn-start-convo" 
-                  type="button"
-                  (click)="onStartConversationClick(agent)"
-                  title="Start conversation">
-            <span>Start conversation</span>
-            <i class="bi bi-arrow-right"></i>
-          </button>
+          <!-- Button 2: Start conversation (or Coming Soon if upcoming) -->
+          @if (agent.status === 'upcoming') {
+            <button class="btn-start-convo disabled-btn" 
+                    type="button"
+                    disabled
+                    title="Coming Soon">
+              <span>Coming Soon</span>
+              <i class="bi bi-clock"></i>
+            </button>
+          } @else {
+            <button class="btn-start-convo" 
+                    type="button"
+                    (click)="onStartConversationClick(agent)"
+                    title="Start conversation">
+              <span>Start conversation</span>
+              <i class="bi bi-arrow-right"></i>
+            </button>
+          }
         </div>
       </div>
     }

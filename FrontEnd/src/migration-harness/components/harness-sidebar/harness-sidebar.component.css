@@ -236,6 +236,30 @@
   padding-left: 9px;
 }
 
+/* UPCOMING AGENT GRAYED OUT */
+.agent-item.upcoming-agent {
+  opacity: 0.42;
+  filter: grayscale(100%);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.agent-item.upcoming-agent .nav-title {
+  color: #64748b;
+}
+
+.agent-item.upcoming-agent .nav-subtext {
+  color: #475569;
+}
+
+.agent-item.upcoming-agent .nav-icon-box {
+  color: #475569;
+}
+
+.agent-item.upcoming-agent:hover {
+  background-color: transparent;
+}
+
 /* RUNNING AGENT DYNAMIC HIGHLIGHT IN SIDEBAR (User Request!) */
 .agent-item.running-agent {
   background: linear-gradient(90deg, rgba(249, 115, 22, 0.18) 0%, rgba(30, 41, 59, 0.9) 100%);

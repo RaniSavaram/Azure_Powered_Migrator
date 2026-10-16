@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { AgentInfo, AgentExecutionStatus } from '../models/agent.model';
+import { AgentInfo } from '../models/agent.model';
 
 @Injectable({
   providedIn: 'root'
@@ -9,6 +9,9 @@ export class HarnessDataService {
   private isSidebarCollapsed$ = new BehaviorSubject<boolean>(false);
   sidebarCollapsed$ = this.isSidebarCollapsed$.asObservable();
 
+  /**
+   * 7 Agents: 6 Live agents (Phases 1-6) and Medallion moved to the last (Upcoming, grayed out)
+   */
   private agentsList: AgentInfo[] = [
     {
       id: 'constraint-agent',
@@ -101,30 +104,12 @@ export class HarnessDataService {
       route: '/agents/migration-generator'
     },
     {
-      id: 'medallion-generation-agent',
-      phase: 6,
-      name: 'Medallion Generation Agent',
-      sidebarName: 'Medallion Generation',
-      sidebarSubtext: 'Bronze • Silver • Gold',
-      phaseTag: 'PHASE 6 · LAKEHOUSE ARCHITECTURE (UPCOMING)',
-      category: 'Lakehouse Design',
-      color: '#0d9488',
-      accentBorder: '#0d9488',
-      bgTint: 'rgba(13, 148, 136, 0.1)',
-      icon: 'bi-layers',
-      status: 'upcoming',
-      executionStatus: 'upcoming',
-      badgeText: 'Phase 6',
-      description: 'Designs Medallion architecture (Bronze / Silver / Gold), Unity Catalog / OneLake hierarchy across dev / staging / prod, data contracts with SLA definitions, and Lakehouse governance.',
-      route: '/agents/medallion-generation'
-    },
-    {
       id: 'artifacts-generator',
-      phase: 7,
+      phase: 6,
       name: 'Artifacts Generator',
       sidebarName: 'Artifacts Generator',
       sidebarSubtext: 'Fabric Items • DDL • DOCX',
-      phaseTag: 'PHASE 7 · ASSET PACKAGING & DEPLOYMENT',
+      phaseTag: 'PHASE 6 · ASSET PACKAGING & DEPLOYMENT',
       category: 'Delivery & Release',
       color: '#ec4899',
       accentBorder: '#ec4899',
@@ -132,24 +117,29 @@ export class HarnessDataService {
       icon: 'bi-box-seam',
       status: 'live',
       executionStatus: 'idle',
-      badgeText: 'Phase 7',
+      badgeText: 'Phase 6',
       description: 'Compiles migration deliverables into exportable artifacts — including Microsoft Fabric item JSONs, SQL DDL bundles, automated Word/PDF assessment docs, and deployment packages.',
       route: '/agents/artifacts-generator'
+    },
+    {
+      id: 'medallion-generation-agent',
+      phase: 7,
+      name: 'Medallion Generation Agent',
+      sidebarName: 'Medallion Generation',
+      sidebarSubtext: 'Bronze • Silver • Gold',
+      phaseTag: 'UPCOMING PHASE · LAKEHOUSE ARCHITECTURE',
+      category: 'Lakehouse Design',
+      color: '#64748b',
+      accentBorder: '#94a3b8',
+      bgTint: 'rgba(100, 116, 139, 0.1)',
+      icon: 'bi-layers',
+      status: 'upcoming',
+      executionStatus: 'upcoming',
+      badgeText: 'Upcoming',
+      description: 'Designs Medallion architecture (Bronze / Silver / Gold), Unity Catalog / OneLake hierarchy across dev / staging / prod, data contracts with SLA definitions, and Lakehouse governance.',
+      route: '/agents/medallion-generation'
     }
   ];
-
-  // Pipeline Sequential Execution
-  private pipelineSequence: string[] = [
-    'constraint-agent',
-    'discovery-agent',
-    'assessment-agent',
-    'evaluation-agent',
-    'migration-generator-agent',
-    'artifacts-generator'
-  ];
-
-  private currentSequenceIndex = -1;
-  private pipelineTimer: any = null;
 
   private agents$ = new BehaviorSubject<AgentInfo[]>(this.agentsList);
   agentsObservable$: Observable<AgentInfo[]> = this.agents$.asObservable();
@@ -161,8 +151,7 @@ export class HarnessDataService {
   pipelineStateObservable$: Observable<'idle' | 'running' | 'completed'> = this.pipelineState$.asObservable();
 
   constructor() {
-    // Initial state is idle. Does NOT run automatically on page load.
-    // It only runs when user clicks 'Start conversation' button.
+    // Completely idle. No automatic execution or background timers.
   }
 
   getAgents(): AgentInfo[] {
@@ -186,96 +175,19 @@ export class HarnessDataService {
   }
 
   /**
-   * Triggered ONLY when user clicks 'Start conversation' button.
-   * If agentId is passed, starts from that agent or starts phase 1.
+   * Start conversation placeholder - does not execute pipeline.
+   * Teammate will hook in real chatbot implementation here.
    */
-  startPipelineFrom(agentId?: string): void {
-    if (this.pipelineTimer) {
-      clearTimeout(this.pipelineTimer);
-    }
-
-    let targetIdx = 0;
-    if (agentId) {
-      const idx = this.pipelineSequence.indexOf(agentId);
-      if (idx !== -1) {
-        targetIdx = idx;
-      }
-    }
-
-    this.currentSequenceIndex = targetIdx;
-    this.pipelineState$.next('running');
-    this.runCurrentPhase();
+  startPipelineFrom(_agentId?: string): void {
+    // No-op: start conversation logic will be attached by teammate
   }
 
-  runSpecificAgent(agentId: string): void {
-    this.startPipelineFrom(agentId);
-  }
-
-  private runCurrentPhase(): void {
-    if (this.currentSequenceIndex >= this.pipelineSequence.length) {
-      this.pipelineState$.next('completed');
-      this.runningAgentId$.next(null);
-      this.updateAllCompleted();
-      return;
-    }
-
-    const currentAgentId = this.pipelineSequence[this.currentSequenceIndex];
-    this.runningAgentId$.next(currentAgentId);
-    this.updateAgentStatuses(this.currentSequenceIndex);
-
-    // Each phase runs, then automatically transitions to the next phase
-    this.pipelineTimer = setTimeout(() => {
-      this.currentSequenceIndex++;
-      this.runCurrentPhase();
-    }, 4500);
-  }
-
-  private updateAgentStatuses(activeIdx: number): void {
-    const updated = this.agentsList.map(agent => {
-      if (agent.status === 'upcoming') {
-        return { ...agent, executionStatus: 'upcoming' as AgentExecutionStatus };
-      }
-      const seqIdx = this.pipelineSequence.indexOf(agent.id);
-      if (seqIdx === activeIdx) {
-        return { ...agent, executionStatus: 'running' as AgentExecutionStatus };
-      } else if (seqIdx < activeIdx) {
-        return { ...agent, executionStatus: 'completed' as AgentExecutionStatus };
-      } else {
-        return { ...agent, executionStatus: 'idle' as AgentExecutionStatus };
-      }
-    });
-
-    this.agentsList = updated;
-    this.agents$.next(updated);
-  }
-
-  private updateAllCompleted(): void {
-    const updated = this.agentsList.map(agent => {
-      if (agent.status === 'upcoming') {
-        return { ...agent, executionStatus: 'upcoming' as AgentExecutionStatus };
-      }
-      return { ...agent, executionStatus: 'completed' as AgentExecutionStatus };
-    });
-
-    this.agentsList = updated;
-    this.agents$.next(updated);
+  runSpecificAgent(_agentId: string): void {
+    // No-op: start conversation logic will be attached by teammate
   }
 
   resetPipeline(): void {
-    if (this.pipelineTimer) {
-      clearTimeout(this.pipelineTimer);
-      this.pipelineTimer = null;
-    }
-    this.currentSequenceIndex = -1;
     this.runningAgentId$.next(null);
     this.pipelineState$.next('idle');
-
-    const updated = this.agentsList.map(agent => ({
-      ...agent,
-      executionStatus: (agent.status === 'upcoming' ? 'upcoming' : 'idle') as AgentExecutionStatus
-    }));
-
-    this.agentsList = updated;
-    this.agents$.next(updated);
   }
 }

@@ -19,13 +19,12 @@ export class HarnessHomeComponent {
   upcomingCount: number = this.harnessDataService.getUpcomingCount();
 
   onHarnessClick(agent: AgentInfo): void {
+    if (agent.status === 'upcoming') return;
     // Teammate integration point: Add harness layer functionality here
   }
 
-  /**
-   * Runs the agent sequence starting from this agent when user clicks 'Start conversation'.
-   */
   onStartConversationClick(agent: AgentInfo): void {
-    this.harnessDataService.startPipelineFrom(agent.id);
+    if (agent.status === 'upcoming') return;
+    // Teammate integration point: Add chatbot conversation functionality here
   }
 }

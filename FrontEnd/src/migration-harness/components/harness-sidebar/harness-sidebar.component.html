@@ -35,7 +35,7 @@
       </a>
     </div>
 
-    <!-- AGENTS Section (Highlight Running Agent dynamically!) -->
+    <!-- AGENTS Section (6 Live Agents + 1 Upcoming Medallion at the end) -->
     <div class="nav-section-group">
       <div class="section-label-row">
         <span class="section-label">AGENTS</span>
@@ -44,44 +44,24 @@
 
       <div class="agents-nav-list">
         @for (agent of agents$ | async; track agent.id) {
-          <a [routerLink]="agent.route" 
-             routerLinkActive="active"
+          <a [routerLink]="agent.status === 'upcoming' ? null : agent.route" 
+             [routerLinkActive]="agent.status === 'upcoming' ? '' : 'active'"
              class="nav-item agent-item"
-             [class.running-agent]="agent.executionStatus === 'running'"
-             [class.completed-agent]="agent.executionStatus === 'completed'"
-             [class.upcoming-agent]="agent.executionStatus === 'upcoming'"
+             [class.upcoming-agent]="agent.status === 'upcoming'"
              [style.--agent-accent]="agent.color"
              [title]="agent.name + ' - ' + agent.sidebarSubtext">
             
-            <div class="nav-icon-box agent-icon" [style.color]="agent.executionStatus === 'running' ? agent.color : null">
+            <div class="nav-icon-box agent-icon">
               <i class="bi" [ngClass]="agent.icon"></i>
             </div>
 
             <div class="nav-text-col">
               <span class="nav-title text-truncate">{{ agent.sidebarName }}</span>
-              <span class="nav-subtext text-truncate">
-                @if (agent.executionStatus === 'running') {
-                  <span class="subtext-running-label">Running phase...</span>
-                } @else if (agent.executionStatus === 'completed') {
-                  <span class="subtext-completed-label">Phase completed</span>
-                } @else {
-                  {{ agent.sidebarSubtext }}
-                }
-              </span>
+              <span class="nav-subtext text-truncate">{{ agent.sidebarSubtext }}</span>
             </div>
 
             <div class="nav-status-col">
-              <!-- Dynamically Highlight Status -->
-              @if (agent.executionStatus === 'running') {
-                <span class="agent-running-tag">
-                  <span class="running-radar-dot"></span>
-                  <span class="running-text">RUNNING</span>
-                </span>
-              } @else if (agent.executionStatus === 'completed') {
-                <span class="agent-completed-tag" title="Phase Completed">
-                  <i class="bi bi-check-circle-fill"></i>
-                </span>
-              } @else if (agent.executionStatus === 'upcoming') {
+              @if (agent.status === 'upcoming') {
                 <span class="soon-indicator-pill" title="Upcoming Agent">SOON</span>
               } @else {
                 <span class="idle-indicator-dot" title="Ready"></span>

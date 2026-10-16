@@ -187,8 +187,30 @@
 }
 
 .agent-card.upcoming-card {
-  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  background: #f8fafc;
   border-color: #e2e8f0;
+  border-top: 3.5px solid #94a3b8 !important;
+  opacity: 0.55;
+  filter: grayscale(85%);
+  cursor: not-allowed;
+}
+
+.agent-card.upcoming-card:hover {
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  border-color: #e2e8f0;
+}
+
+.agent-card.upcoming-card .agent-name {
+  color: #64748b;
+}
+
+.agent-card.upcoming-card .agent-phase-tag {
+  color: #64748b !important;
+}
+
+.agent-card.upcoming-card .agent-description-text {
+  color: #64748b;
 }
 
 /* Card Top Row */
@@ -332,4 +354,36 @@
 .btn-start-convo:hover {
   color: #ea580c;
   transform: translateX(2px);
+}
+
+.btn-harness-layer.disabled-btn,
+.btn-harness-layer:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.btn-harness-layer.disabled-btn:hover,
+.btn-harness-layer:disabled:hover {
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  transform: none;
+}
+
+.btn-start-convo.disabled-btn,
+.btn-start-convo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.btn-start-convo.disabled-btn:hover,
+.btn-start-convo:disabled:hover {
+  transform: none;
+  color: #94a3b8;
 }
