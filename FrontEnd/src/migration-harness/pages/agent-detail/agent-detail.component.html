@@ -1,0 +1,128 @@
+@if (agent) {
+  <div class="agent-detail-container">
+    <!-- Breadcrumbs -->
+    <div class="breadcrumbs-row">
+      <a routerLink="/" class="crumb-link">
+        <i class="bi bi-house"></i> Home
+      </a>
+      <span class="crumb-separator">/</span>
+      <span class="crumb-parent">Agents</span>
+      <span class="crumb-separator">/</span>
+      <span class="crumb-current">{{ agent.name }}</span>
+    </div>
+
+    <!-- Agent Header Card -->
+    <div class="agent-header-card" [style.border-top-color]="agent.accentBorder">
+      <div class="header-main-info">
+        <div class="agent-avatar" [style.background-color]="agent.bgTint" [style.color]="agent.color">
+          <i class="bi" [ngClass]="agent.icon"></i>
+        </div>
+        <div class="header-texts">
+          <div class="phase-eyebrow" [style.color]="agent.color">{{ agent.phaseTag }}</div>
+          <h1 class="agent-heading">{{ agent.name }}</h1>
+          <p class="agent-subheading">{{ agent.description }}</p>
+        </div>
+      </div>
+
+      <div class="header-right-actions">
+        <!-- Harness Layer Button -->
+        <button class="btn-harness-prominent" (click)="openHarnessModal()">
+          <i class="bi bi-shield-check"></i>
+          <span>Harness Layer</span>
+        </button>
+
+        @if (agent.id === 'discovery-agent') {
+          <button class="btn-primary-action" (click)="openScanner()">
+            <i class="bi bi-database-check"></i>
+            <span>Open Database Scanner</span>
+          </button>
+        } @else {
+          <button class="btn-primary-action" (click)="runAgentExecution()" [disabled]="isRunning">
+            <i class="bi bi-play-fill"></i>
+            <span>{{ isRunning ? 'Executing Agent...' : 'Trigger Agent Run' }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="detail-content-grid">
+      <!-- Left Column: Capabilities & Harness Info -->
+      <div class="detail-left-col">
+        <!-- Harness Layer Card -->
+        <div class="info-card harness-summary-card">
+          <div class="card-title-row">
+            <h3 class="card-title">
+              <i class="bi bi-shield-lock-fill" [style.color]="agent.color"></i>
+              {{ agent.harnessLayerTitle }}
+            </h3>
+            <span class="badge-status-online">Deterministic</span>
+          </div>
+          <p class="card-desc">{{ agent.harnessDescription }}</p>
+
+          <div class="harness-quick-checks">
+            <div class="checks-header">Harness Validation Rules</div>
+            @for (check of agent.harnessChecks; track check.rule) {
+              <div class="quick-check-row">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                <span class="check-text">{{ check.name }}</span>
+                <span class="rule-tag">{{ check.rule }}</span>
+              </div>
+            }
+          </div>
+
+          <button class="btn-view-harness-full" (click)="openHarnessModal()">
+            <span>Open Full Harness Console & Rules</span>
+            <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+
+        <!-- Capabilities Card -->
+        <div class="info-card">
+          <h3 class="card-title">Core Agent Capabilities</h3>
+          <ul class="capabilities-list">
+            @for (cap of agent.capabilities; track cap) {
+              <li>
+                <i class="bi bi-check2-circle" [style.color]="agent.color"></i>
+                <span>{{ cap }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+
+      <!-- Right Column: Interactive Console -->
+      <div class="detail-right-col">
+        <div class="console-card">
+          <div class="console-tab-header">
+            <button class="tab-btn" 
+                    [class.active]="activeConsoleTab === 'overview'" 
+                    (click)="activeConsoleTab = 'overview'">
+              Execution Telemetry
+            </button>
+            <button class="tab-btn" 
+                    [class.active]="activeConsoleTab === 'harness'" 
+                    (click)="activeConsoleTab = 'harness'">
+              Harness Logs
+            </button>
+          </div>
+
+          <div class="console-body">
+            @if (executionComplete) {
+              <div class="success-banner">
+                <i class="bi bi-check-circle-fill"></i>
+                Agent completed execution successfully with 0 policy violations!
+              </div>
+            }
+
+            <div class="code-terminal">
+              @for (log of agent.sampleLogs; track $index) {
+                <div class="terminal-row">{{ log }}</div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

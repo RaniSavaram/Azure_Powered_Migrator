@@ -1,0 +1,86 @@
+<div class="harness-dashboard-container">
+  <!-- Top Hero Banner Card -->
+  <div class="hero-banner-card">
+    <div class="hero-left-content">
+      <div class="hero-eyebrow">
+        <span class="sparkle-icon">✦</span>
+        <span>Apexon · Databricks & Fabric Migration Harness</span>
+      </div>
+
+      <h1 class="hero-headline">
+        Your end-to-end Migration Harness platform
+      </h1>
+
+      <p class="hero-description">
+        Migration Harness orchestrates 7 live AI agents across constraint validation, discovery, assessment, evaluation, architecture design, and pipeline generation — reinforced by Layer 1 & 2 validation harnesses for deterministic enterprise execution.
+      </p>
+    </div>
+
+    <div class="hero-right-stats">
+      <!-- Live Agents Counter -->
+      <div class="stat-pill-box live-box">
+        <span class="stat-number">7</span>
+        <span class="stat-label">LIVE</span>
+      </div>
+
+      <!-- POCs Counter -->
+      <div class="stat-pill-box poc-box">
+        <span class="stat-number">2</span>
+        <span class="stat-label">POCS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agents Section Header -->
+  <div class="agents-section-header">
+    <div class="section-title-wrap">
+      <h2 class="section-main-title">Agents</h2>
+      <span class="section-counter-tag">7 live · enterprise harness ready</span>
+    </div>
+  </div>
+
+  <!-- 7 Agent Cards Grid -->
+  <div class="agent-cards-grid">
+    @for (agent of agents; track agent.id) {
+      <div class="agent-card" [style.border-top-color]="agent.accentBorder">
+        <!-- Card Top Row -->
+        <div class="card-top-row">
+          <div class="agent-icon-square" [style.background-color]="agent.bgTint" [style.color]="agent.color">
+            <i class="bi" [ngClass]="agent.icon"></i>
+          </div>
+
+          <div class="card-badges-group">
+            <span class="phase-pill" [style.background-color]="agent.bgTint" [style.color]="agent.color">
+              {{ agent.badgeText }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Card Body -->
+        <div class="card-body-content">
+          <h3 class="agent-name">{{ agent.name }}</h3>
+          <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
+          <p class="agent-description-text">{{ agent.description }}</p>
+        </div>
+
+        <!-- Card Actions Row (Requirement 4: Harness Layer button on every agent block) -->
+        <div class="card-actions-row">
+          <!-- Button 1: HARNESS LAYER (Highlighted & Dedicated) -->
+          <button class="btn-harness-layer" 
+                  (click)="openHarnessLayer(agent, $event)"
+                  title="Inspect {{ agent.harnessLayerTitle }}">
+            <i class="bi bi-shield-lock"></i>
+            <span>Harness Layer</span>
+          </button>
+
+          <!-- Button 2: Start conversation -->
+          <button class="btn-start-convo" 
+                  (click)="startConversation(agent, $event)">
+            <span>Start conversation</span>
+            <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
