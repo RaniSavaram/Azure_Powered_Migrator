@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import { AgentInfo } from '../models/agent.model';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { AgentInfo, AgentExecutionStatus } from '../models/agent.model';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +9,7 @@ export class HarnessDataService {
   private isSidebarCollapsed$ = new BehaviorSubject<boolean>(false);
   sidebarCollapsed$ = this.isSidebarCollapsed$.asObservable();
 
-  private agents: AgentInfo[] = [
+  private agentsList: AgentInfo[] = [
     {
       id: 'constraint-agent',
       phase: 1,
@@ -23,6 +23,7 @@ export class HarnessDataService {
       bgTint: 'rgba(249, 115, 22, 0.1)',
       icon: 'bi-shield-check',
       status: 'live',
+      executionStatus: 'idle',
       badgeText: 'Phase 1',
       description: 'Enforces source constraints, validates primary and foreign key preservation, detects unsupported schema constructs, and applies enterprise governance guardrails before pipeline execution.',
       route: '/agents/constraint'
@@ -40,6 +41,7 @@ export class HarnessDataService {
       bgTint: 'rgba(14, 165, 233, 0.1)',
       icon: 'bi-search',
       status: 'live',
+      executionStatus: 'idle',
       badgeText: 'Phase 2',
       description: 'Analyse your source platform — extracts full schema inventory, row counts, data types, ER relationships, and compliance signals from SQL Server, Oracle, PostgreSQL, Synapse, or Databricks.',
       route: '/agents/discovery'
@@ -57,6 +59,7 @@ export class HarnessDataService {
       bgTint: 'rgba(16, 185, 129, 0.1)',
       icon: 'bi-clipboard-data',
       status: 'live',
+      executionStatus: 'idle',
       badgeText: 'Phase 3',
       description: 'Computes migration complexity scores, workload sizing, table dependency graphs, and risk ratings — generating comprehensive migration readiness reports with human review checkpoints.',
       route: '/agents/assessment'
@@ -74,6 +77,7 @@ export class HarnessDataService {
       bgTint: 'rgba(139, 92, 246, 0.1)',
       icon: 'bi-cpu',
       status: 'live',
+      executionStatus: 'idle',
       badgeText: 'Phase 4',
       description: 'Performs automated evaluation and hallucination detection on agent outputs — validating LLM generated SQL against source schemas with a closed-loop critique mechanism.',
       route: '/agents/evaluation'
@@ -91,6 +95,7 @@ export class HarnessDataService {
       bgTint: 'rgba(99, 102, 241, 0.1)',
       icon: 'bi-code-slash',
       status: 'live',
+      executionStatus: 'idle',
       badgeText: 'Phase 5',
       description: 'Converts legacy ETL code, stored procedures, views, and schemas into production-ready Microsoft Fabric Lakehouse/Warehouse SQL and Databricks Asset Bundles (DAB) + Delta Live Tables.',
       route: '/agents/migration-generator'
@@ -105,9 +110,10 @@ export class HarnessDataService {
       category: 'Lakehouse Design',
       color: '#0d9488',
       accentBorder: '#0d9488',
-      bgTint: 'rgba(13, 148, 136, 0.1)',
+      bgTint: 'rgba(139, 92, 246, 0.1)',
       icon: 'bi-layers',
       status: 'upcoming',
+      executionStatus: 'upcoming',
       badgeText: 'Phase 6',
       description: 'Designs Medallion architecture (Bronze / Silver / Gold), Unity Catalog / OneLake hierarchy across dev / staging / prod, data contracts with SLA definitions, and Lakehouse governance.',
       route: '/agents/medallion-generation'
@@ -125,26 +131,52 @@ export class HarnessDataService {
       bgTint: 'rgba(236, 72, 153, 0.1)',
       icon: 'bi-box-seam',
       status: 'live',
+      executionStatus: 'idle',
       badgeText: 'Phase 7',
       description: 'Compiles migration deliverables into exportable artifacts — including Microsoft Fabric item JSONs, SQL DDL bundles, automated Word/PDF assessment docs, and deployment packages.',
       route: '/agents/artifacts-generator'
     }
   ];
 
-  getAgents(): AgentInfo[] {
-    return this.agents;
+  // Pipeline Sequential Execution
+  private pipelineSequence: string[] = [
+    'constraint-agent',
+    'discovery-agent',
+    'assessment-agent',
+    'evaluation-agent',
+    'migration-generator-agent',
+    'artifacts-generator'
+  ];
+
+  private currentSequenceIndex = -1;
+  private pipelineTimer: any = null;
+
+  private agents$ = new BehaviorSubject<AgentInfo[]>(this.agentsList);
+  agentsObservable$: Observable<AgentInfo[]> = this.agents$.asObservable();
+
+  private runningAgentId$ = new BehaviorSubject<string | null>(null);
+  activeRunningAgentId$: Observable<string | null> = this.runningAgentId$.asObservable();
+
+  private pipelineState$ = new BehaviorSubject<'idle' | 'running' | 'completed'>('idle');
+  pipelineStateObservable$: Observable<'idle' | 'running' | 'completed'> = this.pipelineState$.asObservable();
+
+  constructor() {
+    // Automatically trigger initial Phase 1 execution after short startup delay so user sees live animation
+    setTimeout(() => {
+      this.startPipeline();
+    }, 1200);
   }
 
-  getAgentById(id: string): AgentInfo | undefined {
-    return this.agents.find(a => a.id === id);
+  getAgents(): AgentInfo[] {
+    return this.agents$.value;
   }
 
   getLiveCount(): number {
-    return this.agents.filter(a => a.status === 'live').length;
+    return this.agents$.value.filter(a => a.status === 'live').length;
   }
 
   getUpcomingCount(): number {
-    return this.agents.filter(a => a.status === 'upcoming').length;
+    return this.agents$.value.filter(a => a.status === 'upcoming').length;
   }
 
   toggleSidebar(): void {
@@ -153,5 +185,112 @@ export class HarnessDataService {
 
   setSidebarCollapsed(collapsed: boolean): void {
     this.isSidebarCollapsed$.next(collapsed);
+  }
+
+  /**
+   * Starts or resumes sequential execution of agents: Phase 1 -> Phase 2 -> ... -> Phase 7
+   */
+  startPipeline(): void {
+    if (this.pipelineTimer) {
+      clearTimeout(this.pipelineTimer);
+    }
+
+    this.pipelineState$.next('running');
+
+    if (this.currentSequenceIndex < 0 || this.currentSequenceIndex >= this.pipelineSequence.length) {
+      // Reset to beginning (Phase 1)
+      this.currentSequenceIndex = 0;
+      this.updateAgentStatuses(0);
+    }
+
+    this.runCurrentPhase();
+  }
+
+  private runCurrentPhase(): void {
+    if (this.currentSequenceIndex >= this.pipelineSequence.length) {
+      // All live phases completed
+      this.pipelineState$.next('completed');
+      this.runningAgentId$.next(null);
+      this.updateAllCompleted();
+      return;
+    }
+
+    const currentAgentId = this.pipelineSequence[this.currentSequenceIndex];
+    this.runningAgentId$.next(currentAgentId);
+    this.updateAgentStatuses(this.currentSequenceIndex);
+
+    // Each phase runs for ~4 seconds, then automatically progresses to the next phase
+    this.pipelineTimer = setTimeout(() => {
+      // Mark current as completed and advance index
+      this.currentSequenceIndex++;
+      this.runCurrentPhase();
+    }, 4200);
+  }
+
+  private updateAgentStatuses(activeIdx: number): void {
+    const updated = this.agentsList.map(agent => {
+      if (agent.status === 'upcoming') {
+        return { ...agent, executionStatus: 'upcoming' as AgentExecutionStatus };
+      }
+      const seqIdx = this.pipelineSequence.indexOf(agent.id);
+      if (seqIdx === activeIdx) {
+        return { ...agent, executionStatus: 'running' as AgentExecutionStatus };
+      } else if (seqIdx < activeIdx) {
+        return { ...agent, executionStatus: 'completed' as AgentExecutionStatus };
+      } else {
+        return { ...agent, executionStatus: 'idle' as AgentExecutionStatus };
+      }
+    });
+
+    this.agentsList = updated;
+    this.agents$.next(updated);
+  }
+
+  private updateAllCompleted(): void {
+    const updated = this.agentsList.map(agent => {
+      if (agent.status === 'upcoming') {
+        return { ...agent, executionStatus: 'upcoming' as AgentExecutionStatus };
+      }
+      return { ...agent, executionStatus: 'completed' as AgentExecutionStatus };
+    });
+
+    this.agentsList = updated;
+    this.agents$.next(updated);
+  }
+
+  /**
+   * Reset pipeline back to initial state
+   */
+  resetPipeline(): void {
+    if (this.pipelineTimer) {
+      clearTimeout(this.pipelineTimer);
+      this.pipelineTimer = null;
+    }
+    this.currentSequenceIndex = -1;
+    this.runningAgentId$.next(null);
+    this.pipelineState$.next('idle');
+
+    const updated = this.agentsList.map(agent => ({
+      ...agent,
+      executionStatus: (agent.status === 'upcoming' ? 'upcoming' : 'idle') as AgentExecutionStatus
+    }));
+
+    this.agentsList = updated;
+    this.agents$.next(updated);
+  }
+
+  /**
+   * Run a specific agent manually
+   */
+  runSpecificAgent(agentId: string): void {
+    const idx = this.pipelineSequence.indexOf(agentId);
+    if (idx !== -1) {
+      if (this.pipelineTimer) {
+        clearTimeout(this.pipelineTimer);
+      }
+      this.currentSequenceIndex = idx;
+      this.pipelineState$.next('running');
+      this.runCurrentPhase();
+    }
   }
 }

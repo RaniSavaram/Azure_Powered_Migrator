@@ -1,3 +1,5 @@
+export type AgentExecutionStatus = 'idle' | 'running' | 'completed' | 'upcoming';
+
 export interface AgentInfo {
   id: string;
   phase: number;
@@ -11,6 +13,7 @@ export interface AgentInfo {
   bgTint: string;
   icon: string;
   status: 'live' | 'upcoming';
+  executionStatus: AgentExecutionStatus;
   badgeText: string;
   description: string;
   route: string;

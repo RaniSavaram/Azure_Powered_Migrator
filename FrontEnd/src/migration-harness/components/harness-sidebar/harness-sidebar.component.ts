@@ -14,7 +14,12 @@ import { AgentInfo } from '../../models/agent.model';
 export class HarnessSidebarComponent {
   private harnessDataService = inject(HarnessDataService);
   
-  agents: AgentInfo[] = this.harnessDataService.getAgents();
+  agents$ = this.harnessDataService.agentsObservable$;
   liveCount: number = this.harnessDataService.getLiveCount();
   isCollapsed$ = this.harnessDataService.sidebarCollapsed$;
+
+  onAgentClick(agent: AgentInfo): void {
+    // If user clicks on an agent in sidebar, they can also trigger running that agent
+    this.harnessDataService.runSpecificAgent(agent.id);
+  }
 }

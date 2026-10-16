@@ -3,15 +3,6 @@ import { Routes } from '@angular/router';
 import { HarnessLayoutComponent } from '../migration-harness/layouts/harness-layout.component';
 import { HarnessHomeComponent } from '../migration-harness/pages/home/harness-home.component';
 
-// 7 Dedicated Agent Components
-import { ConstraintAgentComponent } from '../migration-harness/agents/constraint-agent/constraint-agent.component';
-import { DiscoveryAgentComponent } from '../migration-harness/agents/discovery-agent/discovery-agent.component';
-import { AssessmentAgentComponent } from '../migration-harness/agents/assessment-agent/assessment-agent.component';
-import { EvaluationAgentComponent } from '../migration-harness/agents/evaluation-agent/evaluation-agent.component';
-import { MigrationGeneratorAgentComponent } from '../migration-harness/agents/migration-generator-agent/migration-generator-agent.component';
-import { MedallionGenerationAgentComponent } from '../migration-harness/agents/medallion-generation-agent/medallion-generation-agent.component';
-import { ArtifactsGeneratorComponent } from '../migration-harness/agents/artifacts-generator/artifacts-generator.component';
-
 // Other POCs & Classic views
 import { MainLayoutComponent } from './layouts/main-layout/main-layout';
 import { HomeComponent } from './pages/home/home';
@@ -28,34 +19,34 @@ export const routes: Routes = [
         path: '',
         component: HarnessHomeComponent
       },
-      // 7 Dedicated Agent Routes
+      // 7 Dedicated Agent Routes (Lazy Loaded)
       {
         path: 'agents/constraint',
-        component: ConstraintAgentComponent
+        loadComponent: () => import('../migration-harness/agents/constraint-agent/constraint-agent.component').then(m => m.ConstraintAgentComponent)
       },
       {
         path: 'agents/discovery',
-        component: DiscoveryAgentComponent
+        loadComponent: () => import('../migration-harness/agents/discovery-agent/discovery-agent.component').then(m => m.DiscoveryAgentComponent)
       },
       {
         path: 'agents/assessment',
-        component: AssessmentAgentComponent
+        loadComponent: () => import('../migration-harness/agents/assessment-agent/assessment-agent.component').then(m => m.AssessmentAgentComponent)
       },
       {
         path: 'agents/evaluation',
-        component: EvaluationAgentComponent
+        loadComponent: () => import('../migration-harness/agents/evaluation-agent/evaluation-agent.component').then(m => m.EvaluationAgentComponent)
       },
       {
         path: 'agents/migration-generator',
-        component: MigrationGeneratorAgentComponent
+        loadComponent: () => import('../migration-harness/agents/migration-generator-agent/migration-generator-agent.component').then(m => m.MigrationGeneratorAgentComponent)
       },
       {
         path: 'agents/medallion-generation',
-        component: MedallionGenerationAgentComponent
+        loadComponent: () => import('../migration-harness/agents/medallion-generation-agent/medallion-generation-agent.component').then(m => m.MedallionGenerationAgentComponent)
       },
       {
         path: 'agents/artifacts-generator',
-        component: ArtifactsGeneratorComponent
+        loadComponent: () => import('../migration-harness/agents/artifacts-generator/artifacts-generator.component').then(m => m.ArtifactsGeneratorComponent)
       },
       // Other POCs
       {

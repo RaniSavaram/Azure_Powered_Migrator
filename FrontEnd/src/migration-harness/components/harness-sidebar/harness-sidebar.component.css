@@ -49,6 +49,14 @@
   flex-shrink: 0;
 }
 
+.sidebar-logo-emblem {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 50%;
+  display: block;
+}
+
 .header-text-container {
   display: flex;
   flex-direction: column;
@@ -146,7 +154,7 @@
   border-radius: 8px;
   text-decoration: none;
   color: #cbd5e1;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
   position: relative;
 }
 
@@ -194,7 +202,7 @@
   text-overflow: ellipsis;
 }
 
-/* Home Item Active Style (Matches Screenshot) */
+/* Home Item Active Style */
 .home-item.active {
   background-color: #1e293b;
   border: 1px solid rgba(249, 115, 22, 0.4);
@@ -228,8 +236,43 @@
   padding-left: 9px;
 }
 
-.agent-item:hover .nav-icon-box {
-  color: #38bdf8;
+/* RUNNING AGENT DYNAMIC HIGHLIGHT IN SIDEBAR (User Request!) */
+.agent-item.running-agent {
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.18) 0%, rgba(30, 41, 59, 0.9) 100%);
+  border-left: 3.5px solid var(--agent-accent, #f97316);
+  padding-left: 9px;
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.18), inset 0 0 12px rgba(249, 115, 22, 0.05);
+  animation: runningGlow 2s infinite alternate;
+}
+
+@keyframes runningGlow {
+  0% {
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.15);
+  }
+  100% {
+    box-shadow: 0 0 16px rgba(249, 115, 22, 0.35);
+  }
+}
+
+.agent-item.running-agent .nav-title {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.subtext-running-label {
+  color: var(--agent-accent, #f97316);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.subtext-completed-label {
+  color: #4ade80;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.agent-item.completed-agent {
+  opacity: 0.95;
 }
 
 .nav-status-col {
@@ -239,12 +282,60 @@
   flex-shrink: 0;
 }
 
-.live-indicator-dot {
+/* Running Radar Indicator Tag */
+.agent-running-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: rgba(249, 115, 22, 0.2);
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.running-radar-dot {
   width: 6px;
   height: 6px;
-  background-color: #22c55e;
+  background-color: var(--agent-accent, #f97316);
   border-radius: 50%;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
+  animation: radarPulseDot 1.2s infinite;
+}
+
+@keyframes radarPulseDot {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(249, 115, 22, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
+  }
+}
+
+.running-text {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: var(--agent-accent, #f97316);
+  letter-spacing: 0.5px;
+}
+
+/* Completed Checkmark Tag */
+.agent-completed-tag {
+  color: #22c55e;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.idle-indicator-dot {
+  width: 5px;
+  height: 5px;
+  background-color: #475569;
+  border-radius: 50%;
 }
 
 .soon-indicator-pill {

@@ -14,6 +14,33 @@
       <p class="hero-description">
         Apexon Migration Platform orchestrates specialized AI agents across discovery, constraint analysis, assessment, evaluation, pipeline generation, and artifacts packaging — with Medallion Lakehouse intelligence in the upcoming phase.
       </p>
+
+      <!-- Pipeline Sequential Execution Controls -->
+      <div class="hero-pipeline-actions">
+        @if (pipelineState$ | async; as state) {
+          @if (state === 'running') {
+            <div class="pipeline-running-pill">
+              <span class="pill-pulse-ring"></span>
+              <span>Migration Pipeline Running: Sequential Phase Execution Active</span>
+            </div>
+            <button class="btn-pipeline-control restart" (click)="startPipeline()">
+              <i class="bi bi-arrow-repeat"></i> Replay From Phase 1
+            </button>
+          } @else if (state === 'completed') {
+            <div class="pipeline-completed-pill">
+              <i class="bi bi-check-circle-fill"></i>
+              <span>All Active Agent Phases Completed Successfully</span>
+            </div>
+            <button class="btn-pipeline-control" (click)="startPipeline()">
+              <i class="bi bi-play-fill"></i> Run Pipeline Again
+            </button>
+          } @else {
+            <button class="btn-pipeline-start" (click)="startPipeline()">
+              <i class="bi bi-play-circle-fill"></i> Run Migration Pipeline
+            </button>
+          }
+        }
+      </div>
     </div>
 
     <div class="hero-right-stats">
@@ -23,7 +50,7 @@
         <span class="stat-label">LIVE</span>
       </div>
 
-      <!-- Upcoming Agents Counter (Replaced 2 POCs count as requested) -->
+      <!-- Upcoming Agents Counter -->
       <div class="stat-pill-box coming-box">
         <span class="stat-number">{{ upcomingCount }}</span>
         <span class="stat-label">COMING</span>
@@ -41,9 +68,11 @@
 
   <!-- 7 Agent Cards Grid -->
   <div class="agent-cards-grid">
-    @for (agent of agents; track agent.id) {
+    @for (agent of agents$ | async; track agent.id) {
       <div class="agent-card" 
            [class.upcoming-card]="agent.status === 'upcoming'"
+           [class.card-is-running]="agent.executionStatus === 'running'"
+           [class.card-is-completed]="agent.executionStatus === 'completed'"
            [style.border-top-color]="agent.accentBorder">
         
         <!-- Card Top Row -->
@@ -57,7 +86,15 @@
               {{ agent.badgeText }}
             </span>
 
-            @if (agent.status === 'upcoming') {
+            @if (agent.executionStatus === 'running') {
+              <span class="card-running-pill">
+                <span class="dot-pulse"></span> RUNNING
+              </span>
+            } @else if (agent.executionStatus === 'completed') {
+              <span class="card-completed-pill">
+                <i class="bi bi-check-circle-fill"></i> DONE
+              </span>
+            } @else if (agent.status === 'upcoming') {
               <span class="soon-badge">
                 <i class="bi bi-clock"></i> SOON
               </span>

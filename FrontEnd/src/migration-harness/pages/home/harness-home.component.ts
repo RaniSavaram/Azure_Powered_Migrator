@@ -14,22 +14,24 @@ import { AgentInfo } from '../../models/agent.model';
 export class HarnessHomeComponent {
   private harnessDataService = inject(HarnessDataService);
 
-  agents: AgentInfo[] = this.harnessDataService.getAgents();
+  agents$ = this.harnessDataService.agentsObservable$;
   liveCount: number = this.harnessDataService.getLiveCount();
   upcomingCount: number = this.harnessDataService.getUpcomingCount();
+  pipelineState$ = this.harnessDataService.pipelineStateObservable$;
+  activeRunningAgentId$ = this.harnessDataService.activeRunningAgentId$;
 
-  /**
-   * Placeholder for teammate to attach Harness Layer working functionality.
-   * Actions intentionally removed as requested.
-   */
+  startPipeline(): void {
+    this.harnessDataService.startPipeline();
+  }
+
+  resetPipeline(): void {
+    this.harnessDataService.resetPipeline();
+  }
+
   onHarnessClick(agent: AgentInfo): void {
     // Teammate integration point: Add harness layer functionality here
   }
 
-  /**
-   * Placeholder for teammate to attach Chatbot working functionality.
-   * Actions intentionally removed as requested.
-   */
   onStartConversationClick(agent: AgentInfo): void {
     // Teammate integration point: Add working chatbot functionality here
   }
