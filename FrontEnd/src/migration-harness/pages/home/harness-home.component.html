@@ -74,18 +74,17 @@
 
         <!-- Card Actions Row -->
         <div class="card-actions-row">
-          <!-- Button 1: HARNESS LAYER -->
+          <!-- Button 1: HARNESS LAYER (No action) -->
           <button class="btn-harness-layer" 
                   [class.disabled-btn]="agent.status === 'upcoming'"
                   [disabled]="agent.status === 'upcoming'"
                   type="button"
-                  (click)="onHarnessClick(agent)"
                   title="Harness Layer">
             <i class="bi bi-shield-lock"></i>
             <span>Harness Layer</span>
           </button>
 
-          <!-- Button 2: Start conversation (or Coming Soon if upcoming) -->
+          <!-- Button 2: Start conversation (No action for now) -->
           @if (agent.status === 'upcoming') {
             <button class="btn-start-convo disabled-btn" 
                     type="button"
@@ -97,7 +96,6 @@
           } @else {
             <button class="btn-start-convo" 
                     type="button"
-                    (click)="onStartConversationClick(agent)"
                     title="Start conversation">
               <span>Start conversation</span>
               <i class="bi bi-arrow-right"></i>

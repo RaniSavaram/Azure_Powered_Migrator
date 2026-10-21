@@ -188,47 +188,18 @@ export class HarnessDataService {
   }
 
   /**
-   * Runs the sequence and highlights the running agent when user clicks 'Start conversation'.
+   * Pipeline sequence running is disabled per user request.
    */
   startPipelineFrom(agentId?: string): void {
     if (this.pipelineTimer) {
       clearTimeout(this.pipelineTimer);
+      this.pipelineTimer = null;
     }
-
-    let targetIdx = 0;
-    if (agentId) {
-      const idx = this.pipelineSequence.indexOf(agentId);
-      if (idx !== -1) {
-        targetIdx = idx;
-      }
-    }
-
-    this.currentSequenceIndex = targetIdx;
-    this.pipelineState$.next('running');
-    this.runCurrentPhase();
+    // No action
   }
 
   runSpecificAgent(agentId: string): void {
-    this.startPipelineFrom(agentId);
-  }
-
-  private runCurrentPhase(): void {
-    if (this.currentSequenceIndex >= this.pipelineSequence.length) {
-      this.pipelineState$.next('completed');
-      this.runningAgentId$.next(null);
-      this.updateAllCompleted();
-      return;
-    }
-
-    const currentAgentId = this.pipelineSequence[this.currentSequenceIndex];
-    this.runningAgentId$.next(currentAgentId);
-    this.updateAgentStatuses(this.currentSequenceIndex);
-
-    // After 4.5 seconds, automatically advances to the next phase
-    this.pipelineTimer = setTimeout(() => {
-      this.currentSequenceIndex++;
-      this.runCurrentPhase();
-    }, 4500);
+    // No action
   }
 
   private updateAgentStatuses(activeIdx: number): void {
