@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: apexon-ai-innovation-hub
+    name: azure-powered-migrator
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: starter

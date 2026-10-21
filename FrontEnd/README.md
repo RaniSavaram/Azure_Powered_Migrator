@@ -10,7 +10,7 @@ To start a local development server, run:
 ng serve
 ```
 
-The deployed application is available at `https://apexon-ai-innovationhub-new.onrender.com/`. The application will automatically reload whenever you modify any of the source files while using the development server.
+The deployed application is available at `https://azure-powered-migrator.onrender.com/`. The application will automatically reload whenever you modify any of the source files while using the development server.
 
 ## Code scaffolding
 
