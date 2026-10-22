@@ -560,6 +560,60 @@
   background-color: #f1f5f9;
 }
 
+/* Combined Actions Bar (Phase 3 Start Convo | Middle Evaluator Feedback | Phase 4 Start Convo) */
+.combined-actions-bar {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+}
+
+.action-slot-left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.action-slot-middle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-slot-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.middle-evaluator-btn {
+  background-color: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(109, 40, 217, 0.06);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.middle-evaluator-btn:hover {
+  background-color: #ede9fe;
+  border-color: #8b5cf6;
+  color: #5b21b6;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(139, 92, 246, 0.2);
+}
+
 @media (max-width: 992px) {
   .agent-card.combined-agent-card {
     grid-column: span 1;
@@ -574,5 +628,16 @@
     width: 100%;
     height: 1px;
     margin: 8px 0;
+  }
+
+  .combined-actions-bar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .action-slot-left,
+  .action-slot-middle,
+  .action-slot-right {
+    justify-content: center;
   }
 }

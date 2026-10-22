@@ -95,12 +95,11 @@
         </div>
 
         <div class="card-actions-row">
-          <!-- View Results Button (Disabled before chat with agent is completed) -->
+          <!-- View Results Button (Disabled with no action for now) -->
           <button class="btn-view-results" 
-                  [disabled]="!isDiscoveryDone"
-                  (click)="onViewDiscoveryResults()"
+                  [disabled]="true"
                   type="button" 
-                  [title]="isDiscoveryDone ? 'View Schema Discovery Results' : 'Finish chat with Discovery Agent to view results'">
+                  title="View Results">
             <i class="bi bi-bar-chart-steps"></i>
             <span>View Results</span>
           </button>
@@ -108,21 +107,16 @@
           <!-- Start Conversation Button -->
           <button class="btn-start-convo" 
                   type="button" 
-                  (click)="onStartDiscoveryConversation()"
-                  [title]="isDiscoveryDone ? 'Conversation completed' : 'Start conversation'">
-            @if (isDiscoveryDone) {
-              <span>Conversation Done</span>
-              <i class="bi bi-check2"></i>
-            } @else {
-              <span>Start conversation</span>
-              <i class="bi bi-arrow-right"></i>
-            }
+                  [routerLink]="agent.route" 
+                  title="Start conversation">
+            <span>Start conversation</span>
+            <i class="bi bi-arrow-right"></i>
           </button>
         </div>
       </div>
     }
 
-    <!-- 3. Combined Box: Assessment Agent & Migration Generator Agent with Evaluator Feedback Agent Button -->
+    <!-- 3. Combined Box: Assessment Agent & Migration Generator Agent with Evaluator Feedback Agent in the Middle -->
     <div class="agent-card combined-agent-card">
       <div class="combined-top-bar">
         <div class="combined-header-left">
@@ -145,7 +139,7 @@
       </div>
 
       <div class="combined-dual-body">
-        <!-- Sub-Agent 1: Assessment Agent -->
+        <!-- Sub-Agent 1: Assessment Agent (Phase 3) -->
         @if (assessmentAgent; as agent) {
           <div class="combined-agent-pane assessment-pane">
             <div class="pane-header-row">
@@ -162,31 +156,13 @@
               <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
               <p class="agent-description-text">{{ agent.description }}</p>
             </div>
-
-            <!-- Single Evaluator Feedback Agent button on the combined box -->
-            <div class="card-actions-row">
-              <button class="btn-evaluator-feedback" 
-                      type="button" 
-                      [routerLink]="evaluationAgent?.route" 
-                      title="Evaluator Feedback Agent">
-                <i class="bi bi-cpu"></i>
-                <span>Evaluator Feedback Agent</span>
-              </button>
-              <button class="btn-start-convo" 
-                      type="button" 
-                      [routerLink]="agent.route" 
-                      title="Start conversation">
-                <span>Start conversation</span>
-                <i class="bi bi-arrow-right"></i>
-              </button>
-            </div>
           </div>
         }
 
         <!-- Clean Divider (Double arrows removed) -->
         <div class="combined-divider"></div>
 
-        <!-- Sub-Agent 2: Migration Generator Agent -->
+        <!-- Sub-Agent 2: Migration Generator Agent (Phase 4) -->
         @if (migrationAgent; as agent) {
           <div class="combined-agent-pane migration-pane">
             <div class="pane-header-row">
@@ -203,17 +179,44 @@
               <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
               <p class="agent-description-text">{{ agent.description }}</p>
             </div>
+          </div>
+        }
+      </div>
 
-            <!-- Actions Row with Start Conversation -->
-            <div class="card-actions-row">
-              <button class="btn-start-convo" 
-                      type="button" 
-                      [routerLink]="agent.route" 
-                      title="Start conversation">
-                <span>Start conversation</span>
-                <i class="bi bi-arrow-right"></i>
-              </button>
-            </div>
+      <!-- Combined Actions Bar with Evaluator Feedback Agent in the Middle of Phase 3 & Phase 4 -->
+      <div class="combined-actions-bar">
+        @if (assessmentAgent; as agent) {
+          <div class="action-slot-left">
+            <button class="btn-start-convo" 
+                    type="button" 
+                    [routerLink]="agent.route" 
+                    title="Start conversation">
+              <span>Start conversation</span>
+              <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
+        }
+
+        <!-- Evaluator Feedback Agent in the Middle (Common to Phase 3 & 4) -->
+        <div class="action-slot-middle">
+          <button class="btn-evaluator-feedback middle-evaluator-btn" 
+                  type="button" 
+                  [routerLink]="evaluationAgent?.route" 
+                  title="Evaluator Feedback Agent (Common to Phase 3 & 4)">
+            <i class="bi bi-cpu"></i>
+            <span>Evaluator Feedback Agent</span>
+          </button>
+        </div>
+
+        @if (migrationAgent; as agent) {
+          <div class="action-slot-right">
+            <button class="btn-start-convo" 
+                    type="button" 
+                    [routerLink]="agent.route" 
+                    title="Start conversation">
+              <span>Start conversation</span>
+              <i class="bi bi-arrow-right"></i>
+            </button>
           </div>
         }
       </div>

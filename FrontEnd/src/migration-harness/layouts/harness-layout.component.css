@@ -6,6 +6,9 @@
   color: #0f172a;
   overflow: hidden;
   font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .harness-main-column {

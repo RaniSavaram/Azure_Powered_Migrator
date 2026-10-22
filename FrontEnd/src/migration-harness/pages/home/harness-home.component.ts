@@ -16,8 +16,8 @@ export class HarnessHomeComponent {
   private router = inject(Router);
 
   agents$ = this.harnessDataService.agentsObservable$;
-  liveCount: number = this.harnessDataService.getLiveCount();
-  upcomingCount: number = this.harnessDataService.getUpcomingCount();
+  liveCount: number = 5;
+  upcomingCount: number = 1;
 
   constraintAgent = this.harnessDataService.getAgentById('constraint-agent');
   discoveryAgent = this.harnessDataService.getAgentById('discovery-agent');
@@ -26,19 +26,4 @@ export class HarnessHomeComponent {
   migrationAgent = this.harnessDataService.getAgentById('migration-generator-agent');
   artifactsAgent = this.harnessDataService.getAgentById('artifacts-generator');
   medallionAgent = this.harnessDataService.getAgentById('medallion-generation-agent');
-
-  isDiscoveryRunning = false;
-
-  get isDiscoveryDone(): boolean {
-    return this.harnessDataService.isDiscoveryDone();
-  }
-
-  onStartDiscoveryConversation(): void {
-    this.router.navigate([this.discoveryAgent?.route || '/agents/discovery']);
-  }
-
-  onViewDiscoveryResults(): void {
-    if (!this.isDiscoveryDone) return;
-    this.router.navigate(['/dbscanner']);
-  }
 }
