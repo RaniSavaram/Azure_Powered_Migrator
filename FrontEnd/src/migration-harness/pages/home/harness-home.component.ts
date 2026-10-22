@@ -18,5 +18,11 @@ export class HarnessHomeComponent {
   liveCount: number = this.harnessDataService.getLiveCount();
   upcomingCount: number = this.harnessDataService.getUpcomingCount();
 
-  // Harness Layer and Start Conversation actions are intentionally unassigned for now
+  constraintAgent = this.harnessDataService.getAgentById('constraint-agent');
+  discoveryAgent = this.harnessDataService.getAgentById('discovery-agent');
+  assessmentAgent = this.harnessDataService.getAgentById('assessment-agent');
+  evaluationAgent = this.harnessDataService.getAgentById('evaluation-agent');
+  migrationAgent = this.harnessDataService.getAgentById('migration-generator-agent');
+  artifactsAgent = this.harnessDataService.getAgentById('artifacts-generator');
+  medallionAgent = this.harnessDataService.getAgentById('medallion-generation-agent');
 }

@@ -171,6 +171,10 @@ export class HarnessDataService {
     return this.agents$.value;
   }
 
+  getAgentById(id: string): AgentInfo | undefined {
+    return this.agents$.value.find(a => a.id === id);
+  }
+
   getLiveCount(): number {
     return this.agents$.value.filter(a => a.status === 'live').length;
   }
