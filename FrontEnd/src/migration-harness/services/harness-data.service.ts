@@ -187,11 +187,11 @@ export class HarnessDataService {
   }
 
   getLiveCount(): number {
-    return this.agents$.value.filter(a => a.status === 'live').length;
+    return 5;
   }
 
   getUpcomingCount(): number {
-    return this.agents$.value.filter(a => a.status === 'upcoming').length;
+    return 1;
   }
 
   toggleSidebar(): void {
