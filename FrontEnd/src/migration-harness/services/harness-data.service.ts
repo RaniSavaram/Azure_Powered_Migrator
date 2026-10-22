@@ -18,7 +18,7 @@ export class HarnessDataService {
       phase: 1,
       name: 'Constraint Agent',
       sidebarName: 'Constraint Agent',
-      sidebarSubtext: 'Rules • Governance • Keys',
+      sidebarSubtext: 'Rules • Governance • Fabric Guardrails',
       phaseTag: 'PHASE 1 · CONSTRAINT & GOVERNANCE',
       category: 'Governance & Integrity',
       color: '#f97316',
@@ -28,7 +28,7 @@ export class HarnessDataService {
       status: 'live',
       executionStatus: 'idle',
       badgeText: 'Phase 1',
-      description: 'Enforces source constraints, validates primary and foreign key preservation, detects unsupported schema constructs, and applies enterprise governance guardrails before pipeline execution.',
+      description: 'Enforces deterministic Layer 1 migration guardrails — validates primary/foreign keys, checks Microsoft Fabric compatibility, filters unsupported schema constructs, and audits enterprise security policies.',
       route: '/agents/constraint'
     },
     {
@@ -36,7 +36,7 @@ export class HarnessDataService {
       phase: 2,
       name: 'Discovery Agent',
       sidebarName: 'Discovery Agent',
-      sidebarSubtext: 'Schema • compliance and ER',
+      sidebarSubtext: 'Multi-Source • Schema Catalog • ER',
       phaseTag: 'PHASE 2 · SCHEMA INTELLIGENCE',
       category: 'Source Discovery',
       color: '#0ea5e9',
@@ -46,7 +46,7 @@ export class HarnessDataService {
       status: 'live',
       executionStatus: 'idle',
       badgeText: 'Phase 2',
-      description: 'Analyse your source platform — extracts full schema inventory, row counts, data types, ER relationships, and compliance signals from SQL Server, Oracle, PostgreSQL, Synapse, or Databricks.',
+      description: 'Extracts comprehensive schema catalog metadata across SQL Server, Databricks, Snowflake, and Synapse — capturing tables, views, procedures, volumes, and interactive ER relationships.',
       route: '/agents/discovery'
     },
     {
@@ -54,7 +54,7 @@ export class HarnessDataService {
       phase: 3,
       name: 'Assessment Agent',
       sidebarName: 'Assessment Agent',
-      sidebarSubtext: 'Readiness • Sizing • Risk',
+      sidebarSubtext: 'AI Foundry • Sizing • Object Readiness',
       phaseTag: 'PHASE 3 · MIGRATION READINESS & SIZING',
       category: 'Assessment & Strategy',
       color: '#10b981',
@@ -64,7 +64,7 @@ export class HarnessDataService {
       status: 'live',
       executionStatus: 'idle',
       badgeText: 'Phase 3',
-      description: 'Computes migration complexity scores, workload sizing, table dependency graphs, and risk ratings — generating comprehensive migration readiness reports with human review checkpoints.',
+      description: 'Powered by Azure AI Foundry Table Summarizer — analyzes object structures, data volume sizing, column definitions, and dependencies to produce structured migration readiness assessments.',
       route: '/agents/assessment'
     },
     {
@@ -72,8 +72,8 @@ export class HarnessDataService {
       phase: 4,
       name: 'Evaluation Agent',
       sidebarName: 'Evaluation Agent',
-      sidebarSubtext: 'Evaluator • Ground Truth',
-      phaseTag: 'PHASE 4 · EVALUATOR-GENERATOR FEEDBACK',
+      sidebarSubtext: 'Ground Truth • Audit • Critique Loop',
+      phaseTag: 'FEEDBACK BRIDGE · EVALUATION & AUDIT',
       category: 'Quality & Feedback Loop',
       color: '#8b5cf6',
       accentBorder: '#8b5cf6',
@@ -81,8 +81,8 @@ export class HarnessDataService {
       icon: 'bi-cpu',
       status: 'live',
       executionStatus: 'idle',
-      badgeText: 'Phase 4',
-      description: 'Performs automated evaluation and hallucination detection on agent outputs — validating LLM generated SQL against source schemas with a closed-loop critique mechanism.',
+      badgeText: 'Bridge',
+      description: 'Closed-loop AI evaluator that audits assessment summaries and migration plans against source schema ground truth — eliminating hallucinations and ensuring architectural precision.',
       route: '/agents/evaluation'
     },
     {
@@ -90,8 +90,8 @@ export class HarnessDataService {
       phase: 4,
       name: 'Migration Generator Agent',
       sidebarName: 'Migration Generator',
-      sidebarSubtext: 'ETL • Fabric SQL & DLT',
-      phaseTag: 'PHASE 4 · CODE & PIPELINE GENERATION',
+      sidebarSubtext: '9-Section Plan • 5 Batches • Fabric Arch',
+      phaseTag: 'PHASE 4 · FABRIC MIGRATION & BATCH PLANNING',
       category: 'Code Transformation',
       color: '#6366f1',
       accentBorder: '#6366f1',
@@ -100,7 +100,7 @@ export class HarnessDataService {
       status: 'live',
       executionStatus: 'idle',
       badgeText: 'Phase 4',
-      description: 'Converts legacy ETL code, stored procedures, views, and schemas into production-ready Microsoft Fabric Lakehouse/Warehouse SQL and Databricks Asset Bundles (DAB) + Delta Live Tables.',
+      description: 'Generates complete 9-section migration plans — establishing topological execution order, 5-stage dependency batching, Full vs Incremental load strategies, and Microsoft Fabric target architecture.',
       route: '/agents/migration-generator'
     },
     {
@@ -108,8 +108,8 @@ export class HarnessDataService {
       phase: 5,
       name: 'Artifacts Generator',
       sidebarName: 'Artifacts Generator',
-      sidebarSubtext: 'Fabric Items • DDL • DOCX',
-      phaseTag: 'PHASE 5 · ASSET PACKAGING & DEPLOYMENT',
+      sidebarSubtext: 'OneLake • Delta Tables • DDL • Docx',
+      phaseTag: 'PHASE 5 · ASSET PACKAGING & FABRIC DEPLOYMENT',
       category: 'Delivery & Release',
       color: '#ec4899',
       accentBorder: '#ec4899',
@@ -118,7 +118,7 @@ export class HarnessDataService {
       status: 'live',
       executionStatus: 'idle',
       badgeText: 'Phase 5',
-      description: 'Compiles migration deliverables into exportable artifacts — including Microsoft Fabric item JSONs, SQL DDL bundles, automated Word/PDF assessment docs, and deployment packages.',
+      description: 'Automates deployment into Microsoft Fabric OneLake Lakehouses and Warehouses — generating Delta Parquet tables, T-SQL DDL scripts, Data Factory pipelines, and official Word (.docx) assessment reports.',
       route: '/agents/artifacts-generator'
     },
     {
@@ -126,7 +126,7 @@ export class HarnessDataService {
       phase: 7,
       name: 'Medallion Generation Agent',
       sidebarName: 'Medallion Generation',
-      sidebarSubtext: 'Bronze • Silver • Gold',
+      sidebarSubtext: 'Bronze • Silver • Gold Design',
       phaseTag: 'UPCOMING PHASE · LAKEHOUSE ARCHITECTURE',
       category: 'Lakehouse Design',
       color: '#64748b',
@@ -136,7 +136,7 @@ export class HarnessDataService {
       status: 'upcoming',
       executionStatus: 'upcoming',
       badgeText: 'Upcoming',
-      description: 'Designs Medallion architecture (Bronze / Silver / Gold), Unity Catalog / OneLake hierarchy across dev / staging / prod, data contracts with SLA definitions, and Lakehouse governance.',
+      description: 'Automated Medallion lakehouse modeling — structuring raw Bronze ingestion, cleansed Silver relational entities, and Gold semantic models for Microsoft Fabric Power BI analytics.',
       route: '/agents/medallion-generation'
     }
   ];
