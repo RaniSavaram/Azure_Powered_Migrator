@@ -2,7 +2,7 @@ import { Component, inject, ChangeDetectorRef, ViewChild, ElementRef, AfterViewC
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Scanner, SavedConnectionProfile, ConnectionDetails, FabricConnectionDetails } from '../../services/scanner/scanner';
 import { ErDiagram } from '../../components/er-diagram/er-diagram';
 
@@ -12,6 +12,7 @@ import { ErDiagram } from '../../components/er-diagram/er-diagram';
   imports: [
     CommonModule,
     FormsModule,
+    RouterModule,
     ErDiagram
   ],
   templateUrl: './db-scanner.html',

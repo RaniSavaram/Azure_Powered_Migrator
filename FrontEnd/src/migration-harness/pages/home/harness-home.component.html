@@ -37,6 +37,22 @@
       <h2 class="section-main-title">Agents</h2>
       <span class="section-counter-tag">{{ liveCount }} live · {{ upcomingCount }} upcoming</span>
     </div>
+
+    <!-- Process Selection Buttons (Single Step vs Agent by Agent) -->
+    <div class="process-mode-actions">
+      <!-- 1. Single Step Process -> opens /dbscanner -->
+      <a routerLink="/dbscanner" class="btn-process-mode btn-single-step" title="Launch single step all-in-one scanner">
+        <i class="bi bi-lightning-charge-fill"></i>
+        <span>Single Step Process</span>
+      </a>
+
+      <!-- 2. Step-by-Step Agent Process -> prompts user to start from Phase 1 -->
+      <button type="button" class="btn-process-mode btn-agent-step" (click)="openStartPhase1Modal()" title="Start guided sequential agent workflow">
+        <i class="bi bi-diagram-3-fill"></i>
+        <span>Step-by-Step Agent Process</span>
+        <i class="bi bi-arrow-right"></i>
+      </button>
+    </div>
   </div>
 
   <!-- Agent Cards Grid -->
@@ -291,4 +307,46 @@
       </div>
     }
   </div>
+
+  <!-- Start from Phase 1 Confirmation Dialog -->
+  @if (showStartPhase1Modal) {
+    <div class="modal-backdrop-fade" (click)="closeStartPhase1Modal()">
+      <div class="modal-dialog-box" (click)="$event.stopPropagation()">
+        <div class="modal-dialog-header">
+          <div class="modal-header-icon orange-icon">
+            <i class="bi bi-diagram-3-fill"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3>Start Step-by-Step Agent Process</h3>
+            <p>Initiate sequential multi-agent migration workflow</p>
+          </div>
+          <button type="button" class="modal-close-btn" (click)="closeStartPhase1Modal()" aria-label="Close dialog">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-dialog-body">
+          <p class="modal-lead-question">
+            Would you like to start the sequential migration process beginning with <strong>Phase 1: Constraint Agent</strong>?
+          </p>
+
+          <div class="modal-phase-card">
+            <div class="phase-card-pill">Phase 1</div>
+            <div class="phase-card-details">
+              <h4>Constraint Agent</h4>
+              <p>Enforces deterministic Layer 1 migration guardrails, validates primary/foreign keys, and audits enterprise security policies.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-dialog-footer">
+          <button type="button" class="btn-modal-secondary" (click)="closeStartPhase1Modal()">Cancel</button>
+          <button type="button" class="btn-modal-primary" (click)="confirmStartPhase1()">
+            <span>Start from Phase 1</span>
+            <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

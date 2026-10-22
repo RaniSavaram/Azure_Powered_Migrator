@@ -108,9 +108,9 @@ export class HarnessDataService {
       phase: 5,
       name: 'Artifacts Generator',
       sidebarName: 'Artifacts Generator',
-      sidebarSubtext: 'OneLake • Delta Tables • DDL • Docx',
-      phaseTag: 'PHASE 5 · ASSET PACKAGING & FABRIC DEPLOYMENT',
-      category: 'Delivery & Release',
+      sidebarSubtext: 'Delta Tables • Docx • JSON Plan',
+      phaseTag: 'PHASE 5 · ONELAKE DELTA TABLES & REPORTS',
+      category: 'Fabric OneLake Deployment',
       color: '#ec4899',
       accentBorder: '#ec4899',
       bgTint: 'rgba(236, 72, 153, 0.1)',
@@ -118,7 +118,7 @@ export class HarnessDataService {
       status: 'live',
       executionStatus: 'idle',
       badgeText: 'Phase 5',
-      description: 'Automates deployment into Microsoft Fabric OneLake Lakehouses and Warehouses — generating Delta Parquet tables, T-SQL DDL scripts, Data Factory pipelines, and official Word (.docx) assessment reports.',
+      description: 'Parses the AI assessment report and migration plan to provision Delta tables directly into Microsoft Fabric OneLake Lakehouse, generating downloadable Assessment Report (.docx) and migration_plan.json.',
       route: '/agents/artifacts-generator'
     },
     {

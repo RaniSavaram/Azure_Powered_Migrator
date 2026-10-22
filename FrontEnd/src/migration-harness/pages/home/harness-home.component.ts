@@ -26,4 +26,19 @@ export class HarnessHomeComponent {
   migrationAgent = this.harnessDataService.getAgentById('migration-generator-agent');
   artifactsAgent = this.harnessDataService.getAgentById('artifacts-generator');
   medallionAgent = this.harnessDataService.getAgentById('medallion-generation-agent');
+
+  showStartPhase1Modal = false;
+
+  openStartPhase1Modal(): void {
+    this.showStartPhase1Modal = true;
+  }
+
+  closeStartPhase1Modal(): void {
+    this.showStartPhase1Modal = false;
+  }
+
+  confirmStartPhase1(): void {
+    this.showStartPhase1Modal = false;
+    this.router.navigate(['/agents/constraint']);
+  }
 }
