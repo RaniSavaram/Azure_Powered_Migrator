@@ -251,9 +251,19 @@
   font-family: var(--font-main, 'Inter', system-ui, sans-serif);
 }
 
-.btn-view-results-active:hover {
+.btn-view-results-active:hover:not(:disabled) {
   background-color: #e0f2fe;
   border-color: #0ea5e9;
+  color: #0369a1;
+}
+
+.btn-view-results-active:disabled,
+button.btn-view-results-active:disabled {
+  opacity: 0.88;
+  cursor: not-allowed;
+  pointer-events: none;
+  background-color: #f0f9ff;
+  border: 1px solid #7dd3fc;
   color: #0369a1;
 }
 

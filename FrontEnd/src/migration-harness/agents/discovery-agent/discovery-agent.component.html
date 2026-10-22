@@ -56,10 +56,10 @@
           Source schema intelligence and metadata have been gathered. You can now view the comprehensive results or proceed to the next phase.
         </p>
         <div class="completed-actions-row">
-          <a routerLink="/dbscanner" class="btn-view-results-active" title="View Database Scanner Results">
+          <button type="button" class="btn-view-results-active" [disabled]="true" title="View Results">
             <i class="bi bi-bar-chart-steps"></i>
             <span>View Results</span>
-          </a>
+          </button>
           <a [routerLink]="nextPhaseRoute" class="btn-next-phase" title="Proceed to Assessment Agent">
             <span>Next Phase</span>
             <i class="bi bi-arrow-right"></i>

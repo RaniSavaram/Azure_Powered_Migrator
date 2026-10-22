@@ -4,10 +4,33 @@ PAGE
 
 .dbscanner-page{
     width:100%;
-    padding:10px 10px 0px 10px;
-    background:transparent;
+    min-height:100%;
+    padding:16px 24px;
+    background-color:#030c18;
     box-sizing:border-box;
     color:#ffffff;
+    position:relative;
+}
+
+.dbscanner-page::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('../../../assets/logo/white_water_mark.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 380px;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.dbscanner-page > * {
+    position: relative;
+    z-index: 1;
 }
 
 /*====================================================

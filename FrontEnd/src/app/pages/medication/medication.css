@@ -1,8 +1,32 @@
-.medication-page{
+.medication-page {
+    width: 100%;
+    min-height: 100%;
+    background-color: #030c18;
+    color: #ffffff;
+    padding: 28px 36px 48px 36px;
+    box-sizing: border-box;
+    position: relative;
+}
 
-    width:100%;
-    color:#ffffff;
+.medication-page::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('../../../assets/logo/white_water_mark.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 380px;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 0;
+}
 
+.medication-page > * {
+    position: relative;
+    z-index: 1;
 }
 
 /* ---------------- HEADER ---------------- */
