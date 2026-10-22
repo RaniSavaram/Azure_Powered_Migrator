@@ -94,11 +94,33 @@
           <p class="agent-description-text">{{ agent.description }}</p>
         </div>
 
-        <div class="card-actions-row discovery-actions-row">
-          <!-- Harness Layer button intentionally removed per user request -->
-          <button class="btn-start-convo" type="button" [routerLink]="agent.route" title="Start conversation">
-            <span>Start conversation</span>
-            <i class="bi bi-arrow-right"></i>
+        <div class="card-actions-row">
+          <!-- View Results Button (Blurred before, enabled after start conversation) -->
+          <button class="btn-view-results" 
+                  [class.blurred-btn]="!isDiscoveryDone"
+                  [disabled]="!isDiscoveryDone"
+                  (click)="onViewDiscoveryResults()"
+                  type="button" 
+                  [title]="isDiscoveryDone ? 'View Schema Discovery Results' : 'Complete Start Conversation to unlock results'">
+            <i class="bi bi-bar-chart-steps"></i>
+            <span>View Results</span>
+          </button>
+
+          <!-- Start Conversation Button -->
+          <button class="btn-start-convo" 
+                  type="button" 
+                  (click)="onStartDiscoveryConversation()"
+                  [title]="isDiscoveryDone ? 'Conversation completed' : 'Start conversation'">
+            @if (isDiscoveryRunning) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+              <span>Starting...</span>
+            } @else if (isDiscoveryDone) {
+              <span>Conversation Done</span>
+              <i class="bi bi-check2"></i>
+            } @else {
+              <span>Start conversation</span>
+              <i class="bi bi-arrow-right"></i>
+            }
           </button>
         </div>
       </div>
@@ -110,7 +132,7 @@
         <div class="combined-header-left">
           <span class="combined-eyebrow">
             <i class="bi bi-diagram-3-fill"></i>
-            <span>ASSESSMENT & PIPELINE GENERATION PIPELINE</span>
+            <span>ASSESSMENT & Migration generator agent</span>
           </span>
         </div>
         <div class="card-badges-group">

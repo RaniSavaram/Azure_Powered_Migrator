@@ -87,11 +87,11 @@ export class HarnessDataService {
     },
     {
       id: 'migration-generator-agent',
-      phase: 5,
+      phase: 4,
       name: 'Migration Generator Agent',
       sidebarName: 'Migration Generator',
       sidebarSubtext: 'ETL • Fabric SQL & DLT',
-      phaseTag: 'PHASE 5 · CODE & PIPELINE GENERATION',
+      phaseTag: 'PHASE 4 · CODE & PIPELINE GENERATION',
       category: 'Code Transformation',
       color: '#6366f1',
       accentBorder: '#6366f1',
@@ -99,17 +99,17 @@ export class HarnessDataService {
       icon: 'bi-code-slash',
       status: 'live',
       executionStatus: 'idle',
-      badgeText: 'Phase 5',
+      badgeText: 'Phase 4',
       description: 'Converts legacy ETL code, stored procedures, views, and schemas into production-ready Microsoft Fabric Lakehouse/Warehouse SQL and Databricks Asset Bundles (DAB) + Delta Live Tables.',
       route: '/agents/migration-generator'
     },
     {
       id: 'artifacts-generator',
-      phase: 6,
+      phase: 5,
       name: 'Artifacts Generator',
       sidebarName: 'Artifacts Generator',
       sidebarSubtext: 'Fabric Items • DDL • DOCX',
-      phaseTag: 'PHASE 6 · ASSET PACKAGING & DEPLOYMENT',
+      phaseTag: 'PHASE 5 · ASSET PACKAGING & DEPLOYMENT',
       category: 'Delivery & Release',
       color: '#ec4899',
       accentBorder: '#ec4899',
@@ -117,7 +117,7 @@ export class HarnessDataService {
       icon: 'bi-box-seam',
       status: 'live',
       executionStatus: 'idle',
-      badgeText: 'Phase 6',
+      badgeText: 'Phase 5',
       description: 'Compiles migration deliverables into exportable artifacts — including Microsoft Fabric item JSONs, SQL DDL bundles, automated Word/PDF assessment docs, and deployment packages.',
       route: '/agents/artifacts-generator'
     },
@@ -162,6 +162,17 @@ export class HarnessDataService {
 
   private pipelineState$ = new BehaviorSubject<'idle' | 'running' | 'completed'>('idle');
   pipelineStateObservable$: Observable<'idle' | 'running' | 'completed'> = this.pipelineState$.asObservable();
+
+  private discoveryConversationDone$ = new BehaviorSubject<boolean>(false);
+  discoveryConversationDoneObservable$: Observable<boolean> = this.discoveryConversationDone$.asObservable();
+
+  setDiscoveryConversationDone(done: boolean = true): void {
+    this.discoveryConversationDone$.next(done);
+  }
+
+  isDiscoveryDone(): boolean {
+    return this.discoveryConversationDone$.value;
+  }
 
   constructor() {
     // Starts completely idle. Does NOT run automatically on load.

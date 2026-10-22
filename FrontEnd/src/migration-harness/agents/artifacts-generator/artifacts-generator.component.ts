@@ -11,7 +11,7 @@ import { RouterModule } from '@angular/router';
 })
 export class ArtifactsGeneratorComponent {
   agentName = 'Artifacts Generator';
-  phase = 'Phase 7 · Asset Packaging & Deployment';
+  phase = 'Phase 5 · Asset Packaging & Deployment';
 
   onStartChat(): void {
     console.log('Artifacts Generator chat triggered');
