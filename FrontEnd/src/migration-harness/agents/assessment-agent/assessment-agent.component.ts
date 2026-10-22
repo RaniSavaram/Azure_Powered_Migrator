@@ -12,6 +12,8 @@ import { RouterModule } from '@angular/router';
 export class AssessmentAgentComponent {
   agentName = 'Assessment Agent';
   phase = 'Phase 3 · Migration Readiness & Sizing';
+  nextPhaseRoute = '/agents/migration-generator';
+  nextPhaseName = 'Migration Generator Agent';
 
   onStartChat(): void {
     console.log('Assessment Agent chat triggered');

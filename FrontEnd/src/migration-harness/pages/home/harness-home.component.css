@@ -302,6 +302,10 @@
   gap: 8px;
 }
 
+.card-actions-row .btn-start-convo:only-child {
+  margin-left: auto;
+}
+
 /* View Results Button (Discovery Agent) */
 .btn-view-results {
   background-color: #f0f9ff;
@@ -332,11 +336,10 @@
   box-shadow: 0 2px 6px rgba(14, 165, 233, 0.2);
 }
 
-/* Blurred state before start conversation */
-.btn-view-results.blurred-btn,
-.btn-view-results:disabled {
-  filter: blur(1.5px);
-  opacity: 0.45;
+/* Disabled state before start conversation */
+.btn-view-results:disabled,
+.btn-view-results.disabled-btn {
+  opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
   user-select: none;
@@ -345,8 +348,8 @@
   color: #94a3b8;
 }
 
-.btn-view-results.blurred-btn i,
-.btn-view-results:disabled i {
+.btn-view-results:disabled i,
+.btn-view-results.disabled-btn i {
   color: #94a3b8;
 }
 
@@ -555,32 +558,6 @@
 .combined-divider {
   width: 1px;
   background-color: #f1f5f9;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.feedback-loop-badge {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #f5f3ff;
-  border: 1px solid #ddd6fe;
-  color: #8b5cf6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  box-shadow: 0 1px 3px rgba(139, 92, 246, 0.12);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.feedback-loop-badge:hover {
-  background: #ede9fe;
-  transform: scale(1.1);
-  border-color: #8b5cf6;
 }
 
 @media (max-width: 992px) {

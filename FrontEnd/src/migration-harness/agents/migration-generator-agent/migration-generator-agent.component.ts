@@ -12,6 +12,8 @@ import { RouterModule } from '@angular/router';
 export class MigrationGeneratorAgentComponent {
   agentName = 'Migration Generator Agent';
   phase = 'Phase 4 · Code & Pipeline Generation';
+  nextPhaseRoute = '/agents/artifacts-generator';
+  nextPhaseName = 'Artifacts Generator';
 
   onStartChat(): void {
     console.log('Migration Generator Agent chat triggered');

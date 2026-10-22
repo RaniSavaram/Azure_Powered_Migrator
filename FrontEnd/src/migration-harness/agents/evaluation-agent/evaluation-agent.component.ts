@@ -11,7 +11,9 @@ import { RouterModule } from '@angular/router';
 })
 export class EvaluationAgentComponent {
   agentName = 'Evaluation Agent';
-  phase = 'Phase 4 · Evaluator-Generator Feedback';
+  phase = 'Evaluator-Generator Feedback Loop';
+  nextPhaseRoute = '/agents/migration-generator';
+  nextPhaseName = 'Migration Generator Agent';
 
   onStartChat(): void {
     console.log('Evaluation Agent chat triggered');

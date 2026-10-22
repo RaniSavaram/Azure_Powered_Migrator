@@ -12,6 +12,8 @@ import { RouterModule } from '@angular/router';
 export class ConstraintAgentComponent {
   agentName = 'Constraint Agent';
   phase = 'Phase 1 · Constraint & Governance';
+  nextPhaseRoute = '/agents/discovery';
+  nextPhaseName = 'Discovery Agent';
 
   // Placeholder for teammate to connect chatbot / execution logic
   onStartChat(): void {

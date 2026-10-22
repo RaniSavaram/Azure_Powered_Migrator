@@ -21,24 +21,51 @@
           Analyse your source platform — extracts full schema inventory, row counts, data types, ER relationships, and compliance signals.
         </p>
       </div>
+    <div class="header-right-actions">
+      <a class="btn-next-phase" [routerLink]="nextPhaseRoute" (click)="onFinishChat()" title="Proceed to Assessment Agent">
+        <span>Next Phase</span>
+        <i class="bi bi-arrow-right"></i>
+      </a>
     </div>
   </div>
 
   <!-- Main Integration Canvas -->
   <div class="workspace-canvas">
-    <!-- ========================================================================= -->
-    <!-- TEAMMATE INTEGRATION POINT:                                               -->
-    <!-- Attach your working chatbot, console, or conversational workflow here.    -->
-    <!-- ========================================================================= -->
-    <div class="integration-placeholder-card">
-      <div class="placeholder-icon">
-        <i class="bi bi-chat-dots-fill"></i>
+    @if (!isChatCompleted) {
+      <div class="integration-placeholder-card">
+        <div class="placeholder-icon">
+          <i class="bi bi-chat-dots-fill"></i>
+        </div>
+        <h3>Discovery Agent Chatbot & Workflow</h3>
+        <p>
+          Analyse your source platform, extract full schema inventory, row counts, data types, and ER relationships. Complete your conversation with the agent to unlock the results.
+        </p>
+        <button class="btn-finish-chat" type="button" (click)="onFinishChat()">
+          <i class="bi bi-chat-check-fill"></i>
+          <span>Finish Chat with Agent</span>
+        </button>
+        <div class="placeholder-badge">Integration Ready</div>
       </div>
-      <h3>Discovery Agent Chatbot & Workflow</h3>
-      <p>
-        This workspace is ready for team members to plug in the working discovery conversation chatbot or link to database scanner telemetry.
-      </p>
-      <div class="placeholder-badge">Integration Ready</div>
-    </div>
+    } @else {
+      <div class="integration-placeholder-card">
+        <div class="placeholder-icon success-icon">
+          <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h3>Discovery Conversation Completed</h3>
+        <p>
+          Source schema intelligence and metadata have been gathered. You can now view the comprehensive results or proceed to the next phase.
+        </p>
+        <div class="completed-actions-row">
+          <a routerLink="/dbscanner" class="btn-view-results-active" title="View Database Scanner Results">
+            <i class="bi bi-bar-chart-steps"></i>
+            <span>View Results</span>
+          </a>
+          <a [routerLink]="nextPhaseRoute" class="btn-next-phase" title="Proceed to Assessment Agent">
+            <span>Next Phase</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    }
   </div>
 </div>

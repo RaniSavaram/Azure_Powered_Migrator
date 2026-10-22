@@ -34,15 +34,7 @@ export class HarnessHomeComponent {
   }
 
   onStartDiscoveryConversation(): void {
-    if (this.isDiscoveryDone) {
-      this.router.navigate([this.discoveryAgent?.route || '/agents/discovery']);
-      return;
-    }
-    this.isDiscoveryRunning = true;
-    setTimeout(() => {
-      this.harnessDataService.setDiscoveryConversationDone(true);
-      this.isDiscoveryRunning = false;
-    }, 600);
+    this.router.navigate([this.discoveryAgent?.route || '/agents/discovery']);
   }
 
   onViewDiscoveryResults(): void {
