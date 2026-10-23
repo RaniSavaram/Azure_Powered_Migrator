@@ -749,8 +749,8 @@ SCAN STATUS + ACTION BUTTONS
                 </ng-container>
 
                 <div class="remember-me-row">
-                    <input type="checkbox" [(ngModel)]="rememberMe" />
-                    <span>Remember me</span>
+                    <input type="checkbox" [(ngModel)]="rememberMe" id="sourceRememberMeCheck" />
+                    <label for="sourceRememberMeCheck">Remember me</label>
                 </div>
 
             </div>
@@ -1579,8 +1579,6 @@ SCAN STATUS + ACTION BUTTONS
 
     </div>
 
-</div>
-
     <!-- ==========================================================
     SCAN FAILED DIALOG
     ===========================================================-->
@@ -1653,6 +1651,8 @@ SCAN STATUS + ACTION BUTTONS
         </div>
 
     </div>
+
+</div>
 
 <!-- ==========================================================
 END PART 3
