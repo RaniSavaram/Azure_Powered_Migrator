@@ -32,150 +32,19 @@
 
   <!-- Main Integration Canvas -->
   <div class="workspace-canvas">
-    <!-- Deliverables Category Filter Bar -->
-    <div class="artifacts-filter-bar">
-      <div class="filter-tabs">
-        <button type="button" class="filter-tab" [class.active]="activeCategory === 'all'" (click)="setCategory('all')">
-          <i class="bi bi-grid-fill"></i> All Deliverables (4)
-        </button>
-        <button type="button" class="filter-tab" [class.active]="activeCategory === 'lakehouse'" (click)="setCategory('lakehouse')">
-          <i class="bi bi-database-fill-check"></i> OneLake Lakehouse (1)
-        </button>
-        <button type="button" class="filter-tab" [class.active]="activeCategory === 'reports'" (click)="setCategory('reports')">
-          <i class="bi bi-file-earmark-text-fill"></i> Assessment & Plan (2)
-        </button>
-        <button type="button" class="filter-tab" [class.active]="activeCategory === 'pipelines'" (click)="setCategory('pipelines')">
-          <i class="bi bi-bezier2"></i> Fabric Pipelines (1)
-        </button>
+    <!-- ========================================================================= -->
+    <!-- TEAMMATE INTEGRATION POINT:                                               -->
+    <!-- Attach your working chatbot, console, or conversational workflow here.    -->
+    <!-- ========================================================================= -->
+    <div class="integration-placeholder-card">
+      <div class="placeholder-icon">
+        <i class="bi bi-chat-dots-fill"></i>
       </div>
-
-      <div class="filter-meta">
-        <span class="target-env-pill">
-          <i class="bi bi-cloud-check-fill"></i>
-          <span>Target: Microsoft Fabric Insights</span>
-        </span>
-      </div>
-    </div>
-
-    <!-- Main 2-Column Split: Deliverables Grid (Left) + Interactive Agent Chatbot (Right) -->
-    <div class="artifacts-layout-split">
-      <!-- Left Column: Generated Deliverables Cards -->
-      <div class="deliverables-column">
-        <div class="deliverables-grid">
-          @for (item of filteredDeliverables; track item.id) {
-            <div class="deliverable-card">
-              <div class="deliv-card-top">
-                <div class="deliv-icon-box" [style.color]="item.accentColor" [style.background-color]="item.accentColor + '18'">
-                  <i class="bi" [ngClass]="item.icon"></i>
-                </div>
-                <div class="deliv-badges">
-                  <span class="status-badge" [class.badge-provisioned]="item.status === 'Provisioned'" [class.badge-generated]="item.status === 'Generated' || item.status === 'Validated'">
-                    {{ item.status }}
-                  </span>
-                  <span class="type-badge">{{ item.badge }}</span>
-                </div>
-              </div>
-
-              <div class="deliv-card-body">
-                <h3 class="deliv-title">{{ item.title }}</h3>
-                <div class="deliv-subtitle">{{ item.subtitle }}</div>
-                <p class="deliv-desc">{{ item.description }}</p>
-                <div class="deliv-target">
-                  <i class="bi bi-arrow-right-short"></i>
-                  <span>Target: <strong>{{ item.target }}</strong></span>
-                </div>
-              </div>
-
-              <div class="deliv-card-footer">
-                <button type="button" class="btn-deliv-action" (click)="handleDeliverableAction(item)">
-                  <i class="bi" [ngClass]="item.actionIcon"></i>
-                  <span>{{ item.actionLabel }}</span>
-                </button>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
-
-      <!-- Right Column: Interactive Agent Assistant & Deployment Console -->
-      <div class="agent-chat-column">
-        <div class="chat-card">
-          <div class="chat-card-header">
-            <div class="chat-header-title">
-              <div class="agent-avatar-dot">
-                <i class="bi bi-box-seam"></i>
-                <span class="online-indicator"></span>
-              </div>
-              <div>
-                <h4>Artifacts Synthesis Console</h4>
-                <p>Interactive Agent · Phase 5 Orchestration</p>
-              </div>
-            </div>
-            <span class="engine-tag">delta-rs / Fabric REST</span>
-          </div>
-
-          <!-- Message History -->
-          <div class="chat-messages-container">
-            @for (msg of chatMessages; track msg.id) {
-              <div class="chat-bubble-row" [class.user-row]="msg.sender === 'user'" [class.agent-row]="msg.sender === 'agent'">
-                <div class="bubble-content">
-                  <p class="bubble-text">{{ msg.text }}</p>
-                  
-                  @if (msg.actions && msg.actions.length > 0) {
-                    <div class="bubble-action-chips">
-                      @for (act of msg.actions; track act.actionId) {
-                        <button type="button" class="btn-bubble-chip" (click)="handleActionClick(act.actionId)">
-                          <i class="bi" [ngClass]="act.icon"></i>
-                          <span>{{ act.label }}</span>
-                        </button>
-                      }
-                    </div>
-                  }
-
-                  <span class="bubble-timestamp">{{ msg.timestamp }}</span>
-                </div>
-              </div>
-            }
-
-            @if (isProcessing) {
-              <div class="chat-bubble-row agent-row">
-                <div class="bubble-content typing-bubble">
-                  <span class="typing-dot"></span>
-                  <span class="typing-dot"></span>
-                  <span class="typing-dot"></span>
-                </div>
-              </div>
-            }
-          </div>
-
-          <!-- Quick Action Prompts -->
-          <div class="chat-quick-chips">
-            <button type="button" class="quick-chip" (click)="sendMessage('Download Assessment Report (.docx)')">
-              <i class="bi bi-file-earmark-word"></i> Assessment .docx
-            </button>
-            <button type="button" class="quick-chip" (click)="sendMessage('Export migration_plan.json (5 Stages)')">
-              <i class="bi bi-filetype-json"></i> migration_plan.json
-            </button>
-            <button type="button" class="quick-chip" (click)="sendMessage('Sync Delta tables to SQL_Lakehouse')">
-              <i class="bi bi-database-check"></i> OneLake Lakehouse
-            </button>
-          </div>
-
-          <!-- Input Row -->
-          <div class="chat-input-row">
-            <input
-              type="text"
-              class="chat-input-field"
-              [(ngModel)]="userInput"
-              placeholder="Ask Artifacts Generator (e.g. Export JSON plan, OneLake status)..."
-              (keyup.enter)="sendMessage()"
-              [disabled]="isProcessing" />
-            <button type="button" class="btn-send-chat" (click)="sendMessage()" [disabled]="!userInput.trim() || isProcessing">
-              <i class="bi bi-send-fill"></i>
-            </button>
-          </div>
-        </div>
-      </div>
+      <h3>Artifacts Generator Chatbot & Workflow</h3>
+      <p>
+        This workspace is ready for team members to plug in the artifacts synthesis chatbot, Microsoft Fabric deployment console, and export workflows.
+      </p>
+      <div class="placeholder-badge">Integration Ready</div>
     </div>
   </div>
 </div>
