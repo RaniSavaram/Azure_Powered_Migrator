@@ -16,8 +16,8 @@ export class HarnessHomeComponent {
   private router = inject(Router);
 
   agents$ = this.harnessDataService.agentsObservable$;
-  liveCount: number = 5;
-  upcomingCount: number = 1;
+  liveCount: number = this.harnessDataService.getLiveCount();
+  upcomingCount: number = this.harnessDataService.getUpcomingCount();
 
   constraintAgent = this.harnessDataService.getAgentById('constraint-agent');
   discoveryAgent = this.harnessDataService.getAgentById('discovery-agent');

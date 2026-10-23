@@ -178,6 +178,17 @@ export class HarnessDataService {
     // Starts completely idle. Does NOT run automatically on load.
   }
 
+  private selectedAgentId$ = new BehaviorSubject<string | null>(null);
+  selectedAgentIdObservable$: Observable<string | null> = this.selectedAgentId$.asObservable();
+
+  setSelectedAgent(agentId: string | null): void {
+    this.selectedAgentId$.next(agentId);
+  }
+
+  getSelectedAgentId(): string | null {
+    return this.selectedAgentId$.value;
+  }
+
   getAgents(): AgentInfo[] {
     return this.agents$.value;
   }
@@ -187,7 +198,7 @@ export class HarnessDataService {
   }
 
   getLiveCount(): number {
-    return 5;
+    return 6;
   }
 
   getUpcomingCount(): number {

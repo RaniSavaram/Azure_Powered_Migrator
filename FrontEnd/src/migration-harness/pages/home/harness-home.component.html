@@ -72,7 +72,7 @@
         </div>
 
         <div class="card-body-content">
-          <h3 class="agent-name">{{ agent.name }}</h3>
+          <h3 class="agent-name" [routerLink]="agent.route" [title]="'Open ' + agent.name">{{ agent.name }}</h3>
           <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
           <p class="agent-description-text">{{ agent.description }}</p>
         </div>
@@ -105,7 +105,7 @@
         </div>
 
         <div class="card-body-content">
-          <h3 class="agent-name">{{ agent.name }}</h3>
+          <h3 class="agent-name" [routerLink]="agent.route" [title]="'Open ' + agent.name">{{ agent.name }}</h3>
           <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
           <p class="agent-description-text">{{ agent.description }}</p>
         </div>
@@ -168,7 +168,7 @@
             </div>
 
             <div class="pane-body-content">
-              <h3 class="agent-name">{{ agent.name }}</h3>
+              <h3 class="agent-name" [routerLink]="agent.route" [title]="'Open ' + agent.name">{{ agent.name }}</h3>
               <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
               <p class="agent-description-text">{{ agent.description }}</p>
             </div>
@@ -191,7 +191,7 @@
             </div>
 
             <div class="pane-body-content">
-              <h3 class="agent-name">{{ agent.name }}</h3>
+              <h3 class="agent-name" [routerLink]="agent.route" [title]="'Open ' + agent.name">{{ agent.name }}</h3>
               <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
               <p class="agent-description-text">{{ agent.description }}</p>
             </div>
@@ -253,7 +253,7 @@
         </div>
 
         <div class="card-body-content">
-          <h3 class="agent-name">{{ agent.name }}</h3>
+          <h3 class="agent-name" [routerLink]="agent.route" [title]="'Open ' + agent.name">{{ agent.name }}</h3>
           <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
           <p class="agent-description-text">{{ agent.description }}</p>
         </div>
@@ -327,7 +327,7 @@
 
         <div class="modal-dialog-body">
           <p class="modal-lead-question">
-            Would you like to start the sequential migration process beginning with <strong>Phase 1: Constraint Agent</strong>?
+            The sequential migration process starts with <strong>Phase 1: Constraint Agent</strong> to establish deterministic guardrails and schema validation.
           </p>
 
           <div class="modal-phase-card">

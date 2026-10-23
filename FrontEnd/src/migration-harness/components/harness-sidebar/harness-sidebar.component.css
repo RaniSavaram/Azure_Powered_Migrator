@@ -230,25 +230,35 @@
 }
 
 .agent-item.active {
-  background-color: #1e293b;
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.28) 0%, rgba(30, 41, 59, 0.98) 100%);
   color: #ffffff;
-  border: 1px solid rgba(249, 115, 22, 0.4);
-  border-left: 3.5px solid #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.65);
+  border-left: 4px solid var(--agent-accent, #f97316);
   padding-left: 10px;
-  box-shadow: 0 0 12px rgba(249, 115, 22, 0.15);
+  box-shadow: 0 0 18px rgba(249, 115, 22, 0.3), inset 0 0 14px rgba(249, 115, 22, 0.12);
 }
 
 .agent-item.active .nav-icon-box {
-  color: #f97316;
+  color: var(--agent-accent, #f97316);
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 8px var(--agent-accent, #f97316));
 }
 
 .agent-item.active .nav-title {
   color: #ffffff !important;
   font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.2px;
+  text-shadow: 0 0 10px rgba(249, 115, 22, 0.7);
 }
 
 .agent-item.active .nav-subtext {
-  color: #94a3b8 !important;
+  color: #ffedd5 !important;
+  font-weight: 600;
+}
+
+.agent-item:hover:not(.upcoming-agent):not(.active) .nav-title {
+  color: #ffedd5;
 }
 
 /* UPCOMING AGENT GRAYED OUT */
