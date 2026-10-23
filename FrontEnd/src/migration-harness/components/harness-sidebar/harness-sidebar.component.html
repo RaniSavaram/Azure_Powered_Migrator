@@ -47,6 +47,8 @@
           <a [routerLink]="agent.status === 'upcoming' ? null : agent.route" 
              [routerLinkActive]="agent.status === 'upcoming' ? '' : 'active'"
              class="nav-item agent-item"
+             [class.active]="isAgentActive(agent)"
+             [class.running-agent]="isAgentRunning(agent)"
              [class.upcoming-agent]="agent.status === 'upcoming'"
              [style.--agent-accent]="agent.color"
              [title]="agent.name + ' - ' + agent.sidebarSubtext">
@@ -61,6 +63,12 @@
             </div>
 
             <div class="nav-status-col">
+              @if (isAgentRunning(agent)) {
+                <span class="agent-running-tag" title="Agent is Running">
+                  <span class="running-radar-dot"></span>
+                  <span class="running-text">RUNNING</span>
+                </span>
+              }
               @if (agent.status === 'upcoming') {
                 <span class="soon-indicator-pill" title="Upcoming Agent">SOON</span>
               }

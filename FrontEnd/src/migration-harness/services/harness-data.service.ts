@@ -202,6 +202,22 @@ export class HarnessDataService {
     this.isSidebarCollapsed$.next(collapsed);
   }
 
+  setRunningAgent(agentId: string | null): void {
+    this.runningAgentId$.next(agentId);
+    const updated = this.agentsList.map(agent => ({
+      ...agent,
+      executionStatus: (agent.status === 'upcoming' 
+        ? 'upcoming' 
+        : (agent.id === agentId ? 'running' : 'idle')) as AgentExecutionStatus
+    }));
+    this.agentsList = updated;
+    this.agents$.next(updated);
+  }
+
+  getActiveRunningAgentId(): string | null {
+    return this.runningAgentId$.value;
+  }
+
   /**
    * Pipeline sequence running is disabled per user request.
    */

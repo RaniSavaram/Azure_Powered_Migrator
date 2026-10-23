@@ -232,8 +232,23 @@
 .agent-item.active {
   background-color: #1e293b;
   color: #ffffff;
-  border-left: 3px solid #f97316;
-  padding-left: 9px;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  border-left: 3.5px solid #f97316;
+  padding-left: 10px;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.15);
+}
+
+.agent-item.active .nav-icon-box {
+  color: #f97316;
+}
+
+.agent-item.active .nav-title {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.agent-item.active .nav-subtext {
+  color: #94a3b8 !important;
 }
 
 /* UPCOMING AGENT GRAYED OUT */
@@ -262,11 +277,22 @@
 
 /* RUNNING AGENT DYNAMIC HIGHLIGHT IN SIDEBAR (User Request!) */
 .agent-item.running-agent {
-  background: linear-gradient(90deg, rgba(249, 115, 22, 0.18) 0%, rgba(30, 41, 59, 0.9) 100%);
-  border-left: 3.5px solid var(--agent-accent, #f97316);
-  padding-left: 9px;
-  box-shadow: 0 0 14px rgba(249, 115, 22, 0.18), inset 0 0 12px rgba(249, 115, 22, 0.05);
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.22) 0%, rgba(30, 41, 59, 0.95) 100%);
+  border: 1px solid rgba(249, 115, 22, 0.5);
+  border-left: 3.5px solid #f97316;
+  padding-left: 10px;
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.25);
   animation: runningGlow 2s infinite alternate;
+}
+
+.agent-item.running-agent .nav-icon-box {
+  color: #f97316;
+  animation: runningIconPulse 1.6s infinite ease-in-out;
+}
+
+@keyframes runningIconPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.85; }
 }
 
 @keyframes runningGlow {
@@ -279,8 +305,12 @@
 }
 
 .agent-item.running-agent .nav-title {
-  color: #ffffff;
+  color: #ffffff !important;
   font-weight: 700;
+}
+
+.agent-item.running-agent .nav-subtext {
+  color: #cbd5e1 !important;
 }
 
 .subtext-running-label {
