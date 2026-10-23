@@ -128,6 +128,7 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
   scanFailed = false;
 
   showConnection = false;
+  connectionErrorMessage = '';
 
   connecting = false;
 
@@ -722,6 +723,7 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
     };
 
     this.showConnection = true;
+    this.connectionErrorMessage = '';
 
     if (this.source === 'Databricks') {
       this.loadDatabricksConnections();
@@ -987,6 +989,8 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.connecting = true;
 
+    this.connectionErrorMessage = '';
+
     this.scanner.connectDatabase(
       this.source,
       this.connection,
@@ -996,6 +1000,7 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
       next: (response: any) => {
 
         this.connected = true;
+        this.connectionErrorMessage = '';
 
         const connectedDb = this.getFormatSourceForFilename(this.source);
         this.scanStatus = `Connected to ${connectedDb}. Ready to scan.`;
@@ -1051,15 +1056,16 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
 
         this.connecting = false;
 
-        this.cdr.detectChanges();
+        const rawMsg = err.error?.message ?? err.message ?? 'Connection failed. Please verify credentials.';
+        this.connectionErrorMessage = rawMsg;
 
         this.statusMessages.push(
           'Database Connection Failed.'
         );
 
-        console.error(err);
+        this.cdr.detectChanges();
 
-        alert(err.error?.message ?? 'Connection Failed');
+        console.error('Database connection error:', err);
 
       }
 
@@ -1074,6 +1080,8 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
   cancelConnection() {
 
     this.showConnection = false;
+
+    this.connectionErrorMessage = '';
 
     this.connected = false;
 

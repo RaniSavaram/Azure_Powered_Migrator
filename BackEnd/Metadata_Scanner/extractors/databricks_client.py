@@ -87,12 +87,14 @@ class DatabricksExtractor(BaseExtractor):
 
     def __init__(self, Creds):
         self.server_hostname = (Creds.get_servername() or "").strip().strip('"').strip("'")
-        self.server_hostname = re.sub(r"^https?://", "", self.server_hostname).rstrip("/")
+        self.server_hostname = re.sub(r"^https?://", "", self.server_hostname).split("/")[0].strip().rstrip("/")
         self.catalog = (Creds.get_database_name() or "").strip().strip('"').strip("'")
-        self.access_token = (Creds.get_password() or "").strip().strip('"').strip("'")
+        self.access_token = (Creds.get_password() or "").strip().strip('\r\n\t').strip('"').strip("'")
         self.http_path = (Creds.get_extra("http_path") or "").strip().strip('"').strip("'")
-        if self.http_path and not self.http_path.startswith("/"):
-            self.http_path = "/" + self.http_path
+        if self.http_path:
+            self.http_path = re.sub(r"^https?://[^/]+", "", self.http_path).strip()
+            if not self.http_path.startswith("/"):
+                self.http_path = "/" + self.http_path
         self.connection = None
 
     def _log_scan_info(self, message):
@@ -194,9 +196,9 @@ class DatabricksExtractor(BaseExtractor):
         if not self.catalog:
             raise ValueError("Catalog (database) name is empty.")
         if not self.access_token:
-            raise ValueError("Access token (password field) is empty.")
+            raise ValueError("Personal Access Token (PAT) is empty.")
         if not self.http_path:
-            raise ValueError("HTTP path is empty (extra['http_path']).")
+            raise ValueError("HTTP path is empty.")
 
         try:
             from Logs import Logs
@@ -206,12 +208,24 @@ class DatabricksExtractor(BaseExtractor):
 
         self._ensure_warehouse_running()
 
-        self.connection = databricks_sql.connect(
-            server_hostname=self.server_hostname,
-            http_path=self.http_path,
-            access_token=self.access_token,
-            catalog=self.catalog,
-        )
+        try:
+            self.connection = databricks_sql.connect(
+                server_hostname=self.server_hostname,
+                http_path=self.http_path,
+                access_token=self.access_token,
+                catalog=self.catalog,
+            )
+        except Exception as e:
+            err_msg = str(e)
+            if "unsupported type for this API" in err_msg or "Invalid access token" in err_msg or "401" in err_msg:
+                raise ValueError(
+                    f"Databricks Authentication Failed: Credential was rejected by '{self.server_hostname}'. "
+                    "Please verify that: "
+                    "1. You are using a valid Databricks Personal Access Token (PAT) (which starts with 'dapi...', generated from Databricks User Settings -> Developer -> Access tokens). "
+                    "2. The token is active, has not expired, and has access to SQL warehouse endpoint '" + (self.http_path or "") + "'. "
+                    "3. An Azure AD password or client secret was not entered instead of a Databricks PAT."
+                ) from e
+            raise
 
     def close(self):
         if self.connection:

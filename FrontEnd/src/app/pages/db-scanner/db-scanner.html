@@ -412,6 +412,15 @@ SCAN STATUS + ACTION BUTTONS
 
             <div class="dialog-body">
 
+                <!-- Inline Connection Error Banner -->
+                <div class="connection-error-banner" *ngIf="connectionErrorMessage">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <div class="error-text">
+                        <strong>Connection Failed</strong>
+                        <p>{{ connectionErrorMessage }}</p>
+                    </div>
+                </div>
+
                 <div class="form-group" *ngIf="savedConnectionOptions.length">
                     <label>Saved connections</label>
                     <select [(ngModel)]="selectedSavedConnection" (change)="onSavedConnectionChange()">
@@ -436,7 +445,12 @@ SCAN STATUS + ACTION BUTTONS
                         <input
                             type="text"
                             [(ngModel)]="connection.server"
+                            (input)="connectionErrorMessage = ''"
                             placeholder="dbc-xxxxxxxx-xxxx.cloud.databricks.com">
+
+                        <small class="field-hint">
+                            <i class="bi bi-info-circle"></i> Workspace URL without https:// (e.g. <code>dbc-xxxxxxxx-xxxx.cloud.databricks.com</code>).
+                        </small>
 
                     </div>
 
@@ -447,6 +461,7 @@ SCAN STATUS + ACTION BUTTONS
                         <input
                             type="text"
                             [(ngModel)]="connection.database"
+                            (input)="connectionErrorMessage = ''"
                             placeholder="main">
 
                     </div>
@@ -458,7 +473,12 @@ SCAN STATUS + ACTION BUTTONS
                         <input
                             type="password"
                             [(ngModel)]="connection.password"
+                            (input)="connectionErrorMessage = ''"
                             placeholder="dapi...">
+
+                        <small class="field-hint">
+                            <i class="bi bi-key-fill"></i> Databricks Personal Access Token (starts with <strong>dapi</strong>). Generate via <em>User Settings &rarr; Developer &rarr; Access tokens</em>.
+                        </small>
 
                     </div>
 
@@ -469,7 +489,12 @@ SCAN STATUS + ACTION BUTTONS
                         <input
                             type="text"
                             [(ngModel)]="connection.httpPath"
+                            (input)="connectionErrorMessage = ''"
                             placeholder="/sql/1.0/warehouses/xxxxxxxxxxxxxxxx">
+
+                        <small class="field-hint">
+                            <i class="bi bi-info-circle"></i> Found under Databricks <em>SQL Warehouses &rarr; Connection details &rarr; HTTP path</em>.
+                        </small>
 
                     </div>
 

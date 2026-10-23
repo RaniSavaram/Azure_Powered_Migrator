@@ -1063,82 +1063,145 @@ CONNECTION DIALOG
 }
 
 /*====================================================
+CONNECTION ERROR BANNER
+====================================================*/
+
+.connection-error-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 13px 15px;
+    margin-bottom: 16px;
+    color: #991b1b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.connection-error-banner i {
+    color: #ef4444;
+    font-size: 19px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.connection-error-banner .error-text {
+    flex: 1;
+}
+
+.connection-error-banner strong {
+    display: block;
+    margin-bottom: 3px;
+    color: #7f1d1d;
+    font-size: 13.5px;
+    font-weight: 700;
+}
+
+.connection-error-banner p {
+    margin: 0;
+    color: #991b1b;
+    word-break: break-word;
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+
+/*====================================================
 COMPLETED DIALOG / DOCUMENT LINKS
 ====================================================*/
 
 .completed-dialog {
-    border:1px solid #0e223a;
+    border: 1px solid #e2e8f0;
 }
 
 .connection-success-dialog {
-    border-color:#22c55e;
+    border-color: #86efac;
+    background: #ffffff;
 }
 
-.failed-dialog {
-    border-color:#7a1f1f;
+.connection-success-dialog h2 {
+    color: #15803d;
 }
 
 .connection-success-dialog .success-icon {
-    color:#22c55e;
+    color: #16a34a;
+}
+
+.failed-dialog {
+    border-color: #fecaca;
+    background: #ffffff;
+}
+
+.failed-dialog h2 {
+    color: #b91c1c;
+}
+
+.failed-dialog .failed-icon {
+    color: #dc2626;
 }
 
 .document-links {
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-    margin-top:15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
 }
 
 .doc-link {
-    display:flex;
-    align-items:center;
-    gap:12px;
-    background:#030c18;
-    border:1px solid #10243d;
-    border-radius:10px;
-    padding:16px;
-    color:#ffffff;
-    text-decoration:none;
-    font-weight:600;
-    font-size:15px;
-    transition:0.3s;
-}
-
-.doc-actions {
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-left:auto;
-}
-
-.doc-action {
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:34px;
-    height:34px;
-    border:1px solid #254264;
-    border-radius:6px;
-    background:#07182b;
-    color:#ffffff;
-    cursor:pointer;
-    text-decoration:none;
-}
-
-.doc-action:hover {
-    border-color:#ff5a1f;
-    color:#ff5a1f;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 15px 18px;
+    color: #0f172a;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
 }
 
 .doc-link:hover {
-    border-color:#ff5a1f;
-    background:rgba(255, 90, 31, 0.05);
-    color:#ff5a1f;
+    border-color: #cbd5e1;
+    background: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    color: #0f172a;
 }
 
 .doc-link .word-icon {
-    color:#2b579a;
-    font-size:24px;
+    color: #2563eb;
+    font-size: 24px;
+}
+
+.doc-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.doc-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.doc-action:hover {
+    border-color: #f97316;
+    color: #f97316;
+    background: #fff7ed;
 }
 
 /*====================================================
@@ -1231,20 +1294,30 @@ select{
 SCROLLBAR
 ====================================================*/
 
+/*====================================================
+SCROLLBAR
+====================================================*/
+
 .status-box::-webkit-scrollbar,
-.logs-window::-webkit-scrollbar{
-    width:6px;
+.logs-window::-webkit-scrollbar,
+.artifacts-body::-webkit-scrollbar,
+.live-terminal-window::-webkit-scrollbar {
+    width: 6px;
 }
 
 .status-box::-webkit-scrollbar-thumb,
-.logs-window::-webkit-scrollbar-thumb{
-    background:#10243d;
-    border-radius:10px;
+.logs-window::-webkit-scrollbar-thumb,
+.artifacts-body::-webkit-scrollbar-thumb,
+.live-terminal-window::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
 }
 
 .status-box::-webkit-scrollbar-track,
-.logs-window::-webkit-scrollbar-track{
-    background:#030c18;
+.logs-window::-webkit-scrollbar-track,
+.artifacts-body::-webkit-scrollbar-track,
+.live-terminal-window::-webkit-scrollbar-track {
+    background: #f1f5f9;
 }
 
 /*====================================================
@@ -1273,14 +1346,14 @@ ARTIFACTS DIALOG
 
 .dialog-subtitle {
     font-size: 13px;
-    color: #38bdf8;
+    color: #0284c7;
     font-weight: 500;
 }
 
 .re-run-btn {
     background: transparent;
-    border: 1px solid #38bdf8;
-    color: #38bdf8;
+    border: 1px solid #0284c7;
+    color: #0284c7;
     border-radius: 6px;
     padding: 6px 14px;
     font-size: 13px;
@@ -1315,20 +1388,21 @@ ARTIFACTS DIALOG
 .spinner-large {
     width: 46px;
     height: 46px;
-    border: 4px solid rgba(56, 189, 248, 0.2);
-    border-top: 4px solid #38bdf8;
+    border: 4px solid rgba(2, 132, 199, 0.2);
+    border-top: 4px solid #0284c7;
     border-radius: 50%;
     animation: fabric-spin 0.9s linear infinite;
 }
 
 .artifacts-loading-body h3 {
-    color: #f1f5f9;
+    color: #0f172a;
     font-size: 18px;
+    font-weight: 700;
     margin: 0;
 }
 
 .artifacts-loading-body p {
-    color: #94a3b8;
+    color: #64748b;
     font-size: 14px;
     max-width: 500px;
     margin: 0;
@@ -1342,6 +1416,7 @@ ARTIFACTS DIALOG
     flex-direction: column;
     gap: 20px;
     overflow-y: auto;
+    background: #ffffff;
 }
 
 .artifacts-logs-tab {
@@ -1361,39 +1436,47 @@ ARTIFACTS DIALOG
     min-height: 480px;
     resize: none;
     box-sizing: border-box;
+    background: #0f172a;
+    color: #86efac;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 16px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.7;
 }
 
 .status-banner {
     display: flex;
     gap: 16px;
     padding: 16px 20px;
-    border-radius: 10px;
+    border-radius: 12px;
     align-items: flex-start;
 }
 
 .status-banner.success {
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #10b981;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
 }
 
 .status-banner.warning,
 .status-banner.partial {
-    background: rgba(245, 158, 11, 0.12);
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    color: #f59e0b;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
 }
 
 .status-banner.error {
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    color: #ef4444;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
 }
 
 .status-banner.info {
-    background: rgba(56, 189, 248, 0.12);
-    border: 1px solid rgba(56, 189, 248, 0.35);
-    color: #38bdf8;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    color: #0369a1;
 }
 
 .status-banner .status-icon i {
@@ -1404,13 +1487,15 @@ ARTIFACTS DIALOG
     margin: 0 0 4px 0;
     font-size: 15px;
     font-weight: 700;
+    color: inherit;
 }
 
 .status-text p {
     margin: 0;
     font-size: 13.5px;
-    color: #cbd5e1;
-    line-height: 1.4;
+    color: inherit;
+    line-height: 1.45;
+    opacity: 0.92;
 }
 
 .artifacts-meta-grid {
@@ -1420,32 +1505,43 @@ ARTIFACTS DIALOG
 }
 
 .meta-card {
-    background: #030c18;
-    border: 1px solid #10243d;
-    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.meta-card:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
 }
 
 .meta-label {
-    font-size: 12px;
+    font-size: 11.5px;
     color: #64748b;
     display: flex;
     align-items: center;
     gap: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .meta-val {
-    font-size: 14px;
-    font-weight: 600;
-    color: #f8fafc;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #0f172a;
 }
 
 .meta-sub {
-    font-size: 11.5px;
-    color: #94a3b8;
+    font-size: 12px;
+    color: #64748b;
     word-break: break-all;
 }
 
@@ -1454,24 +1550,23 @@ ARTIFACTS DIALOG
     align-items: center;
     gap: 6px;
     margin-top: 4px;
-    font-size: 11.5px;
-    color: #38bdf8;
+    font-size: 12px;
+    color: #0284c7;
+    background: #e0f2fe;
+    border: 1px solid #bae6fd;
     text-decoration: none;
     font-weight: 600;
-    padding: 3px 8px;
+    padding: 4px 10px;
     border-radius: 6px;
-    background: rgba(56, 189, 248, 0.1);
-    border: 1px solid rgba(56, 189, 248, 0.25);
     transition: all 0.2s ease;
     width: fit-content;
 }
 
 .fabric-link:hover {
     color: #ffffff;
-    background: rgba(56, 189, 248, 0.25);
-    border-color: rgba(56, 189, 248, 0.5);
+    background: #0284c7;
+    border-color: #0284c7;
     text-decoration: none;
-    transform: translateY(-1px);
 }
 
 .fabric-link i {
@@ -1479,9 +1574,9 @@ ARTIFACTS DIALOG
 }
 
 .errors-box {
-    background: rgba(239, 68, 68, 0.08);
-    border: 1px solid rgba(239, 68, 68, 0.25);
-    border-radius: 8px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
     padding: 16px;
 }
 
@@ -1489,8 +1584,8 @@ ARTIFACTS DIALOG
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #f87171;
-    font-weight: 600;
+    color: #b91c1c;
+    font-weight: 700;
     font-size: 14px;
     margin-bottom: 10px;
 }
@@ -1498,86 +1593,109 @@ ARTIFACTS DIALOG
 .errors-box ul {
     margin: 0;
     padding-left: 20px;
-    color: #fca5a5;
+    color: #991b1b;
     font-size: 13px;
     line-height: 1.6;
 }
 
 .artifacts-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
 }
 
 .artifacts-table th {
-    background: #0b192c;
-    color: #94a3b8;
+    background: #f8fafc;
+    color: #475569;
     font-size: 12px;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     padding: 12px 16px;
     text-align: left;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 2px solid #e2e8f0;
 }
 
 .artifacts-table td {
     padding: 12px 16px;
-    border-bottom: 1px solid #0f172a;
-    font-size: 14px;
-    color: #cbd5e1;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13.5px;
+    color: #1e293b;
+    background: #ffffff;
+}
+
+.artifacts-table tr:hover td {
+    background: #f8fafc;
+}
+
+.artifacts-table tr:last-child td {
+    border-bottom: none;
 }
 
 .badge-schema {
-    background: #1e293b;
-    color: #38bdf8;
+    background: #f1f5f9;
+    color: #0284c7;
+    border: 1px solid #e2e8f0;
     padding: 3px 8px;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
 }
 
 .badge-type {
-    background: #1e293b;
-    color: #94a3b8;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
     padding: 3px 8px;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
 }
 
 .badge-type[data-type="Table"] {
-    background: rgba(56, 189, 248, 0.15);
-    color: #38bdf8;
+    background: #e0f2fe;
+    color: #0284c7;
+    border-color: #bae6fd;
 }
 
 .badge-type[data-type="Volume"] {
-    background: rgba(167, 139, 250, 0.15);
-    color: #a78bfa;
+    background: #ede9fe;
+    color: #7c3aed;
+    border-color: #ddd6fe;
 }
 
 .badge-type[data-type="View"] {
-    background: rgba(52, 211, 153, 0.15);
-    color: #34d399;
+    background: #dcfce7;
+    color: #15803d;
+    border-color: #bbf7d0;
 }
 
 .badge-type[data-type="Stored Procedure"] {
-    background: rgba(251, 191, 36, 0.15);
-    color: #fbbf24;
+    background: #fef3c7;
+    color: #b45309;
+    border-color: #fde68a;
 }
 
 .badge-type[data-type="Lakehouse"] {
-    background: rgba(45, 212, 191, 0.15);
-    color: #2dd4bf;
+    background: #ccfbf1;
+    color: #0f766e;
+    border-color: #99f6e4;
 }
 
 .badge-type[data-type="Warehouse"] {
-    background: rgba(251, 146, 60, 0.15);
-    color: #fb923c;
+    background: #ffedd5;
+    color: #c2410c;
+    border-color: #fed7aa;
 }
 
 .badge-type[data-type="Pipeline"] {
-    background: rgba(244, 114, 182, 0.15);
-    color: #f472b6;
+    background: #fce7f3;
+    color: #be185d;
+    border-color: #fbcfe8;
 }
 
 .status-pill {
@@ -1589,13 +1707,15 @@ ARTIFACTS DIALOG
 }
 
 .status-pill.success {
-    background: rgba(16, 185, 129, 0.15);
-    color: #34d399;
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
 }
 
 .status-pill.failed {
-    background: rgba(245, 158, 11, 0.15);
-    color: #fbbf24;
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
 }
 
 .empty-state {
@@ -1610,8 +1730,8 @@ ARTIFACTS LIVE CONSOLE
 ====================================================*/
 
 .artifacts-live-console {
-    background: #030c18;
-    border: 1px solid #10243d;
+    background: #0f172a;
+    border: 1px solid #1e293b;
     border-radius: 12px;
     padding: 16px 20px;
     display: flex;
@@ -1626,7 +1746,7 @@ ARTIFACTS LIVE CONSOLE
     justify-content: space-between;
     align-items: center;
     padding-bottom: 12px;
-    border-bottom: 1px solid #10243d;
+    border-bottom: 1px solid #1e293b;
 }
 
 .live-console-title {
@@ -1643,7 +1763,7 @@ ARTIFACTS LIVE CONSOLE
 }
 
 .live-console-title strong {
-    color: #6366f1;
+    color: #818cf8;
 }
 
 .live-pulse {
@@ -1675,11 +1795,11 @@ ARTIFACTS LIVE CONSOLE
 .live-terminal-window {
     flex: 1;
     overflow-y: auto;
-    background: #020710;
-    border: 1px solid #0d1e33;
+    background: #020617;
+    border: 1px solid #1e293b;
     border-radius: 8px;
     padding: 14px 16px;
-    font-family: 'Consolas', 'Courier New', monospace;
+    font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
     font-size: 12.5px;
     line-height: 1.6;
     display: flex;
