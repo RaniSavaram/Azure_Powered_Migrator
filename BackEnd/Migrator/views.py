@@ -412,9 +412,16 @@ def connect_database(request):
     Creds.set_servername(request.data.get("server"))
     Creds.set_database_name(request.data.get("database"))
     Creds.set_username (request.data.get("username"))
-    Creds.set_password (request.data.get("password"))
+    Creds.set_password (request.data.get("password") or request.data.get("token") or "")
     Creds.set_port(request.data.get("port") or None)
-    Creds.set_extra_dict(request.data.get("extra") or {})
+    extra_payload = request.data.get("extra") or {}
+    if not isinstance(extra_payload, dict):
+        extra_payload = {}
+    if request.data.get("httpPath") and "http_path" not in extra_payload:
+        extra_payload["http_path"] = request.data.get("httpPath")
+    if request.data.get("http_path") and "http_path" not in extra_payload:
+        extra_payload["http_path"] = request.data.get("http_path")
+    Creds.set_extra_dict(extra_payload)
     print("[INFO]: Connection Details recieved")
     Logs["Scan Info"].append("[INFO]: Connection Details recieved")
     for conn_line in _get_connection_log_lines(source, Creds):

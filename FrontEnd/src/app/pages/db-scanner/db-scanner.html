@@ -446,7 +446,8 @@ SCAN STATUS + ACTION BUTTONS
                             type="text"
                             [(ngModel)]="connection.server"
                             (input)="connectionErrorMessage = ''"
-                            placeholder="dbc-xxxxxxxx-xxxx.cloud.databricks.com">
+                            placeholder="dbc-xxxxxxxx-xxxx.cloud.databricks.com"
+                            autocomplete="off">
 
                         <small class="field-hint">
                             <i class="bi bi-info-circle"></i> Workspace URL without https:// (e.g. <code>dbc-xxxxxxxx-xxxx.cloud.databricks.com</code>).
@@ -462,7 +463,9 @@ SCAN STATUS + ACTION BUTTONS
                             type="text"
                             [(ngModel)]="connection.database"
                             (input)="connectionErrorMessage = ''"
-                            placeholder="main">
+                            placeholder="main"
+                            autocomplete="off"
+                            name="db_catalog">
 
                     </div>
 
@@ -474,7 +477,9 @@ SCAN STATUS + ACTION BUTTONS
                             type="password"
                             [(ngModel)]="connection.password"
                             (input)="connectionErrorMessage = ''"
-                            placeholder="dapi...">
+                            placeholder="dapi..."
+                            autocomplete="new-password"
+                            name="db_pat">
 
                         <small class="field-hint">
                             <i class="bi bi-key-fill"></i> Databricks Personal Access Token (starts with <strong>dapi</strong>). Generate via <em>User Settings &rarr; Developer &rarr; Access tokens</em>.
@@ -490,7 +495,8 @@ SCAN STATUS + ACTION BUTTONS
                             type="text"
                             [(ngModel)]="connection.httpPath"
                             (input)="connectionErrorMessage = ''"
-                            placeholder="/sql/1.0/warehouses/xxxxxxxxxxxxxxxx">
+                            placeholder="/sql/1.0/warehouses/xxxxxxxxxxxxxxxx"
+                            autocomplete="off">
 
                         <small class="field-hint">
                             <i class="bi bi-info-circle"></i> Found under Databricks <em>SQL Warehouses &rarr; Connection details &rarr; HTTP path</em>.

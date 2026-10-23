@@ -88,9 +88,12 @@ class DatabricksExtractor(BaseExtractor):
     def __init__(self, Creds):
         self.server_hostname = (Creds.get_servername() or "").strip().strip('"').strip("'")
         self.server_hostname = re.sub(r"^https?://", "", self.server_hostname).split("/")[0].strip().rstrip("/")
-        self.catalog = (Creds.get_database_name() or "").strip().strip('"').strip("'")
-        self.access_token = (Creds.get_password() or "").strip().strip('\r\n\t').strip('"').strip("'")
-        self.http_path = (Creds.get_extra("http_path") or "").strip().strip('"').strip("'")
+        self.access_token = (
+            Creds.get_password()
+            or Creds.get_extra("token")
+            or Creds.get_extra("access_token")
+            or ""
+        ).strip().strip('\r\n\t').strip('"').strip("'")
         if self.http_path:
             self.http_path = re.sub(r"^https?://[^/]+", "", self.http_path).strip()
             if not self.http_path.startswith("/"):

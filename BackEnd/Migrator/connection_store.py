@@ -45,6 +45,18 @@ def _as_profile_list(value) -> list:
     return []
 
 
+def _get_profiles_for_source(connections: dict, source: str) -> list:
+    if not source:
+        return []
+    # Check exact, lowercase, capitalized
+    s_clean = source.strip()
+    s_lower = s_clean.lower()
+    for key, val in connections.items():
+        if key.strip().lower() == s_lower:
+            return _as_profile_list(val)
+    return []
+
+
 def save_connection(source: str, connection: dict) -> None:
     """Upserts `connection` into the source's profile list, keyed by
     server - connecting again to a previously-saved server updates that
@@ -52,11 +64,22 @@ def save_connection(source: str, connection: dict) -> None:
     if not source:
         return
     connections = _load_all()
-    profiles = _as_profile_list(connections.get(source))
+    s_lower = source.strip().lower()
+
+    # Find existing key if any
+    matched_key = source
+    for key in connections.keys():
+        if key.strip().lower() == s_lower:
+            matched_key = key
+            break
+
+    profiles = _as_profile_list(connections.get(matched_key))
     server = connection.get("server")
     profiles = [p for p in profiles if p.get("server") != server]
     profiles.append(connection)
-    connections[source] = profiles
+    connections[matched_key] = profiles
+    # Also ensure lowercase key is synchronized for consistent lookup
+    connections[s_lower] = profiles
     _write_all(connections)
 
 
@@ -65,7 +88,7 @@ def get_saved_connection(source: str) -> dict | None:
     lookup for callers that only want one connection to pre-fill with."""
     if not source:
         return None
-    profiles = _as_profile_list(_load_all().get(source))
+    profiles = _get_profiles_for_source(_load_all(), source)
     return profiles[-1] if profiles else None
 
 
@@ -74,4 +97,5 @@ def get_saved_connections(source: str) -> list:
     offer a picker instead of just the last-used connection."""
     if not source:
         return []
-    return _as_profile_list(_load_all().get(source))
+    return _get_profiles_for_source(_load_all(), source)
+

@@ -351,7 +351,7 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
   //=========================================================
 
   private getRememberedConnectionKey(source: string): string {
-    return `${this.REMEMBERED_CONNECTION_KEY}.${(source || '').trim()}`;
+    return `${this.REMEMBERED_CONNECTION_KEY}.${(source || '').trim().toLowerCase()}`;
   }
 
   getSavedProfileKey(profile: SavedConnectionProfile): string {
@@ -377,8 +377,9 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     try {
-      const key = this.getRememberedConnectionKey(this.source);
-      const raw = localStorage.getItem(key);
+      const lowerKey = `${this.REMEMBERED_CONNECTION_KEY}.${this.source.trim().toLowerCase()}`;
+      const rawKey = `${this.REMEMBERED_CONNECTION_KEY}.${this.source.trim()}`;
+      const raw = localStorage.getItem(lowerKey) || localStorage.getItem(rawKey);
       if (!raw) {
         return [];
       }
@@ -401,23 +402,49 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   private loadRememberedConnection() {
     this.savedConnectionOptions = this.readSavedProfiles();
-    this.selectedSavedConnection = '__new__';
-    this.rememberMe = this.savedConnectionOptions.length > 0;
 
-    this.connection = {
-      server: '',
-      database: '',
-      username: '',
-      password: '',
-      httpPath: '',
-      tenantId: '',
-      clientId: '',
-      clientSecret: '',
-      account: '',
-      warehouse: '',
-      role: '',
-      token: '',
-    };
+    if (this.savedConnectionOptions.length > 0) {
+      const latest = this.savedConnectionOptions[this.savedConnectionOptions.length - 1];
+      this.selectedSavedConnection = this.getSavedProfileKey(latest);
+      this.rememberMe = true;
+      this.connection = {
+        server: latest.server ?? '',
+        database: latest.database ?? '',
+        username: latest.username ?? '',
+        password: latest.password ?? '',
+        httpPath: latest.extra?.http_path ?? '',
+        tenantId: latest.extra?.tenant_id ?? '',
+        clientId: latest.extra?.client_id ?? '',
+        clientSecret: latest.extra?.client_secret ?? '',
+        account: latest.extra?.account ?? '',
+        warehouse: latest.extra?.warehouse ?? '',
+        role: latest.extra?.role ?? '',
+        token: latest.extra?.token ?? '',
+      };
+      if (this.source === 'dynamics365') {
+        this.dynamicsAuthMode = latest.extra?.client_secret ? 'secret' : 'password';
+      }
+      if (this.source === 'Snowflake') {
+        this.snowflakeAuthMode = latest.extra?.token ? 'token' : 'password';
+      }
+    } else {
+      this.selectedSavedConnection = '__new__';
+      this.rememberMe = false;
+      this.connection = {
+        server: '',
+        database: '',
+        username: '',
+        password: '',
+        httpPath: '',
+        tenantId: '',
+        clientId: '',
+        clientSecret: '',
+        account: '',
+        warehouse: '',
+        role: '',
+        token: '',
+      };
+    }
   }
 
   private saveRememberedConnection() {
@@ -777,10 +804,23 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.scanner.getSavedConnections('Databricks').subscribe({
       next: (response) => {
-        this.databricksConnections = response.connections ?? [];
+        const backendConns = response.connections ?? [];
+        this.databricksConnections = backendConns;
 
-        if (this.databricksConnections.length === 0) {
+        // Merge backend profiles and local localStorage profiles
+        const localProfiles = this.readSavedProfiles();
+        const merged: SavedConnectionProfile[] = [...localProfiles];
+        for (const bConn of backendConns) {
+          if (!merged.some(p => this.getSavedProfileKey(p) === this.getSavedProfileKey(bConn))) {
+            merged.push(bConn);
+          }
+        }
+
+        this.savedConnectionOptions = merged;
+
+        if (this.savedConnectionOptions.length === 0) {
           this.databricksMode = 'new';
+          this.selectedSavedConnection = '__new__';
           this.cdr.detectChanges();
           return;
         }
@@ -788,23 +828,50 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
         this.databricksMode = 'select';
         this.buildDatabricksOptions();
 
-        // Default to the most recently saved profile.
-        const latest = this.databricksConnections[this.databricksConnections.length - 1];
+        // Default to the most recently saved profile
+        const latest = this.savedConnectionOptions[this.savedConnectionOptions.length - 1];
+        this.selectedSavedConnection = this.getSavedProfileKey(latest);
         this.connection = {
           server: latest.server ?? '',
           database: latest.database ?? '',
           username: latest.username ?? '',
           password: latest.password ?? '',
           httpPath: latest.extra?.http_path ?? '',
+          tenantId: latest.extra?.tenant_id ?? '',
+          clientId: latest.extra?.client_id ?? '',
+          clientSecret: latest.extra?.client_secret ?? '',
+          account: latest.extra?.account ?? '',
+          warehouse: latest.extra?.warehouse ?? '',
+          role: latest.extra?.role ?? '',
+          token: latest.extra?.token ?? '',
         };
-
+        this.rememberMe = true;
         this.cdr.detectChanges();
       },
       error: () => {
-        // No saved connections yet, or lookup failed - fall back to a
-        // blank, manually-entered connection.
-        this.databricksMode = 'new';
-        this.databricksConnections = [];
+        this.savedConnectionOptions = this.readSavedProfiles();
+        if (this.savedConnectionOptions.length > 0) {
+          const latest = this.savedConnectionOptions[this.savedConnectionOptions.length - 1];
+          this.selectedSavedConnection = this.getSavedProfileKey(latest);
+          this.connection = {
+            server: latest.server ?? '',
+            database: latest.database ?? '',
+            username: latest.username ?? '',
+            password: latest.password ?? '',
+            httpPath: latest.extra?.http_path ?? '',
+            tenantId: latest.extra?.tenant_id ?? '',
+            clientId: latest.extra?.client_id ?? '',
+            clientSecret: latest.extra?.client_secret ?? '',
+            account: latest.extra?.account ?? '',
+            warehouse: latest.extra?.warehouse ?? '',
+            role: latest.extra?.role ?? '',
+            token: latest.extra?.token ?? '',
+          };
+          this.rememberMe = true;
+        } else {
+          this.databricksMode = 'new';
+          this.selectedSavedConnection = '__new__';
+        }
         this.cdr.detectChanges();
       },
     });
