@@ -23,28 +23,282 @@
       </div>
     </div>
     <div class="header-right-actions">
-      <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Discovery Agent">
-        <span>Next Phase</span>
-        <i class="bi bi-arrow-right"></i>
-      </a>
+      @if (isSourceConnected) {
+        <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Assessment Agent">
+          <span>Proceed to Assessment Agent</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      } @else {
+        <span class="badge bg-warning text-dark px-3 py-2 fw-semibold" style="font-size: 12px; border-radius: 8px;">
+          <i class="bi bi-lock-fill me-1"></i> Awaiting Source Connection
+        </span>
+      }
     </div>
   </div>
 
-  <!-- Main Integration Canvas -->
-  <div class="workspace-canvas">
-    <!-- ========================================================================= -->
-    <!-- TEAMMATE INTEGRATION POINT:                                               -->
-    <!-- Attach your working chatbot, console, or conversational workflow here.    -->
-    <!-- ========================================================================= -->
-    <div class="integration-placeholder-card">
-      <div class="placeholder-icon">
-        <i class="bi bi-chat-dots-fill"></i>
+  @if (isSourceConnected) {
+    <!-- Prompt Next Step Banner (Assessment Agent) -->
+    <div class="next-step-prompt-banner" style="border-color: rgba(14, 165, 233, 0.35); background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(14, 165, 233, 0.08) 100%);">
+      <div class="prompt-banner-left">
+        <div class="prompt-badge-icon" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);">
+          <i class="bi bi-file-earmark-text"></i>
+        </div>
+        <div class="prompt-banner-text">
+          <div class="prompt-banner-tag" style="color: #0284c7;">
+            <span class="badge-dot" style="background: #0ea5e9;"></span> Layer 1 Gate: {{ gateDecision || 'PASS' }} · Downstream Ready
+          </div>
+          <div class="prompt-banner-title">
+            Constraint Level Checks Verified in Logs
+          </div>
+          <div class="prompt-banner-sub">
+            All primary/foreign keys and Fabric guardrails evaluated. Once reviewed, proceed to <strong>Assessment Agent (Phase 3)</strong>.
+          </div>
+        </div>
       </div>
-      <h3>Constraint Agent Chatbot & Workflow</h3>
-      <p>
-        This workspace is ready for team members to plug in the working interactive chatbot and constraint evaluation engine.
-      </p>
-      <div class="placeholder-badge">Integration Ready</div>
+      <div class="prompt-banner-actions">
+        <button type="button" class="btn-proceed-agent" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 3px 10px rgba(14, 165, 233, 0.35);" (click)="handleActionClick('next')">
+          <span>Proceed to Assessment Agent</span>
+          <i class="bi bi-arrow-right-circle-fill"></i>
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (!isSourceConnected) {
+    <!-- Blank / Waiting State -->
+    <div class="agent-blank-state-container">
+      <div class="agent-blank-state-card">
+        <div class="blank-state-icon-box">
+          <i class="bi bi-shield-lock"></i>
+        </div>
+        <div class="blank-state-badge">Awaiting Phase 1 Connection</div>
+        <h2>No Source Database Connected</h2>
+        <p>
+          Constraint Agent enforces deterministic migration guardrails, PK/FK referential integrity, and Fabric compatibility checks.
+          This workspace remains blank until connection credentials and schema intelligence are provided in <strong>Discovery Agent (Phase 1)</strong>.
+        </p>
+        <a routerLink="/agents/discovery" class="btn-connect-source-cta">
+          <i class="bi bi-plug-fill"></i>
+          <span>Connect Database in Discovery Agent</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  } @else {
+    <!-- Main Conversational Workspace -->
+    <div class="agent-chat-layout" style="--agent-accent-color: #f97316; --agent-focus-shadow: rgba(249, 115, 22, 0.15);">
+      <!-- Chat Card -->
+      <div class="chat-main-card">
+      <!-- Toolbar -->
+      <div class="chat-header-toolbar">
+        <div class="chat-status-indicator">
+          <span class="status-dot-pulse"></span>
+          <span class="status-title">Constraint Intelligence Engine</span>
+          <span class="status-tag">Deterministic Layer 1 &amp; Governance · {{ gateDecision || 'PASS' }}</span>
+        </div>
+        <div class="chat-toolbar-actions">
+          <button type="button" class="btn-toolbar-ghost" (click)="loadConstraintLevelChecks()" title="Re-run Constraint Level Checks">
+            <i class="bi bi-arrow-clockwise"></i>
+            <span>Re-run Checks</span>
+          </button>
+          <button type="button" class="btn-toolbar-ghost" (click)="clearChat()" title="Reset Conversation">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            <span>Reset</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable Message History -->
+      <div class="chat-scroll-area" #chatScroll>
+        @for (msg of messages; track msg.id) {
+          <div class="chat-msg-row" [ngClass]="msg.sender === 'user' ? 'user-msg' : 'bot-msg'">
+            <div class="msg-avatar" [ngClass]="msg.sender === 'user' ? 'user-avatar' : 'agent-icon-box orange-box'">
+              @if (msg.sender === 'user') {
+                <i class="bi bi-person-fill"></i>
+              } @else {
+                <i class="bi bi-shield-check"></i>
+              }
+            </div>
+
+            <div class="msg-bubble">
+              <div class="msg-header">
+                <span class="msg-sender-name">{{ msg.sender === 'user' ? 'You' : 'Constraint Agent' }}</span>
+                <span class="msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
+              </div>
+
+              <!-- Message Text -->
+              <div class="msg-content" [innerHTML]="formatMessageText(msg.text)"></div>
+
+              <!-- Metric Pills -->
+              @if (msg.metrics && msg.metrics.length > 0) {
+                <div class="msg-metrics-grid">
+                  @for (m of msg.metrics; track m.label) {
+                    <div class="msg-metric-pill">
+                      <div class="metric-pill-val" [style.color]="m.color || '#f97316'">{{ m.value }}</div>
+                      <div class="metric-pill-lbl">{{ m.label }}</div>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Rule Items -->
+              @if (msg.rules && msg.rules.length > 0) {
+                <div class="msg-rules-list">
+                  @for (r of msg.rules; track r.id) {
+                    <div class="msg-rule-item">
+                      <div class="rule-info">
+                        <span class="rule-id">{{ r.id }}</span>
+                        <span class="rule-desc">{{ r.desc }}</span>
+                      </div>
+                      <span class="rule-badge" [ngClass]="r.status">{{ r.status }}</span>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Code Block / Logs Console -->
+              @if (msg.codeBlock) {
+                <div class="terminal-console-card">
+                  <div class="terminal-console-header">
+                    <div class="terminal-dots">
+                      <span class="dot-red"></span>
+                      <span class="dot-yellow"></span>
+                      <span class="dot-green"></span>
+                    </div>
+                    <span class="terminal-title">
+                      <i class="bi bi-terminal-fill text-warning"></i>
+                      <span>Constraint Level Checks Stream (Harness Layer 1 Console)</span>
+                    </span>
+                    <div class="terminal-actions">
+                      <button type="button" class="btn-terminal-copy" (click)="copyLogs(msg.codeBlock)" title="Copy Logs">
+                        <i class="bi bi-clipboard"></i>
+                        <span>Copy Logs</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="terminal-body">{{ msg.codeBlock }}</div>
+                </div>
+              }
+
+              <!-- Action buttons -->
+              @if (msg.actions && msg.actions.length > 0) {
+                <div class="msg-actions-row">
+                  @for (act of msg.actions; track act.label) {
+                    <button type="button" 
+                            class="btn-msg-action" 
+                            [class.primary-action]="act.primary"
+                            (click)="handleActionClick(act.action)">
+                      <i class="bi" [ngClass]="act.icon"></i>
+                      <span>{{ act.label }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Typing Indicator -->
+        @if (isTyping) {
+          <div class="chat-msg-row bot-msg">
+            <div class="msg-avatar agent-icon-box orange-box">
+              <i class="bi bi-shield-check"></i>
+            </div>
+            <div class="typing-row">
+              <div class="typing-indicator">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+              </div>
+              <span>Evaluating schema constraints...</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Quick Prompts Tray -->
+      <div class="chat-quick-prompts-tray">
+        @for (prompt of quickPrompts; track prompt.label) {
+          <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)">
+            <i class="bi" [ngClass]="prompt.icon"></i>
+            <span>{{ prompt.label }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Input Bar -->
+      <div class="chat-input-bar">
+        <input type="text" 
+               class="chat-input-field" 
+               placeholder="Ask Constraint Agent about PK/FKs, unsupported datatypes, governance..." 
+               [(ngModel)]="userInput" 
+               (keydown.enter)="sendMessage()" 
+               [disabled]="isTyping">
+        <button type="button" 
+                class="btn-chat-send" 
+                (click)="sendMessage()" 
+                [disabled]="!userInput.trim() || isTyping"
+                title="Send Message">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Telemetry Panel -->
+    <div class="telemetry-sidebar-card">
+      <h4 class="telemetry-card-title">
+        <i class="bi bi-shield-check text-warning"></i>
+        <span>Constraint Telemetry</span>
+      </h4>
+
+      <div class="telemetry-stat-box">
+        <div class="stat-box-num text-success">{{ liveMetrics.length > 0 ? liveMetrics[0].value : '100%' }}</div>
+        <div class="stat-box-lbl">PK Preservation Score</div>
+      </div>
+
+      <div class="telemetry-stat-box">
+        <div class="stat-box-num text-primary">{{ liveMetrics.length > 1 ? liveMetrics[1].value : '98.6%' }}</div>
+        <div class="stat-box-lbl">FK Graph Integrity</div>
+      </div>
+
+      <div class="telemetry-stat-box">
+        <div class="stat-box-num text-warning">{{ liveMetrics.length > 2 ? liveMetrics[2].value : '3 Types' }}</div>
+        <div class="stat-box-lbl">Unsupported Types Remapped</div>
+      </div>
+
+      <div class="telemetry-stat-box">
+        <div class="stat-box-num text-success">{{ gateDecision || 'PASS' }}</div>
+        <div class="stat-box-lbl">Layer 1 Gate Decision</div>
+      </div>
+
+      <h5 class="telemetry-card-title" style="font-size: 12px; margin-top: 6px;">
+        <i class="bi bi-check2-all"></i>
+        <span>Guardrail Checklist</span>
+      </h5>
+
+      <div class="telemetry-checklist">
+        <div class="telemetry-check-item">
+          <span>Primary Key Uniqueness</span>
+          <i class="bi bi-check-circle-fill text-success"></i>
+        </div>
+        <div class="telemetry-check-item">
+          <span>Foreign Key Graph</span>
+          <i class="bi bi-check-circle-fill text-success"></i>
+        </div>
+        <div class="telemetry-check-item">
+          <span>Nullability Compliance</span>
+          <i class="bi bi-check-circle-fill text-success"></i>
+        </div>
+        <div class="telemetry-check-item">
+          <span>Spatial & XML Handling</span>
+          <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+        </div>
+        <div class="telemetry-check-item">
+          <span>Naming Standard Audit</span>
+          <i class="bi bi-check-circle-fill text-success"></i>
+        </div>
+      </div>
     </div>
   </div>
+  }
 </div>

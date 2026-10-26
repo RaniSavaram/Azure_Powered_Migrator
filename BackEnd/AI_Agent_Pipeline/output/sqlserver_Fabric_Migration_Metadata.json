@@ -1,16 +1,16 @@
 {
   "metadata": {
-    "scan_id": "3e2b6c9f-0a26-4d12-be8f-d69a7a4040eb",
-    "generated_at": "2026-10-05T06:50:01.740390Z",
+    "scan_id": null,
+    "generated_at": "2026-10-26T06:16:41.045227Z",
     "source_platform": "SQL Server",
     "target_platform": "Microsoft Fabric (OneLake)",
     "total_tables": 68,
-    "total_columns": 976,
+    "total_columns": 970,
     "total_views": 23,
     "total_procedures": 6,
     "total_functions": 0,
     "total_size_mb": 881.31,
-    "total_row_count": 2877732
+    "total_row_count": 4016222
   },
   "source": {
     "database_name": "ic4_metarepo",
@@ -39,9 +39,13 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "id",
+      "declared_primary_key": [
+        "id"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "id",
@@ -66,9 +70,36 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "id",
+      "declared_primary_key": [
+        "id"
+      ],
+      "declared_foreign_keys": [
+        {
+          "name": "auth_group_permissions_group_id_b120cbf9_fk_auth_group_id",
+          "columns": [
+            "group_id"
+          ],
+          "ref_schema": "dbo",
+          "ref_table": "auth_group",
+          "ref_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "auth_group_permissions_permission_id_84c5c92e_fk_auth_permission_id",
+          "columns": [
+            "permission_id"
+          ],
+          "ref_schema": "dbo",
+          "ref_table": "auth_permission",
+          "ref_columns": [
+            "id"
+          ]
+        }
+      ],
       "columns": [
         {
           "name": "id",
@@ -102,10 +133,26 @@
       "schema": "dbo",
       "type": "table",
       "size_mb": 0.21,
-      "row_count": 24,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "row_count": 72,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "id",
+      "declared_primary_key": [
+        "id"
+      ],
+      "declared_foreign_keys": [
+        {
+          "name": "auth_permission_content_type_id_2f476e4b_fk_django_content_type_id",
+          "columns": [
+            "content_type_id"
+          ],
+          "ref_schema": "dbo",
+          "ref_table": "django_content_type",
+          "ref_columns": [
+            "id"
+          ]
+        }
+      ],
       "columns": [
         {
           "name": "id",
@@ -145,10 +192,14 @@
       "schema": "dbo",
       "type": "table",
       "size_mb": 0.14,
-      "row_count": 1,
-      "medallion_layer": "Silver",
-      "layer_reason": "like entity (users).",
+      "row_count": 2,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "id",
+      "declared_primary_key": [
+        "id"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "id",
@@ -236,9 +287,36 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "id",
+      "declared_primary_key": [
+        "id"
+      ],
+      "declared_foreign_keys": [
+        {
+          "name": "auth_user_groups_group_id_97559544_fk_auth_group_id",
+          "columns": [
+            "group_id"
+          ],
+          "ref_schema": "dbo",
+          "ref_table": "auth_group",
+          "ref_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "auth_user_groups_user_id_6a12ed8b_fk_auth_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "ref_schema": "dbo",
+          "ref_table": "auth_user",
+          "ref_columns": [
+            "id"
+          ]
+        }
+      ],
       "columns": [
         {
           "name": "id",
@@ -274,9 +352,36 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "id",
+      "declared_primary_key": [
+        "id"
+      ],
+      "declared_foreign_keys": [
+        {
+          "name": "auth_user_user_permissions_permission_id_1fbb5f2c_fk_auth_permission_id",
+          "columns": [
+            "permission_id"
+          ],
+          "ref_schema": "dbo",
+          "ref_table": "auth_permission",
+          "ref_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "ref_schema": "dbo",
+          "ref_table": "auth_user",
+          "ref_columns": [
+            "id"
+          ]
+        }
+      ],
       "columns": [
         {
           "name": "id",
@@ -312,9 +417,13 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 4,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "DepartmentID",
+      "declared_primary_key": [
+        "DepartmentID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "DepartmentID",
@@ -339,9 +448,25 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 505,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "EmployeeID",
+      "declared_primary_key": [
+        "EmployeeID"
+      ],
+      "declared_foreign_keys": [
+        {
+          "name": "FK__DE_Employ__Depar__30242045",
+          "columns": [
+            "DepartmentID"
+          ],
+          "ref_schema": "dbo",
+          "ref_table": "DE_Department",
+          "ref_columns": [
+            "DepartmentID"
+          ]
+        }
+      ],
       "columns": [
         {
           "name": "EmployeeID",
@@ -393,10 +518,12 @@
       "schema": "dbo",
       "type": "table",
       "size_mb": 22.45,
-      "row_count": 45669,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "row_count": 137007,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "vehicle_id",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "crash_date",
@@ -595,10 +722,14 @@
       "schema": "dbo",
       "type": "table",
       "size_mb": 0.14,
-      "row_count": 2,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
-      "primary_key": null,
+      "row_count": 4,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
+      "primary_key": "dept_no",
+      "declared_primary_key": [
+        "dept_no"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "dept_name",
@@ -630,9 +761,36 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "id",
+      "declared_primary_key": [
+        "id"
+      ],
+      "declared_foreign_keys": [
+        {
+          "name": "django_admin_log_content_type_id_c4bce8eb_fk_django_content_type_id",
+          "columns": [
+            "content_type_id"
+          ],
+          "ref_schema": "dbo",
+          "ref_table": "django_content_type",
+          "ref_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "django_admin_log_user_id_c564eba6_fk_auth_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "ref_schema": "dbo",
+          "ref_table": "auth_user",
+          "ref_columns": [
+            "id"
+          ]
+        }
+      ],
       "columns": [
         {
           "name": "id",
@@ -702,10 +860,14 @@
       "schema": "dbo",
       "type": "table",
       "size_mb": 0.14,
-      "row_count": 6,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "row_count": 12,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "id",
+      "declared_primary_key": [
+        "id"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "id",
@@ -738,8 +900,12 @@
       "size_mb": 0.07,
       "row_count": 18,
       "medallion_layer": "Bronze",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "id",
+      "declared_primary_key": [
+        "id"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "id",
@@ -777,10 +943,14 @@
       "schema": "dbo",
       "type": "table",
       "size_mb": 0.14,
-      "row_count": 9,
+      "row_count": 36,
       "medallion_layer": "Bronze",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "session_key",
+      "declared_primary_key": [
+        "session_key"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "session_key",
@@ -811,10 +981,12 @@
       "schema": "dbo",
       "type": "table",
       "size_mb": 187.45,
-      "row_count": 507689,
-      "medallion_layer": "Silver",
-      "layer_reason": "test for validation only.",
+      "row_count": 1523067,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "BUSS_DT",
@@ -922,10 +1094,12 @@
       "schema": "dbo",
       "type": "table",
       "size_mb": 0.07,
-      "row_count": 30,
+      "row_count": 90,
       "medallion_layer": "Bronze",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_PRPTY_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "BUSS_DT",
@@ -1006,9 +1180,13 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "EmployeeID",
+      "declared_primary_key": [
+        "EmployeeID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "EmployeeID",
@@ -1055,8 +1233,10 @@
       "size_mb": 0.06,
       "row_count": 0,
       "medallion_layer": "Bronze",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "EmployeeID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "EmployeeID",
@@ -1102,9 +1282,11 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 12,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "emp_id",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "emp_id",
@@ -1137,8 +1319,12 @@
       "size_mb": 0.06,
       "row_count": 0,
       "medallion_layer": "Bronze",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "id",
+      "declared_primary_key": [
+        "id"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "id",
@@ -1227,8 +1413,10 @@
       "size_mb": 0.06,
       "row_count": 0,
       "medallion_layer": "Bronze",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": null,
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "src_tablename",
@@ -1275,8 +1463,12 @@
       "size_mb": 0.06,
       "row_count": 0,
       "medallion_layer": "Bronze",
-      "layer_reason": "Categorized based on dependencies and naming",
-      "primary_key": "principal_id",
+      "layer_reason": "Core Lakehouse entity",
+      "primary_key": "diagram_id",
+      "declared_primary_key": [
+        "diagram_id"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "name",
@@ -1322,9 +1514,13 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 9,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "APPL_ID",
+      "declared_primary_key": [
+        "APPL_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "APPL_ID",
@@ -1384,9 +1580,15 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 11,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "BSN_TERM_ID",
+      "declared_primary_key": [
+        "BSN_TERM_ID",
+        "ASSET_ID",
+        "ASSET_TYP"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "BSN_TERM_ID",
@@ -1439,9 +1641,13 @@
       "type": "table",
       "size_mb": 0.13,
       "row_count": 255,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "BSN_TERM_ID",
+      "declared_primary_key": [
+        "BSN_TERM_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "BSN_TERM_ID",
@@ -1556,10 +1762,14 @@
       "schema": "MDR_T",
       "type": "table",
       "size_mb": 0.14,
-      "row_count": 12,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "row_count": 24,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "CONN_ID",
+      "declared_primary_key": [
+        "CONN_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "CONN_ID",
@@ -1634,8 +1844,10 @@
       "size_mb": 0.06,
       "row_count": 0,
       "medallion_layer": "Bronze",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": null,
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "container_name",
@@ -1673,10 +1885,14 @@
       "schema": "MDR_T",
       "type": "table",
       "size_mb": 0.14,
-      "row_count": 38,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "row_count": 76,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "ID",
+      "declared_primary_key": [
+        "ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "ID",
@@ -1736,9 +1952,11 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 171,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": null,
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "SRC_DB_PLTFRM_NM",
@@ -1791,9 +2009,11 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 1,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "RUN_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "JOB_NM",
@@ -1881,9 +2101,11 @@
       "type": "table",
       "size_mb": 0.32,
       "row_count": 1302,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "OBJ_ID",
@@ -2062,9 +2284,11 @@
       "type": "table",
       "size_mb": 470.26,
       "row_count": 2169666,
-      "medallion_layer": "Silver",
-      "layer_reason": "test for validation only.",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "BUSS_DT",
@@ -2159,9 +2383,11 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_PRPTY_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "OBJ_PRPTY_ID",
@@ -2206,10 +2432,12 @@
       "schema": "MDR_T",
       "type": "table",
       "size_mb": 0.26,
-      "row_count": 356,
+      "row_count": 1068,
       "medallion_layer": "Bronze",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_PRPTY_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "BUSS_DT",
@@ -2297,9 +2525,15 @@
       "type": "table",
       "size_mb": 0.2,
       "row_count": 309,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_ID",
+      "declared_primary_key": [
+        "OBJ_ID",
+        "OBJ_PRPTY_ID",
+        "RUL_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "OBJ_ID",
@@ -2408,9 +2642,13 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 47,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "RUL_ID",
+      "declared_primary_key": [
+        "RUL_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "RUL_ID",
@@ -2505,9 +2743,14 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 192,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "JOB_ID",
+      "declared_primary_key": [
+        "JOB_ID",
+        "BUSS_DT"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "JOB_ID",
@@ -2574,9 +2817,14 @@
       "type": "table",
       "size_mb": 6.13,
       "row_count": 18140,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "JOB_CNTL_ID",
+      "declared_primary_key": [
+        "JOB_CNTL_ID",
+        "VER_NBR"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "JOB_CNTL_ID",
@@ -2678,9 +2926,14 @@
       "type": "table",
       "size_mb": 0.32,
       "row_count": 763,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "JOB_ID",
+      "declared_primary_key": [
+        "JOB_ID",
+        "VER_NBR"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "JOB_ID",
@@ -2769,10 +3022,15 @@
       "schema": "MDR_T",
       "type": "table",
       "size_mb": 50.27,
-      "row_count": 148,
+      "row_count": 444,
       "medallion_layer": "Bronze",
-      "layer_reason": "Raw staging or ingestion layer",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "JOB_ID",
+      "declared_primary_key": [
+        "JOB_ID",
+        "VER_NBR"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "JOB_ID",
@@ -2839,9 +3097,15 @@
       "type": "table",
       "size_mb": 0.95,
       "row_count": 1625,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "JOB_ID",
+      "declared_primary_key": [
+        "JOB_ID",
+        "BUSS_DT",
+        "RUN_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "JOB_ID",
@@ -2949,10 +3213,12 @@
       "schema": "MDR_T",
       "type": "table",
       "size_mb": 6.45,
-      "row_count": 3108,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "row_count": 9324,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "OBJ_ID",
@@ -3033,9 +3299,11 @@
       "type": "table",
       "size_mb": 0.32,
       "row_count": 1198,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "OBJ_ID",
@@ -3095,9 +3363,11 @@
       "type": "table",
       "size_mb": 28.51,
       "row_count": 91868,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "JOB_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "JOB_ID",
@@ -3192,9 +3462,14 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 41,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "TMPL_ID",
+      "declared_primary_key": [
+        "TMPL_ID",
+        "STP_NM"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "TMPL_ID",
@@ -3261,9 +3536,11 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": null,
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "SYSTEM",
@@ -3386,9 +3663,13 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 10,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "CLBRTN_ID",
+      "declared_primary_key": [
+        "CLBRTN_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "CLBRTN_ID",
@@ -3450,9 +3731,14 @@
       "type": "table",
       "size_mb": 0.95,
       "row_count": 1337,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_ID",
+      "declared_primary_key": [
+        "OBJ_ID",
+        "VER_NBR"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "OBJ_ID",
@@ -3680,9 +3966,13 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 6,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "CLBRTN_ID",
+      "declared_primary_key": [
+        "CLBRTN_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "CLBRTN_ID",
@@ -3751,9 +4041,14 @@
       "type": "table",
       "size_mb": 5.32,
       "row_count": 20624,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_PRPTY_ID",
+      "declared_primary_key": [
+        "OBJ_PRPTY_ID",
+        "VER_NBR"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "OBJ_PRPTY_ID",
@@ -3925,9 +4220,11 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 38,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": null,
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "PARM_NM",
@@ -3973,9 +4270,13 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 20,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "PRSS_ID",
+      "declared_primary_key": [
+        "PRSS_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "PRSS_ID",
@@ -4049,9 +4350,13 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 125,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "PRSS_PARM_ID",
+      "declared_primary_key": [
+        "PRSS_PARM_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "PRSS_PARM_ID",
@@ -4118,9 +4423,11 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "recon_val_id",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "recon_val_id",
@@ -4271,9 +4578,11 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "recon_val_id",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "recon_val_id",
@@ -4381,10 +4690,12 @@
       "schema": "MDR_T",
       "type": "table",
       "size_mb": 0.26,
-      "row_count": 361,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "row_count": 1083,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": null,
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "FUNCTION",
@@ -4416,9 +4727,14 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 83,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
-      "primary_key": "SCHEDULE_ID",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
+      "primary_key": "JOB_ID",
+      "declared_primary_key": [
+        "JOB_ID",
+        "SCHEDULE_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "JOB_ID",
@@ -4492,9 +4808,11 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": null,
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "source_db_name",
@@ -4568,9 +4886,13 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 23,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "SRC_SYS_ID",
+      "declared_primary_key": [
+        "SRC_SYS_ID"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "SRC_SYS_ID",
@@ -4629,10 +4951,12 @@
       "schema": "MDR_T",
       "type": "table",
       "size_mb": 0.07,
-      "row_count": 235,
+      "row_count": 705,
       "medallion_layer": "Bronze",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": null,
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "BSN_TERM_NM",
@@ -4664,9 +4988,11 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": null,
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "src_table",
@@ -4697,10 +5023,15 @@
       "schema": "MDR_T",
       "type": "table",
       "size_mb": 52.64,
-      "row_count": 192,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "row_count": 576,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "JOB_ID",
+      "declared_primary_key": [
+        "JOB_ID",
+        "VER_NBR"
+      ],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "JOB_ID",
@@ -4773,10 +5104,12 @@
       "schema": "MDR_V",
       "type": "table",
       "size_mb": 43.57,
-      "row_count": 5376,
-      "medallion_layer": "Silver",
-      "layer_reason": "test only if used for validation. It appears to be a derived/compare dataset; treat as non",
+      "row_count": 16128,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "KEY_TYP",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "FILE_PATH",
@@ -4912,10 +5245,12 @@
       "schema": "MDR_W",
       "type": "table",
       "size_mb": 0.82,
-      "row_count": 6014,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "row_count": 18042,
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "TEST_CASE_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "TEST_CASE_ID",
@@ -4969,8 +5304,10 @@
       "size_mb": 0.06,
       "row_count": 0,
       "medallion_layer": "Bronze",
-      "layer_reason": "Raw staging or ingestion layer",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "OBJ_ID",
@@ -5030,9 +5367,11 @@
       "type": "table",
       "size_mb": 0.95,
       "row_count": 1337,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "OBJ_ID",
@@ -5268,8 +5607,10 @@
       "size_mb": 0.06,
       "row_count": 0,
       "medallion_layer": "Bronze",
-      "layer_reason": "Raw staging or ingestion layer",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "OBJ_ID",
@@ -5497,9 +5838,11 @@
       "type": "table",
       "size_mb": 5.32,
       "row_count": 20624,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "OBJ_PRPTY_ID",
+      "declared_primary_key": [],
+      "declared_foreign_keys": [],
       "columns": [
         {
           "name": "OBJ_PRPTY_ID",

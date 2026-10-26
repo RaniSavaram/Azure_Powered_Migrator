@@ -1065,6 +1065,15 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
     ).subscribe({
 
       next: (response: any) => {
+        if (response && (response.connected === false || response.status === 'error')) {
+          this.connected = false;
+          this.connecting = false;
+          const rawMsg = response.error ?? response.message ?? 'Database connection failed. Please verify credentials.';
+          this.connectionErrorMessage = rawMsg;
+          this.statusMessages.push(`Database Connection Failed: ${rawMsg}`);
+          this.cdr.detectChanges();
+          return;
+        }
 
         this.connected = true;
         this.connectionErrorMessage = '';

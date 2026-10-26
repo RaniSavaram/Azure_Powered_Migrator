@@ -21,51 +21,756 @@
           Extracts comprehensive schema catalog metadata across SQL Server, Databricks, Snowflake, and Synapse — capturing tables, views, procedures, volumes, and interactive ER relationships.
         </p>
       </div>
+    </div>
     <div class="header-right-actions">
-      <a class="btn-next-phase" [routerLink]="nextPhaseRoute" (click)="onFinishChat()" title="Proceed to Assessment Agent">
-        <span>Next Phase</span>
-        <i class="bi bi-arrow-right"></i>
-      </a>
+      @if (isSourceConnected) {
+        <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Constraint Agent">
+          <span>Proceed to Constraint Agent</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      } @else {
+        <button type="button" class="btn-toolbar-connect" (click)="openInlineConnectCard()">
+          <i class="bi bi-plug-fill"></i>
+          <span>Connect Source</span>
+        </button>
+      }
     </div>
   </div>
 
-  <!-- Main Integration Canvas -->
-  <div class="workspace-canvas">
-    @if (!isChatCompleted) {
-      <div class="integration-placeholder-card">
-        <div class="placeholder-icon">
-          <i class="bi bi-chat-dots-fill"></i>
+  <!-- Prominent Next Step Guidance Banner -->
+  @if (isSourceConnected) {
+    <div class="next-step-prompt-banner">
+      <div class="prompt-banner-left">
+        <div class="prompt-badge-icon">
+          <i class="bi bi-shield-check"></i>
         </div>
-        <h3>Discovery Agent Chatbot & Workflow</h3>
-        <p>
-          Analyse your source platform, extract full schema inventory, row counts, data types, and ER relationships. Complete your conversation with the agent to unlock the results.
-        </p>
-        <button class="btn-finish-chat" type="button" (click)="onFinishChat()">
-          <i class="bi bi-chat-check-fill"></i>
-          <span>Finish Chat with Agent</span>
+        <div class="prompt-banner-text">
+          <div class="prompt-banner-tag">
+            <span class="badge-dot"></span> Next Step Required · Phase 2 Constraint &amp; Governance
+          </div>
+          <div class="prompt-banner-title">
+            Check Constraint Level Checks in Constraint Agent
+          </div>
+          <div class="prompt-banner-sub">
+            Source <strong>{{ connectionConfig?.platform || 'Database' }}</strong> is connected successfully! Move to <strong>Constraint Agent</strong> to review the deterministic Layer 1 constraint-level validation logs.
+          </div>
+        </div>
+      </div>
+      <div class="prompt-banner-actions">
+        <button type="button" class="btn-proceed-agent" (click)="handleActionClick('next')">
+          <span>Proceed to Constraint Agent</span>
+          <i class="bi bi-arrow-right-circle-fill"></i>
         </button>
-        <div class="placeholder-badge">Integration Ready</div>
       </div>
-    } @else {
-      <div class="integration-placeholder-card">
-        <div class="placeholder-icon success-icon">
-          <i class="bi bi-check-circle-fill"></i>
+    </div>
+  }
+
+  <!-- Main Conversational Workspace -->
+  <div class="agent-chat-layout" style="--agent-accent-color: #0ea5e9; --agent-focus-shadow: rgba(14, 165, 233, 0.15);">
+    <!-- Chat Card -->
+    <div class="chat-main-card">
+      <!-- Toolbar -->
+      <div class="chat-header-toolbar">
+        <div class="chat-status-indicator">
+          <span class="status-dot-pulse" [style.background]="isSourceConnected ? '#10b981' : '#f59e0b'" [style.box-shadow]="isSourceConnected ? '0 0 0 0 rgba(16, 185, 129, 0.7)' : '0 0 0 0 rgba(245, 158, 11, 0.7)'"></span>
+          <span class="status-title">Schema Intelligence Engine</span>
+          @if (isSourceConnected) {
+            <span class="status-tag status-tag-connected">
+              <i class="bi bi-check-circle-fill"></i> Connected: {{ connectionConfig?.platform }} ({{ connectionConfig?.server }})
+            </span>
+          } @else {
+            <span class="status-tag status-tag-idle">Phase 1 · Awaiting Connection</span>
+          }
         </div>
-        <h3>Discovery Conversation Completed</h3>
-        <p>
-          Source schema intelligence and metadata have been gathered. You can now view the comprehensive results or proceed to the next phase.
-        </p>
-        <div class="completed-actions-row">
-          <button type="button" class="btn-view-results-active" [disabled]="true" title="View Results">
-            <i class="bi bi-bar-chart-steps"></i>
-            <span>View Results</span>
+        <div class="chat-toolbar-actions">
+          @if (isSourceConnected) {
+            <button type="button" class="btn-toolbar-ghost" (click)="openInlineConnectCard()" title="Change connection">
+              <i class="bi bi-arrow-repeat"></i>
+              <span>Change</span>
+            </button>
+            <button type="button" class="btn-toolbar-ghost text-danger" (click)="disconnectSource()" title="Disconnect Database">
+              <i class="bi bi-plug"></i>
+              <span>Disconnect</span>
+            </button>
+          } @else {
+            <button type="button" class="btn-toolbar-connect" (click)="openInlineConnectCard()" title="Configure connection">
+              <i class="bi bi-plug-fill"></i>
+              <span>Connect Source</span>
+            </button>
+          }
+          <button type="button" class="btn-toolbar-ghost" (click)="clearChat()" title="Restart Conversation">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            <span>Reset</span>
           </button>
-          <a [routerLink]="nextPhaseRoute" class="btn-next-phase" title="Proceed to Assessment Agent">
-            <span>Next Phase</span>
-            <i class="bi bi-arrow-right"></i>
-          </a>
         </div>
       </div>
-    }
+
+      <!-- Scrollable Message History with Inline Connection Card in Chat -->
+      <div class="chat-scroll-area" #chatScroll>
+        @for (msg of messages; track msg.id) {
+          <div class="chat-msg-row" [ngClass]="msg.sender === 'user' ? 'user-msg' : 'bot-msg'">
+            <div class="msg-avatar" [ngClass]="msg.sender === 'user' ? 'user-avatar' : 'agent-icon-box blue-box'">
+              @if (msg.sender === 'user') {
+                <i class="bi bi-person-fill"></i>
+              } @else {
+                <i class="bi bi-search"></i>
+              }
+            </div>
+
+            <div class="msg-bubble">
+              <div class="msg-header">
+                <span class="msg-sender-name">{{ msg.sender === 'user' ? 'You' : 'Discovery Agent' }}</span>
+                <span class="msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
+              </div>
+
+              <!-- Message Text -->
+              <div class="msg-content" [innerHTML]="formatMessageText(msg.text)"></div>
+
+              <!-- Metric Pills -->
+              @if (msg.metrics && msg.metrics.length > 0) {
+                <div class="msg-metrics-grid">
+                  @for (m of msg.metrics; track m.label) {
+                    <div class="msg-metric-pill">
+                      <div class="metric-pill-val" [style.color]="m.color || '#0ea5e9'">{{ m.value }}</div>
+                      <div class="metric-pill-lbl">{{ m.label }}</div>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Rule Items -->
+              @if (msg.rules && msg.rules.length > 0) {
+                <div class="msg-rules-list">
+                  @for (r of msg.rules; track r.id) {
+                    <div class="msg-rule-item">
+                      <div class="rule-info">
+                        <span class="rule-id">{{ r.id }}</span>
+                        <span class="rule-desc">{{ r.desc }}</span>
+                      </div>
+                      <span class="rule-badge" [ngClass]="r.status">{{ r.status }}</span>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Code Block / Logs Console -->
+              @if (msg.codeBlock) {
+                <div class="terminal-console-card">
+                  <div class="terminal-console-header">
+                    <div class="terminal-dots">
+                      <span class="dot-red"></span>
+                      <span class="dot-yellow"></span>
+                      <span class="dot-green"></span>
+                    </div>
+                    <span class="terminal-title">
+                      <i class="bi bi-terminal-fill text-info"></i>
+                      <span>Connection &amp; Schema Extraction Logs</span>
+                    </span>
+                    <div class="terminal-actions">
+                      <button type="button" class="btn-terminal-copy" (click)="copyLogs(msg.codeBlock)" title="Copy Logs">
+                        <i class="bi bi-clipboard"></i>
+                        <span>Copy Logs</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="terminal-body">{{ msg.codeBlock }}</div>
+                </div>
+              }
+
+              <!-- Action buttons -->
+              @if (msg.actions && msg.actions.length > 0) {
+                <div class="msg-actions-row">
+                  @for (act of msg.actions; track act.label) {
+                    <button type="button" 
+                            class="btn-msg-action" 
+                            [class.primary-action]="act.primary"
+                            (click)="handleActionClick(act.action)">
+                      <i class="bi" [ngClass]="act.icon"></i>
+                      <span>{{ act.label }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Inline Connection Card appearing directly inside the chat interface -->
+        @if (!isSourceConnected || showInlineConnectCard) {
+          <div class="chat-msg-row bot-msg">
+            <div class="msg-avatar agent-icon-box blue-box">
+              <i class="bi bi-hdd-network-fill"></i>
+            </div>
+            <div class="msg-bubble conn-chat-bubble" id="chat-conn-card">
+              <div class="conn-card-header">
+                <div class="conn-card-title">
+                  <i class="bi bi-plug-fill text-primary"></i>
+                  <span>{{ connectionForm.platform ? ('Connect ' + connectionForm.platform) : 'Source Database Connection' }}</span>
+                </div>
+                @if (isSourceConnected) {
+                  <button type="button" class="btn-close-inline" (click)="closeInlineConnectCard()" title="Close details">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                } @else {
+                  <span class="conn-card-badge">Phase 1 Required</span>
+                }
+              </div>
+
+              <!-- Source Database Selection -->
+              <div class="conn-field-group conn-field-full" style="margin-bottom: 6px;">
+                <label class="conn-field-label">
+                  <i class="bi bi-database-fill" style="color: #f97316;"></i>
+                  <span>Source Database Platform</span>
+                </label>
+                <select class="conn-field-select" 
+                        [ngModel]="connectionForm.platform" 
+                        (ngModelChange)="selectPlatform($event)">
+                  @for (plat of availablePlatforms; track plat) {
+                    <option [value]="plat">{{ plat }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- Platform selector pills (7 Supported Sources) -->
+              <div class="platform-selector-pills">
+                @for (plat of availablePlatforms; track plat) {
+                  <button type="button" 
+                          class="platform-pill-btn" 
+                          [class.active]="connectionForm.platform === plat"
+                          (click)="selectPlatform(plat)">
+                    <i class="bi" [ngClass]="plat === 'SQL Server' ? 'bi-database' : (plat === 'Databricks' ? 'bi-boxes' : (plat === 'Dynamics 365' ? 'bi-diagram-2' : (plat === 'Snowflake' ? 'bi-snow' : (plat === 'Oracle' ? 'bi-server' : (plat === 'SAP HANA' ? 'bi-cpu' : 'bi-cloud-check')))))"></i>
+                    <span>{{ plat }}</span>
+                  </button>
+                }
+              </div>
+
+              <!-- Inputs Grid -->
+              <div class="conn-inputs-grid">
+                <!-- Saved Connections Dropdown -->
+                <div class="conn-field-group conn-field-full">
+                  <label class="conn-field-label">
+                    <span>Saved connections</span>
+                  </label>
+                  <select class="conn-field-select" 
+                          [(ngModel)]="connectionForm.savedConnection" 
+                          (change)="onSavedConnectionChange()">
+                    <option value="__new__">+ Add new connection...</option>
+                    @for (opt of currentSavedOptions; track opt.key) {
+                      <option [value]="opt.key">{{ opt.label }}</option>
+                    }
+                  </select>
+                </div>
+
+                <!-- 1. SQL SERVER FIELDS -->
+                @if (connectionForm.platform === 'SQL Server') {
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Server</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['server']"
+                           [(ngModel)]="connectionForm.server" 
+                           placeholder="sqlserver-prod.database.windows.net">
+                    @if (fieldErrors['server']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Server endpoint is required</div>
+                    }
+                  </div>
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Database</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['database']"
+                           [(ngModel)]="connectionForm.database" 
+                           placeholder="Enterprise_DW">
+                    @if (fieldErrors['database']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Database name is required</div>
+                    }
+                  </div>
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Username</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['username']"
+                           [(ngModel)]="connectionForm.username" 
+                           placeholder="migration_admin">
+                    @if (fieldErrors['username']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Username is required</div>
+                    }
+                  </div>
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Password</label>
+                    <input type="password" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['password']"
+                           [(ngModel)]="connectionForm.password" 
+                           placeholder="••••••••••••">
+                    @if (fieldErrors['password']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Password is required</div>
+                    }
+                  </div>
+                }
+
+                <!-- 2. DATABRICKS FIELDS -->
+                @if (connectionForm.platform === 'Databricks') {
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Server</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['server']"
+                           [(ngModel)]="connectionForm.server" 
+                           placeholder="dbc-xxxxxxxx-xxxx.cloud.databricks.com">
+                    @if (fieldErrors['server']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Server is required</div>
+                    }
+                  </div>
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Catalog (Unity Catalog)</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [(ngModel)]="connectionForm.catalog" 
+                           placeholder="main">
+                  </div>
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Personal Access Token</label>
+                    <input type="password" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['personalAccessToken']"
+                           [(ngModel)]="connectionForm.personalAccessToken" 
+                           placeholder="dapi...">
+                    @if (fieldErrors['personalAccessToken']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Personal Access Token is required</div>
+                    }
+                  </div>
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">HTTP Path</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [(ngModel)]="connectionForm.httpPath" 
+                           placeholder="/sql/1.0/warehouses/xxxxxxxxxxxxxxxx">
+                  </div>
+                }
+
+                <!-- 3. DYNAMICS 365 FIELDS -->
+                @if (connectionForm.platform === 'Dynamics 365') {
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Organization URL</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['server']"
+                           [(ngModel)]="connectionForm.server" 
+                           placeholder="https://yourorg.crm.dynamics.com">
+                    @if (fieldErrors['server']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Organization URL is required</div>
+                    }
+                  </div>
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Authentication Method</label>
+                    <select class="conn-field-select" [(ngModel)]="connectionForm.dynamicsAuthMode">
+                      <option value="secret">App registration (Client Secret)</option>
+                      <option value="password">Username &amp; Password</option>
+                    </select>
+                  </div>
+                  @if (connectionForm.dynamicsAuthMode === 'secret') {
+                    <div class="conn-field-group">
+                      <label class="conn-field-label">Tenant ID</label>
+                      <input type="text" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['tenantId']"
+                             [(ngModel)]="connectionForm.tenantId" 
+                             placeholder="Azure AD Tenant ID">
+                    </div>
+                    <div class="conn-field-group">
+                      <label class="conn-field-label">Client ID</label>
+                      <input type="text" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['clientId']"
+                             [(ngModel)]="connectionForm.clientId" 
+                             placeholder="Application (client) ID">
+                    </div>
+                    <div class="conn-field-group conn-field-full">
+                      <label class="conn-field-label">Client Secret</label>
+                      <input type="password" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['clientSecret']"
+                             [(ngModel)]="connectionForm.clientSecret" 
+                             placeholder="Client secret value">
+                    </div>
+                  } @else {
+                    <div class="conn-field-group">
+                      <label class="conn-field-label">Username</label>
+                      <input type="text" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['username']"
+                             [(ngModel)]="connectionForm.username" 
+                             placeholder="you@yourorg.onmicrosoft.com">
+                    </div>
+                    <div class="conn-field-group">
+                      <label class="conn-field-label">Password</label>
+                      <input type="password" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['password']"
+                             [(ngModel)]="connectionForm.password" 
+                             placeholder="Dynamics 365 password">
+                    </div>
+                  }
+                }
+
+                <!-- 4. SNOWFLAKE FIELDS -->
+                @if (connectionForm.platform === 'Snowflake') {
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Account Identifier</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['account']"
+                           [(ngModel)]="connectionForm.account" 
+                           placeholder="xy12345.us-east-1 or myorg-myaccount">
+                    @if (fieldErrors['account']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Account identifier is required</div>
+                    }
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">Warehouse</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [(ngModel)]="connectionForm.warehouse" 
+                           placeholder="COMPUTE_WH">
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">Database</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['database']"
+                           [(ngModel)]="connectionForm.database" 
+                           placeholder="ANALYTICS_DB">
+                  </div>
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Authentication</label>
+                    <select class="conn-field-select" [(ngModel)]="connectionForm.snowflakeAuthMode">
+                      <option value="token">Programmatic Access Token (PAT)</option>
+                      <option value="password">Username &amp; Password</option>
+                    </select>
+                  </div>
+                  @if (connectionForm.snowflakeAuthMode === 'token') {
+                    <div class="conn-field-group conn-field-full">
+                      <label class="conn-field-label">Access Token</label>
+                      <input type="password" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['token']"
+                             [(ngModel)]="connectionForm.token" 
+                             placeholder="eyJhbGciOi...">
+                    </div>
+                  } @else {
+                    <div class="conn-field-group">
+                      <label class="conn-field-label">Username</label>
+                      <input type="text" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['username']"
+                             [(ngModel)]="connectionForm.username" 
+                             placeholder="snowflake_user">
+                    </div>
+                    <div class="conn-field-group">
+                      <label class="conn-field-label">Password</label>
+                      <input type="password" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['password']"
+                             [(ngModel)]="connectionForm.password" 
+                             placeholder="••••••••••••">
+                    </div>
+                  }
+                }
+
+                <!-- 5. ORACLE FIELDS -->
+                @if (connectionForm.platform === 'Oracle') {
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Host / Server</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['server']"
+                           [(ngModel)]="connectionForm.server" 
+                           placeholder="oracle-db.enterprise.com">
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">Port</label>
+                    <input type="number" 
+                           class="conn-field-input" 
+                           [(ngModel)]="connectionForm.port" 
+                           placeholder="1521">
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">Service Name / SID</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [(ngModel)]="connectionForm.database" 
+                           placeholder="ORCL">
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">Username</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['username']"
+                           [(ngModel)]="connectionForm.username" 
+                           placeholder="system">
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">Password</label>
+                    <input type="password" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['password']"
+                           [(ngModel)]="connectionForm.password" 
+                           placeholder="••••••••••••">
+                  </div>
+                }
+
+                <!-- 6. SAP HANA FIELDS -->
+                @if (connectionForm.platform === 'SAP HANA') {
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Host / Server</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['server']"
+                           [(ngModel)]="connectionForm.server" 
+                           placeholder="hana-instance.cloud.sap.corp">
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">Port (SQL Port)</label>
+                    <input type="number" 
+                           class="conn-field-input" 
+                           [(ngModel)]="connectionForm.port" 
+                           placeholder="30015">
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">Schema / DB</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [(ngModel)]="connectionForm.database" 
+                           placeholder="HDB">
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">Username</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['username']"
+                           [(ngModel)]="connectionForm.username" 
+                           placeholder="SYSTEM">
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">Password</label>
+                    <input type="password" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['password']"
+                           [(ngModel)]="connectionForm.password" 
+                           placeholder="••••••••••••">
+                  </div>
+                }
+
+                <!-- 7. AZURE SYNAPSE FIELDS -->
+                @if (connectionForm.platform === 'Synapse') {
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Workspace / Serverless SQL Endpoint</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['server']"
+                           [(ngModel)]="connectionForm.server" 
+                           placeholder="synapsews-ondemand.sql.azuresynapse.net">
+                  </div>
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label">Database Pool</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [(ngModel)]="connectionForm.database" 
+                           placeholder="DedicatedPool01">
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">SQL Admin Username</label>
+                    <input type="text" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['username']"
+                           [(ngModel)]="connectionForm.username" 
+                           placeholder="sqladminuser">
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label">Password</label>
+                    <input type="password" 
+                           class="conn-field-input" 
+                           [class.input-error]="fieldErrors['password']"
+                           [(ngModel)]="connectionForm.password" 
+                           placeholder="••••••••••••">
+                  </div>
+                }
+
+                <!-- Remember Me Checkbox -->
+                <label class="remember-me-checkbox-row">
+                  <input type="checkbox" [(ngModel)]="connectionForm.rememberMe">
+                  <span>Remember connection profile on this device</span>
+                </label>
+
+                <!-- Informational Note -->
+                <div class="conn-demo-limit-note">
+                  <i class="bi bi-info-circle text-info"></i>
+                  <span>Live extraction connects directly via backend and indexes tables, columns, and foreign key relationships.</span>
+                </div>
+              </div>
+
+              <!-- CRITICAL: ERROR NOTIFICATION DISPLAYED DIRECTLY ABOVE ACTION BUTTONS -->
+              @if (connectionFailed) {
+                <div class="conn-failed-alert inline-error" id="conn-error-alert">
+                  <div class="conn-failed-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                  </div>
+                  <div class="conn-failed-body">
+                    <div class="conn-failed-title">Connection Error</div>
+                    <div class="conn-failed-msg">{{ connectionErrorMessage }}</div>
+                    <div class="conn-failed-help">Please complete the required details highlighted above and click <strong>Connect</strong>, or click <strong>Use Demo Simulation</strong>.</div>
+                  </div>
+                </div>
+              }
+
+              <!-- Actions Bar -->
+              <div class="conn-actions-bar">
+                <div class="conn-actions-left">
+                  <button type="button" 
+                          class="btn-conn-demo"
+                          (click)="connectDemoCatalog()" 
+                          [disabled]="isConnecting"
+                          title="Connect with pre-indexed demo dataset">
+                    <i class="bi bi-box-seam"></i>
+                    <span>Use Demo Simulation</span>
+                  </button>
+                </div>
+                <div class="conn-actions-right">
+                  @if (isSourceConnected) {
+                    <button type="button" class="btn-conn-cancel" (click)="closeInlineConnectCard()">
+                      <i class="bi bi-x"></i>
+                      <span>Cancel</span>
+                    </button>
+                  }
+                  <button type="button" 
+                          id="btn-submit-conn"
+                          class="btn-conn-submit" 
+                          (click)="connectSourcePlatform(false)" 
+                          [disabled]="isConnecting">
+                    <i class="bi" [ngClass]="isConnecting ? 'bi-hourglass-split' : 'bi-plug-fill'"></i>
+                    <span>{{ isConnecting ? 'Connecting &amp; Scanning...' : 'Connect' }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Typing Indicator -->
+        @if (isTyping) {
+          <div class="chat-msg-row bot-msg">
+            <div class="msg-avatar agent-icon-box blue-box">
+              <i class="bi bi-search"></i>
+            </div>
+            <div class="typing-row">
+              <div class="typing-indicator">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+              </div>
+              <span>Validating credentials &amp; cataloging schema...</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Quick Prompts Tray -->
+      <div class="chat-quick-prompts-tray">
+        @for (prompt of quickPrompts; track prompt.label) {
+          <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)">
+            <i class="bi" [ngClass]="prompt.icon"></i>
+            <span>{{ prompt.label }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Input Bar -->
+      <div class="chat-input-bar">
+        <input type="text" 
+               class="chat-input-field" 
+               placeholder="Ask Discovery Agent about schema inventory, connections, table volumes..." 
+               [(ngModel)]="userInput" 
+               (keydown.enter)="sendMessage()" 
+               [disabled]="isTyping">
+        <button type="button" 
+                class="btn-chat-send" 
+                (click)="sendMessage()" 
+                [disabled]="!userInput.trim() || isTyping"
+                title="Send Message">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Telemetry Panel -->
+    <div class="telemetry-sidebar-card">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <h4 class="telemetry-card-title" style="margin: 0;">
+          <i class="bi bi-search text-primary"></i>
+          <span>Catalog Telemetry</span>
+        </h4>
+        @if (isSourceConnected) {
+          <span class="badge bg-success" style="font-size: 10px;">ONLINE</span>
+        } @else {
+          <span class="badge bg-warning text-dark" style="font-size: 10px;">STANDBY</span>
+        }
+      </div>
+
+      <div class="telemetry-stat-box">
+        <div class="stat-box-num" [style.color]="isSourceConnected ? '#0ea5e9' : '#94a3b8'">
+          {{ lastExtractedMetadata?.summary?.tables ? (lastExtractedMetadata.summary.tables + ' Tables') : (isSourceConnected ? '68 Tables' : '-- Tables') }}
+        </div>
+        <div class="stat-box-lbl">Schema Inventory Count</div>
+      </div>
+
+      <div class="telemetry-stat-box">
+        <div class="stat-box-num" [style.color]="isSourceConnected ? '#10b981' : '#94a3b8'">
+          {{ isSourceConnected ? '4.01M' : '-- Records' }}
+        </div>
+        <div class="stat-box-lbl">Total Records Discovered</div>
+      </div>
+
+      <div class="telemetry-stat-box">
+        <div class="stat-box-num" [style.color]="isSourceConnected ? '#f59e0b' : '#94a3b8'">
+          {{ isSourceConnected ? '881.3 MB' : '-- Volume' }}
+        </div>
+        <div class="stat-box-lbl">Source Storage Volume</div>
+      </div>
+
+      <div class="telemetry-stat-box">
+        <div class="stat-box-num" [style.color]="isSourceConnected ? '#0ea5e9' : '#94a3b8'">
+          {{ isSourceConnected ? '15 Edges' : '-- Edges' }}
+        </div>
+        <div class="stat-box-lbl">ER Graph Relationships</div>
+      </div>
+
+      <h5 class="telemetry-card-title" style="font-size: 12px; margin-top: 6px;">
+        <i class="bi bi-check2-all"></i>
+        <span>Source Connectors</span>
+      </h5>
+
+      <div class="telemetry-checklist">
+        @for (platform of availablePlatforms; track platform) {
+          <div class="telemetry-check-item">
+            <span>{{ platform }}</span>
+            <span class="badge" 
+                  [ngClass]="isSourceConnected && connectionConfig?.platform === platform ? 'bg-success' : 'bg-light text-muted'" 
+                  style="font-size: 10px;">
+              {{ isSourceConnected && connectionConfig?.platform === platform ? 'CONNECTED' : 'READY' }}
+            </span>
+          </div>
+        }
+      </div>
+
+      <div style="margin-top: auto; padding-top: 12px;">
+        <a routerLink="/dbscanner" 
+           class="btn btn-outline-primary w-100 btn-sm d-flex align-items-center justify-content-center gap-2"
+           [class.disabled]="!isSourceConnected">
+          <i class="bi bi-database-check"></i>
+          <span>Open Full DB Scanner</span>
+        </a>
+      </div>
+    </div>
   </div>
 </div>

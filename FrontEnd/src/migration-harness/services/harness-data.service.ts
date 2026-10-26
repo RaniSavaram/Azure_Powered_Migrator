@@ -2,6 +2,28 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { AgentInfo, AgentExecutionStatus } from '../models/agent.model';
 
+export interface SourceConnectionConfig {
+  platform: string;
+  server: string;
+  port?: number | string;
+  database?: string;
+  catalog?: string;
+  username?: string;
+  password?: string;
+  httpPath?: string;
+  token?: string;
+  personalAccessToken?: string;
+  account?: string;
+  warehouse?: string;
+  tenantId?: string;
+  clientId?: string;
+  clientSecret?: string;
+  authType?: string;
+  rememberMe?: boolean;
+  savedConnectionName?: string;
+  connectedAt?: Date;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -9,35 +31,99 @@ export class HarnessDataService {
   private isSidebarCollapsed$ = new BehaviorSubject<boolean>(false);
   sidebarCollapsed$ = this.isSidebarCollapsed$.asObservable();
 
+  // Source Database Connection State - always starts disconnected
+  private isSourceConnected$ = new BehaviorSubject<boolean>(false);
+  sourceConnectedObservable$: Observable<boolean> = this.isSourceConnected$.asObservable();
+
+  private connectionConfig$ = new BehaviorSubject<SourceConnectionConfig | null>(null);
+  connectionConfigObservable$: Observable<SourceConnectionConfig | null> = this.connectionConfig$.asObservable();
+
+  private connectionStatus$ = new BehaviorSubject<'idle' | 'success' | 'failed'>('idle');
+  connectionStatusObservable$: Observable<'idle' | 'success' | 'failed'> = this.connectionStatus$.asObservable();
+
+  private connectionLogs$ = new BehaviorSubject<string[]>([]);
+  connectionLogsObservable$: Observable<string[]> = this.connectionLogs$.asObservable();
+
+  private constraintLogs$ = new BehaviorSubject<string | null>(null);
+  constraintLogsObservable$: Observable<string | null> = this.constraintLogs$.asObservable();
+
+  private constraintResult$ = new BehaviorSubject<any | null>(null);
+  constraintResultObservable$: Observable<any | null> = this.constraintResult$.asObservable();
+
+  isSourceConnected(): boolean {
+    return this.isSourceConnected$.value;
+  }
+
+  getConnectionConfig(): SourceConnectionConfig | null {
+    return this.connectionConfig$.value;
+  }
+
+  getConnectionStatus(): 'idle' | 'success' | 'failed' {
+    return this.connectionStatus$.value;
+  }
+
+  getConnectionLogs(): string[] {
+    return this.connectionLogs$.value;
+  }
+
+  getConstraintLogs(): string | null {
+    return this.constraintLogs$.value;
+  }
+
+  getConstraintResult(): any | null {
+    return this.constraintResult$.value;
+  }
+
+  setSourceConnected(connected: boolean, config?: SourceConnectionConfig, logs?: string[]): void {
+    this.isSourceConnected$.next(connected);
+    this.connectionStatus$.next(connected ? 'success' : 'idle');
+    if (config) {
+      this.connectionConfig$.next(config);
+    }
+    if (logs && logs.length > 0) {
+      this.connectionLogs$.next(logs);
+    }
+  }
+
+  setConnectionFailed(logs?: string[]): void {
+    this.isSourceConnected$.next(false);
+    this.connectionStatus$.next('failed');
+    if (logs && logs.length > 0) {
+      this.connectionLogs$.next(logs);
+    }
+  }
+
+  setConnectionLogs(logs: string[]): void {
+    this.connectionLogs$.next(logs);
+  }
+
+  setConstraintData(reportText: string, result?: any): void {
+    this.constraintLogs$.next(reportText);
+    if (result) {
+      this.constraintResult$.next(result);
+    }
+  }
+
+  disconnectSource(): void {
+    this.setSourceConnected(false);
+    this.connectionStatus$.next('idle');
+    this.connectionLogs$.next([]);
+    this.constraintLogs$.next(null);
+    this.constraintResult$.next(null);
+    this.setDiscoveryConversationDone(false);
+  }
+
   /**
    * 7 Agents: 6 Live agents (Phases 1-6) and Medallion moved to the last (Upcoming, grayed out)
    */
   private agentsList: AgentInfo[] = [
     {
-      id: 'constraint-agent',
-      phase: 1,
-      name: 'Constraint Agent',
-      sidebarName: 'Constraint Agent',
-      sidebarSubtext: 'Rules • Governance • Fabric Guardrails',
-      phaseTag: 'PHASE 1 · CONSTRAINT & GOVERNANCE',
-      category: 'Governance & Integrity',
-      color: '#f97316',
-      accentBorder: '#f97316',
-      bgTint: 'rgba(249, 115, 22, 0.1)',
-      icon: 'bi-shield-check',
-      status: 'live',
-      executionStatus: 'idle',
-      badgeText: 'Phase 1',
-      description: 'Enforces deterministic Layer 1 migration guardrails — validates primary/foreign keys, checks Microsoft Fabric compatibility, filters unsupported schema constructs, and audits enterprise security policies.',
-      route: '/agents/constraint'
-    },
-    {
       id: 'discovery-agent',
-      phase: 2,
+      phase: 1,
       name: 'Discovery Agent',
       sidebarName: 'Discovery Agent',
       sidebarSubtext: 'Multi-Source • Schema Catalog • ER',
-      phaseTag: 'PHASE 2 · SCHEMA INTELLIGENCE',
+      phaseTag: 'PHASE 1 · SCHEMA INTELLIGENCE',
       category: 'Source Discovery',
       color: '#0ea5e9',
       accentBorder: '#0ea5e9',
@@ -45,9 +131,27 @@ export class HarnessDataService {
       icon: 'bi-search',
       status: 'live',
       executionStatus: 'idle',
-      badgeText: 'Phase 2',
-      description: 'Extracts comprehensive schema catalog metadata across SQL Server, Databricks, Snowflake, and Synapse — capturing tables, views, procedures, volumes, and interactive ER relationships.',
+      badgeText: 'Phase 1',
+      description: 'Extracts comprehensive schema catalog metadata across SQL Server, Databricks, Dynamics 365, Snowflake, Oracle, SAP HANA, and Synapse — capturing tables, views, procedures, volumes, and interactive ER relationships.',
       route: '/agents/discovery'
+    },
+    {
+      id: 'constraint-agent',
+      phase: 2,
+      name: 'Constraint Agent',
+      sidebarName: 'Constraint Agent',
+      sidebarSubtext: 'Rules • Governance • Fabric Guardrails',
+      phaseTag: 'PHASE 2 · CONSTRAINT & GOVERNANCE',
+      category: 'Governance & Integrity',
+      color: '#f97316',
+      accentBorder: '#f97316',
+      bgTint: 'rgba(249, 115, 22, 0.1)',
+      icon: 'bi-shield-check',
+      status: 'live',
+      executionStatus: 'idle',
+      badgeText: 'Phase 2',
+      description: 'Enforces deterministic Layer 1 migration guardrails — validates primary/foreign keys, checks Microsoft Fabric compatibility, filters unsupported schema constructs, and audits enterprise security policies.',
+      route: '/agents/constraint'
     },
     {
       id: 'assessment-agent',
@@ -143,8 +247,8 @@ export class HarnessDataService {
 
   // Pipeline sequence of the 6 live phases (skipping medallion upcoming)
   private pipelineSequence: string[] = [
-    'constraint-agent',
     'discovery-agent',
+    'constraint-agent',
     'assessment-agent',
     'evaluation-agent',
     'migration-generator-agent',
@@ -176,6 +280,14 @@ export class HarnessDataService {
 
   constructor() {
     // Starts completely idle. Does NOT run automatically on load.
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('migrator_source_connected');
+        localStorage.removeItem('migrator_connection_config');
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   private selectedAgentId$ = new BehaviorSubject<string | null>(null);

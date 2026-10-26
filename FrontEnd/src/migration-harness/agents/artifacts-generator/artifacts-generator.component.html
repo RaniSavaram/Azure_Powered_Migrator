@@ -23,28 +23,51 @@
       </div>
     </div>
     <div class="header-right-actions">
-      <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Return to Home Dashboard">
-        <span>Complete Workflow</span>
-        <i class="bi bi-check-lg"></i>
-      </a>
+      @if (isSourceConnected) {
+        <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Return to Home Dashboard">
+          <span>Complete Workflow</span>
+          <i class="bi bi-check-lg"></i>
+        </a>
+      } @else {
+        <span class="badge bg-warning text-dark px-3 py-2 fw-semibold" style="font-size: 12px; border-radius: 8px;">
+          <i class="bi bi-lock-fill me-1"></i> Awaiting Source Connection
+        </span>
+      }
     </div>
   </div>
 
-  <!-- Main Integration Canvas -->
-  <div class="workspace-canvas">
-    <!-- ========================================================================= -->
-    <!-- TEAMMATE INTEGRATION POINT:                                               -->
-    <!-- Attach your working chatbot, console, or conversational workflow here.    -->
-    <!-- ========================================================================= -->
-    <div class="integration-placeholder-card">
-      <div class="placeholder-icon">
-        <i class="bi bi-chat-dots-fill"></i>
+  @if (!isSourceConnected) {
+    <!-- Blank / Waiting State -->
+    <div class="agent-blank-state-container">
+      <div class="agent-blank-state-card">
+        <div class="blank-state-icon-box">
+          <i class="bi bi-box-seam"></i>
+        </div>
+        <div class="blank-state-badge">Awaiting Phase 1 Connection</div>
+        <h2>No Source Database Connected</h2>
+        <p>
+          Artifacts Generator compiles OneLake Delta tables, T-SQL DDL, and Word documentation. This workspace remains blank until connection credentials and schema intelligence are provided in <strong>Discovery Agent (Phase 1)</strong>.
+        </p>
+        <a routerLink="/agents/discovery" class="btn-connect-source-cta">
+          <i class="bi bi-plug-fill"></i>
+          <span>Connect Database in Discovery Agent</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
       </div>
-      <h3>Artifacts Generator Chatbot & Workflow</h3>
-      <p>
-        This workspace is ready for team members to plug in the artifacts synthesis chatbot, Microsoft Fabric deployment console, and export workflows.
-      </p>
-      <div class="placeholder-badge">Integration Ready</div>
     </div>
-  </div>
+  } @else {
+    <!-- Main Integration Canvas -->
+    <div class="workspace-canvas">
+      <div class="integration-placeholder-card">
+        <div class="placeholder-icon">
+          <i class="bi bi-chat-dots-fill"></i>
+        </div>
+        <h3>Artifacts Generator Chatbot & Workflow</h3>
+        <p>
+          This workspace is ready for team members to plug in the artifacts compilation chatbot, file export actions, and release packaging.
+        </p>
+        <div class="placeholder-badge">Integration Ready</div>
+      </div>
+    </div>
+  }
 </div>

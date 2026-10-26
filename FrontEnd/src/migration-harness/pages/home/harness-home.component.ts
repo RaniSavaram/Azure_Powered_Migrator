@@ -27,6 +27,10 @@ export class HarnessHomeComponent {
   artifactsAgent = this.harnessDataService.getAgentById('artifacts-generator');
   medallionAgent = this.harnessDataService.getAgentById('medallion-generation-agent');
 
+  get isSourceConnected(): boolean {
+    return this.harnessDataService.isSourceConnected();
+  }
+
   showStartPhase1Modal = false;
 
   openStartPhase1Modal(): void {
@@ -39,6 +43,6 @@ export class HarnessHomeComponent {
 
   confirmStartPhase1(): void {
     this.showStartPhase1Modal = false;
-    this.router.navigate(['/agents/constraint']);
+    this.router.navigate(['/agents/discovery']);
   }
 }

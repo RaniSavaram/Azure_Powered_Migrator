@@ -57,40 +57,7 @@
 
   <!-- Agent Cards Grid -->
   <div class="agent-cards-grid">
-    <!-- 1. Constraint Agent -->
-    @if (constraintAgent; as agent) {
-      <div class="agent-card" [style.border-top-color]="agent.accentBorder">
-        <div class="card-top-row">
-          <div class="agent-icon-square" [style.background-color]="agent.bgTint" [style.color]="agent.color">
-            <i class="bi" [ngClass]="agent.icon"></i>
-          </div>
-          <div class="card-badges-group">
-            <span class="phase-pill" [style.background-color]="agent.bgTint" [style.color]="agent.color">
-              {{ agent.badgeText }}
-            </span>
-          </div>
-        </div>
-
-        <div class="card-body-content">
-          <h3 class="agent-name" [routerLink]="agent.route" [title]="'Open ' + agent.name">{{ agent.name }}</h3>
-          <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
-          <p class="agent-description-text">{{ agent.description }}</p>
-        </div>
-
-        <div class="card-actions-row">
-          <button class="btn-harness-layer" type="button" title="Harness Layer">
-            <i class="bi bi-shield-lock"></i>
-            <span>Harness Layer</span>
-          </button>
-          <button class="btn-start-convo" type="button" [routerLink]="agent.route" title="Start conversation">
-            <span>Start conversation</span>
-            <i class="bi bi-arrow-right"></i>
-          </button>
-        </div>
-      </div>
-    }
-
-    <!-- 2. Discovery Agent (Harness Layer Button Removed) -->
+    <!-- 1. Discovery Agent (Phase 1) -->
     @if (discoveryAgent; as agent) {
       <div class="agent-card" [style.border-top-color]="agent.accentBorder">
         <div class="card-top-row">
@@ -98,6 +65,15 @@
             <i class="bi" [ngClass]="agent.icon"></i>
           </div>
           <div class="card-badges-group">
+            @if (isSourceConnected) {
+              <span class="badge bg-success text-white px-2 py-1" style="font-size: 11px; font-weight: 700; border-radius: 20px;">
+                <i class="bi bi-check-circle-fill me-1"></i> Connected
+              </span>
+            } @else {
+              <span class="badge bg-info text-dark px-2 py-1" style="font-size: 11px; font-weight: 700; border-radius: 20px;">
+                <i class="bi bi-plug-fill me-1"></i> Connect First
+              </span>
+            }
             <span class="phase-pill" [style.background-color]="agent.bgTint" [style.color]="agent.color">
               {{ agent.badgeText }}
             </span>
@@ -125,6 +101,44 @@
                   type="button" 
                   [routerLink]="agent.route" 
                   title="Start conversation">
+            <span>{{ isSourceConnected ? 'Open conversation' : 'Connect Source Platform' }}</span>
+            <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- 2. Constraint Agent (Phase 2) -->
+    @if (constraintAgent; as agent) {
+      <div class="agent-card" [style.border-top-color]="agent.accentBorder" [style.opacity]="isSourceConnected ? '1' : '0.88'">
+        <div class="card-top-row">
+          <div class="agent-icon-square" [style.background-color]="agent.bgTint" [style.color]="agent.color">
+            <i class="bi" [ngClass]="agent.icon"></i>
+          </div>
+          <div class="card-badges-group">
+            @if (!isSourceConnected) {
+              <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 11px; font-weight: 700; border-radius: 20px;">
+                <i class="bi bi-lock-fill me-1"></i> Awaiting Phase 1
+              </span>
+            }
+            <span class="phase-pill" [style.background-color]="agent.bgTint" [style.color]="agent.color">
+              {{ agent.badgeText }}
+            </span>
+          </div>
+        </div>
+
+        <div class="card-body-content">
+          <h3 class="agent-name">{{ agent.name }}</h3>
+          <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
+          <p class="agent-description-text">{{ agent.description }}</p>
+        </div>
+
+        <div class="card-actions-row">
+          <button class="btn-harness-layer" type="button" title="Harness Layer">
+            <i class="bi bi-shield-lock"></i>
+            <span>Harness Layer</span>
+          </button>
+          <button class="btn-start-convo" type="button" [routerLink]="agent.route" title="Start conversation">
             <span>Start conversation</span>
             <i class="bi bi-arrow-right"></i>
           </button>
@@ -142,6 +156,11 @@
           </span>
         </div>
         <div class="card-badges-group">
+          @if (!isSourceConnected) {
+            <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 11px; font-weight: 700; border-radius: 20px;">
+              <i class="bi bi-lock-fill me-1"></i> Awaiting Phase 1
+            </span>
+          }
           <span class="phase-pill" [style.background-color]="assessmentAgent?.bgTint" [style.color]="assessmentAgent?.color">
             {{ assessmentAgent?.badgeText }}
           </span>
@@ -246,6 +265,11 @@
             <i class="bi" [ngClass]="agent.icon"></i>
           </div>
           <div class="card-badges-group">
+            @if (!isSourceConnected) {
+              <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 11px; font-weight: 700; border-radius: 20px;">
+                <i class="bi bi-lock-fill me-1"></i> Awaiting Phase 1
+              </span>
+            }
             <span class="phase-pill" [style.background-color]="agent.bgTint" [style.color]="agent.color">
               {{ agent.badgeText }}
             </span>

@@ -31,26 +31,60 @@ class SQLServerExtractor(BaseExtractor):
         if not self.username:
             raise ValueError("Username is empty.")
 
-        if self.password is None:
-            raise ValueError("Password is None.")
+        if not self.password:
+            raise ValueError(f"Password is empty for user '{self.username}'. Please enter your database password.")
 
-        self.connection = pymssql.connect(
-            server=self.server,
-            database=self.database,
-            user=self.username,
-            password=self.password,
-            timeout=600,
-            as_dict=True
-        )
-    
+        clean_user = self.username.strip()
+        users_to_try = [clean_user]
+        if ".database.windows.net" in (self.server or "").lower():
+            server_prefix = self.server.split(".")[0]
+            if "@" not in clean_user:
+                users_to_try = [f"{clean_user}@{server_prefix}", clean_user]
+
+        last_err = None
+        for u in users_to_try:
+            try:
+                self.connection = pymssql.connect(
+                    server=self.server,
+                    database=self.database,
+                    user=u,
+                    password=self.password,
+                    timeout=30,
+                    login_timeout=15,
+                    as_dict=True
+                )
+                return
+            except Exception as ex:
+                last_err = ex
+
+        # If pymssql failed, fallback to pyodbc with modern SQL driver
+        try:
+            import pyodbc
+            drivers = pyodbc.drivers()
+            driver_name = "ODBC Driver 18 for SQL Server" if "ODBC Driver 18 for SQL Server" in drivers else ("SQL Server" if "SQL Server" in drivers else None)
+            if driver_name:
+                conn_str = f"DRIVER={{{driver_name}}};SERVER={self.server};DATABASE={self.database};UID={clean_user};PWD={self.password};Encrypt=yes;TrustServerCertificate=yes"
+                self.connection = pyodbc.connect(conn_str, timeout=15)
+                return
+        except Exception:
+            pass
+
+        if last_err:
+            raise last_err
+
     def close(self):
 
         if self.connection:
-            self.connection.close()
+            try:
+                self.connection.close()
+            except Exception:
+                pass
+            self.connection = None
 
     def extract(self, output_file="data/metadata.json"):
 
-        self.connect()
+        if not self.connection:
+            self.connect()
 
         metadata = {
             "database": self.database,
@@ -71,98 +105,99 @@ class SQLServerExtractor(BaseExtractor):
         """)
 
         tables = cursor.fetchall()
+        # Normalize dict access if using pyodbc or pymssql
+        def _get_val(r, key, idx=0):
+            if isinstance(r, dict):
+                return r.get(key)
+            return r[idx]
 
         schema_map = {}
 
-        for table in tables:
-
-            schema_name = table["TABLE_SCHEMA"]
-
-            if schema_name not in schema_map:
-
-                schema_map[schema_name] = {
-                    "name": schema_name,
-                    "tables": [],
-                    "procedures": []
-                }
-
-            table_object = {
-                "name": table["TABLE_NAME"],
-                "type": table["TABLE_TYPE"],
-                "columns": []
-            }
-
-            column_cursor = self.connection.cursor()
-
-            column_cursor.execute("""
+        # 1. Fetch all columns in ONE single batch query
+        cols_by_table = {}
+        try:
+            col_cur = self.connection.cursor()
+            col_cur.execute("""
                 SELECT
-
+                    TABLE_SCHEMA,
+                    TABLE_NAME,
                     COLUMN_NAME,
                     DATA_TYPE,
                     CHARACTER_MAXIMUM_LENGTH,
                     NUMERIC_PRECISION,
                     NUMERIC_SCALE,
                     IS_NULLABLE
-
                 FROM INFORMATION_SCHEMA.COLUMNS
-
-                WHERE TABLE_SCHEMA=%s
-                AND TABLE_NAME=%s
-
+                WHERE TABLE_SCHEMA NOT IN ('sys', 'INFORMATION_SCHEMA')
                 ORDER BY ORDINAL_POSITION
-            """, (schema_name, table["TABLE_NAME"]))
-
-            columns = column_cursor.fetchall()
-
-            for column in columns:
-
-                table_object["columns"].append({
-
-                    "name": column["COLUMN_NAME"],
-                    "datatype": column["DATA_TYPE"],
-                    "max_length": column["CHARACTER_MAXIMUM_LENGTH"],
-                    "precision": column["NUMERIC_PRECISION"],
-                    "scale": column["NUMERIC_SCALE"],
-                    "nullable": column["IS_NULLABLE"]
-
+            """)
+            for crow in col_cur.fetchall():
+                s_name = _get_val(crow, "TABLE_SCHEMA", 0)
+                t_name = _get_val(crow, "TABLE_NAME", 1)
+                k = (s_name, t_name)
+                if k not in cols_by_table:
+                    cols_by_table[k] = []
+                cols_by_table[k].append({
+                    "name": _get_val(crow, "COLUMN_NAME", 2),
+                    "datatype": _get_val(crow, "DATA_TYPE", 3),
+                    "max_length": _get_val(crow, "CHARACTER_MAXIMUM_LENGTH", 4),
+                    "precision": _get_val(crow, "NUMERIC_PRECISION", 5),
+                    "scale": _get_val(crow, "NUMERIC_SCALE", 6),
+                    "nullable": _get_val(crow, "IS_NULLABLE", 7),
                 })
-            # Row count for this table
-            count_cursor = self.connection.cursor()
-            try:
-                count_cursor.execute(
-                    f"SELECT COUNT(*) AS row_count FROM [{schema_name}].[{table['TABLE_NAME']}]"
-                )
-                row_count_result = count_cursor.fetchone()
-                table_object["row_count"] = row_count_result["row_count"] if row_count_result else 0
-            except Exception as e:
-                print(f"[WARNING] Could not get row count for {schema_name}.{table['TABLE_NAME']}: {e}")
-                table_object["row_count"] = 0
+        except Exception as col_err:
+            print(f"[WARNING] Batch column query notice: {col_err}")
 
-            # Calculate or query table size in MB
-            try:
-                size_cursor = self.connection.cursor()
-                size_cursor.execute(f"""
-                    SELECT ROUND(((SUM(a.total_pages) * 8) / 1024.0), 2) AS size_mb
-                    FROM sys.tables t
-                    JOIN sys.schemas s ON t.schema_id = s.schema_id
-                    JOIN sys.indexes i ON t.OBJECT_ID = i.object_id
-                    JOIN sys.partitions p ON i.object_id = p.OBJECT_ID AND i.index_id = p.index_id
-                    JOIN sys.allocation_units a ON p.partition_id = a.container_id
-                    WHERE s.name = '{schema_name}' AND t.name = '{table['TABLE_NAME']}'
-                    GROUP BY t.Name, s.Name
-                """)
-                size_row = size_cursor.fetchone()
-                if size_row and size_row.get("size_mb") is not None and float(size_row["size_mb"]) > 0:
-                    table_object["size_mb"] = float(size_row["size_mb"])
-                else:
-                    r_cnt = table_object.get("row_count") or 0
-                    c_cnt = len(table_object.get("columns", []))
-                    table_object["size_mb"] = round((64 + (r_cnt * max(c_cnt * 32, 64)) / 1024.0) / 1024.0, 2)
-            except Exception:
-                r_cnt = table_object.get("row_count") or 0
-                c_cnt = len(table_object.get("columns", []))
-                table_object["size_mb"] = round((64 + (r_cnt * max(c_cnt * 32, 64)) / 1024.0) / 1024.0, 2)
+        # 2. Fetch row count and size in MB for all tables in ONE single batch query
+        stats_by_table = {}
+        try:
+            size_cursor = self.connection.cursor()
+            size_cursor.execute("""
+                SELECT 
+                    s.name AS schema_name,
+                    t.name AS table_name,
+                    SUM(p.rows) AS row_count,
+                    ROUND(SUM(a.total_pages) * 8 / 1024.0, 2) AS size_mb
+                FROM sys.tables t
+                JOIN sys.schemas s ON t.schema_id = s.schema_id
+                JOIN sys.indexes i ON t.object_id = i.object_id
+                JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+                JOIN sys.allocation_units a ON p.partition_id = a.container_id
+                GROUP BY s.name, t.name
+            """)
+            for srow in size_cursor.fetchall():
+                sn = _get_val(srow, "schema_name", 0)
+                tn = _get_val(srow, "table_name", 1)
+                rc = int(_get_val(srow, "row_count", 2) or 0)
+                sz = float(_get_val(srow, "size_mb", 3) or 0.06)
+                stats_by_table[(sn, tn)] = {"row_count": rc, "size_mb": sz}
+        except Exception as st_err:
+            print(f"[WARNING] Batch sizing query notice: {st_err}")
 
+        for table in tables:
+            schema_name = _get_val(table, "TABLE_SCHEMA", 0)
+            table_name = _get_val(table, "TABLE_NAME", 1)
+            table_type = _get_val(table, "TABLE_TYPE", 2)
+
+            if schema_name not in schema_map:
+                schema_map[schema_name] = {
+                    "name": schema_name,
+                    "tables": [],
+                    "procedures": []
+                }
+
+            t_cols = cols_by_table.get((schema_name, table_name), [])
+            t_stats = stats_by_table.get((schema_name, table_name), {})
+            r_cnt = t_stats.get("row_count", 0)
+            sz_mb = t_stats.get("size_mb", 0.06)
+
+            table_object = {
+                "name": table_name,
+                "type": table_type,
+                "columns": t_cols,
+                "row_count": r_cnt,
+                "size_mb": sz_mb
+            }
             schema_map[schema_name]["tables"].append(table_object)
 
         # Stored procedures, kept per-schema alongside "tables" so Harness

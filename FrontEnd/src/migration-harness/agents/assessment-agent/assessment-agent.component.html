@@ -18,33 +18,222 @@
         <div class="phase-tag green-tag">{{ phase }}</div>
         <h1 class="workspace-title">{{ agentName }}</h1>
         <p class="workspace-subtitle">
-          Powered by Azure AI Foundry Table Summarizer — analyzes object structures, data volume sizing, column definitions, and dependencies to produce structured migration readiness assessments.
+          Analyzes table structures, column definitions, data volume sizing, and foreign key dependencies to produce comprehensive Microsoft Fabric readiness assessments and official DOCX reports.
         </p>
       </div>
     </div>
     <div class="header-right-actions">
-      <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Migration Generator Agent">
-        <span>Next Phase</span>
-        <i class="bi bi-arrow-right"></i>
-      </a>
+      @if (isSourceConnected) {
+        <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Migration Generator Agent">
+          <span>Next Phase</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      } @else {
+        <span class="badge bg-warning text-dark px-3 py-2 fw-semibold" style="font-size: 12px; border-radius: 8px;">
+          <i class="bi bi-lock-fill me-1"></i> Awaiting Source Connection
+        </span>
+      }
     </div>
   </div>
 
-  <!-- Main Integration Canvas -->
-  <div class="workspace-canvas">
-    <!-- ========================================================================= -->
-    <!-- TEAMMATE INTEGRATION POINT:                                               -->
-    <!-- Attach your working chatbot, console, or conversational workflow here.    -->
-    <!-- ========================================================================= -->
-    <div class="integration-placeholder-card">
-      <div class="placeholder-icon">
-        <i class="bi bi-chat-dots-fill"></i>
+  @if (!isSourceConnected) {
+    <!-- Blank / Waiting State -->
+    <div class="agent-blank-state-container">
+      <div class="agent-blank-state-card">
+        <div class="blank-state-icon-box">
+          <i class="bi bi-clipboard-data"></i>
+        </div>
+        <div class="blank-state-badge">Awaiting Phase 1 Connection</div>
+        <h2>No Source Database Connected</h2>
+        <p>
+          Assessment Agent requires schema catalog, table definitions, and sizing metrics from <strong>Discovery Agent (Phase 1)</strong> before migration complexity scores and Fabric SKU sizing can be evaluated.
+        </p>
+        <a routerLink="/agents/discovery" class="btn-connect-source-cta">
+          <i class="bi bi-plug-fill"></i>
+          <span>Connect Database in Discovery Agent</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
       </div>
-      <h3>Assessment Agent Chatbot & Workflow</h3>
-      <p>
-        This workspace is ready for team members to plug in the assessment conversational chatbot and sizing analysis logic.
-      </p>
-      <div class="placeholder-badge">Integration Ready</div>
     </div>
-  </div>
+  } @else {
+    <!-- Main Conversational Workspace -->
+    <div class="agent-chat-layout" style="--agent-accent-color: #10b981; --agent-focus-shadow: rgba(16, 185, 129, 0.15);">
+      <!-- Chat Main Card -->
+      <div class="chat-main-card">
+        <!-- Toolbar -->
+        <div class="chat-header-toolbar">
+          <div class="chat-status-indicator">
+            <span class="status-dot-pulse" style="background-color: #10b981;"></span>
+            <span class="status-title">Assessment & Sizing Intelligence Engine</span>
+            <span class="status-tag" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">Active Telemetry</span>
+          </div>
+          <div class="chat-toolbar-actions">
+            @if (latestReportFile) {
+              <a [href]="'/output/' + latestReportFile + '?view=1'" target="_blank" class="btn-toolbar-ghost" title="View Document in Word Online">
+                <i class="bi bi-file-earmark-word text-success"></i>
+                <span>View Report</span>
+              </a>
+            }
+            <button type="button" class="btn-toolbar-ghost" (click)="clearChat()" title="Restart Conversation">
+              <i class="bi bi-arrow-counterclockwise"></i>
+              <span>Reset</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable Message History -->
+        <div class="chat-scroll-area" #chatScroll>
+          @for (msg of messages; track msg.id) {
+            <div class="chat-msg-row" [ngClass]="msg.sender === 'user' ? 'user-msg' : 'bot-msg'">
+              <div class="msg-avatar" [ngClass]="msg.sender === 'user' ? 'user-avatar' : 'agent-icon-box green-box'">
+                @if (msg.sender === 'user') {
+                  <i class="bi bi-person-fill"></i>
+                } @else {
+                  <i class="bi bi-clipboard-data"></i>
+                }
+              </div>
+
+              <div class="msg-bubble">
+                <div class="msg-header">
+                  <span class="msg-sender-name">{{ msg.sender === 'user' ? 'You' : 'Assessment Agent' }}</span>
+                  <span class="msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
+                </div>
+
+                <!-- Message Text -->
+                <div class="msg-content">
+                  <p [innerHTML]="msg.text"></p>
+                </div>
+
+                <!-- Metric Pills -->
+                @if (msg.metrics && msg.metrics.length > 0) {
+                  <div class="msg-metrics-grid">
+                    @for (m of msg.metrics; track m.label) {
+                      <div class="msg-metric-pill">
+                        <div class="metric-pill-val" style="color: #10b981;">{{ m.value }}</div>
+                        <div class="metric-pill-lbl">{{ m.label }}</div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Code Block -->
+                @if (msg.codeBlock) {
+                  <pre class="msg-code-block"><code>{{ msg.codeBlock }}</code></pre>
+                }
+
+                <!-- Action buttons -->
+                @if (msg.actions && msg.actions.length > 0) {
+                  <div class="msg-actions-row">
+                    @for (act of msg.actions; track act.label) {
+                      <button type="button" 
+                              class="btn-msg-action" 
+                              [class.primary-action]="act.primary"
+                              (click)="handleActionClick(act.action)">
+                        <i class="bi" [ngClass]="act.icon"></i>
+                        <span>{{ act.label }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Typing Indicator -->
+          @if (isTyping) {
+            <div class="chat-msg-row bot-msg">
+              <div class="msg-avatar agent-icon-box green-box">
+                <i class="bi bi-clipboard-data"></i>
+              </div>
+              <div class="typing-row">
+                <div class="typing-indicator">
+                  <span class="typing-dot" style="background-color: #10b981;"></span>
+                  <span class="typing-dot" style="background-color: #10b981;"></span>
+                  <span class="typing-dot" style="background-color: #10b981;"></span>
+                </div>
+                <span>Synthesizing table metadata, sizing profiles & compiling Assessment Report...</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Quick Prompts Tray -->
+        <div class="chat-quick-prompts-tray">
+          @for (prompt of quickPrompts; track prompt.label) {
+            <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)">
+              <i class="bi" [ngClass]="prompt.icon"></i>
+              <span>{{ prompt.label }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Input Bar -->
+        <div class="chat-input-bar">
+          <input type="text" 
+                 class="chat-input-field" 
+                 placeholder="Ask Assessment Agent about table sizing, Direct Lake readiness, complexity..." 
+                 [(ngModel)]="userInput" 
+                 (keydown.enter)="sendMessage()" 
+                 [disabled]="isTyping">
+          <button type="button" 
+                  class="btn-chat-send" 
+                  (click)="sendMessage()" 
+                  [disabled]="!userInput.trim() || isTyping"
+                  title="Send Message"
+                  style="background-color: #10b981;">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Telemetry Panel -->
+      <div class="telemetry-sidebar-card">
+        <h4 class="telemetry-card-title">
+          <i class="bi bi-cpu text-success"></i>
+          <span>Assessment Scope</span>
+        </h4>
+
+        <div class="telemetry-stat-list">
+          <div class="telemetry-stat-row">
+            <span class="telemetry-stat-label">Source Platform</span>
+            <span class="telemetry-stat-value text-dark fw-bold">{{ connectionConfig?.platform || 'SQL Server' }}</span>
+          </div>
+          <div class="telemetry-stat-row">
+            <span class="telemetry-stat-label">Analysis Model</span>
+            <span class="telemetry-stat-value">Table Summarizer Engine</span>
+          </div>
+          <div class="telemetry-stat-row">
+            <span class="telemetry-stat-label">Direct Lake Eligibility</span>
+            <span class="badge bg-success text-white px-2 py-1">100% Ready</span>
+          </div>
+          <div class="telemetry-stat-row">
+            <span class="telemetry-stat-label">Target Architecture</span>
+            <span class="telemetry-stat-value">Microsoft Fabric Lakehouse</span>
+          </div>
+        </div>
+
+        @if (lastAssessmentData) {
+          <div class="p-3 bg-light rounded mt-3 border">
+            <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-file-earmark-check text-success me-1"></i> Generated Artifact</h6>
+            <div class="small text-muted mb-2">{{ lastAssessmentData.report_file }}</div>
+            <div class="d-flex gap-2">
+              <a [href]="'/output/' + lastAssessmentData.report_file + '?view=1'" target="_blank" class="btn btn-sm btn-outline-success flex-fill">
+                <i class="bi bi-eye"></i> View
+              </a>
+              <a [href]="'/output/' + lastAssessmentData.report_file" target="_blank" class="btn btn-sm btn-success flex-fill text-white">
+                <i class="bi bi-download"></i> Download
+              </a>
+            </div>
+          </div>
+        }
+
+        <div class="telemetry-action-box mt-3">
+          <button type="button" class="btn-run-audit-action" (click)="sendMessage('Generate comprehensive Assessment Report Word document (.docx)')" style="background-color: #10b981;">
+            <i class="bi bi-lightning-charge-fill me-1"></i>
+            <span>Generate Assessment Report</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

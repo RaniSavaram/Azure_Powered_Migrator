@@ -1,2052 +1,3260 @@
 {
   "meta": {
-    "source_system": "databricks",
-    "database_name": "bfsi_dev"
+    "source_system": "sqlserver",
+    "database_name": "AdventureWorks"
   },
   "tables": [
     {
-      "schema": "cards",
-      "table_name": "dim_card",
+      "schema": "dbo",
+      "table_name": "auth_group",
       "medallion_layer": null,
       "load_strategy": "Full Load",
       "columns": [
         {
-          "name": "card_id",
-          "data_type": "STRING"
+          "name": "id",
+          "data_type": "int"
         },
         {
-          "name": "customer_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "card_number",
-          "data_type": "STRING"
-        },
-        {
-          "name": "card_number_masked",
-          "data_type": "STRING"
-        },
-        {
-          "name": "card_network",
-          "data_type": "STRING"
-        },
-        {
-          "name": "card_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "product_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "cardholder_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "issue_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "expiry_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "cvv_stored",
-          "data_type": "STRING"
-        },
-        {
-          "name": "credit_limit",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "available_limit",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "cash_limit",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "current_outstanding",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "min_amount_due",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "total_amount_due",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "statement_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "payment_due_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "reward_points",
-          "data_type": "INT"
-        },
-        {
-          "name": "card_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "is_contactless",
-          "data_type": "STRING"
-        },
-        {
-          "name": "is_international_enabled",
-          "data_type": "STRING"
+          "name": "name",
+          "data_type": "nvarchar(150)(255)(255)(255)(255)(255)(255)(255)"
         }
       ]
     },
     {
-      "schema": "cards",
-      "table_name": "fact_card_transaction",
+      "schema": "dbo",
+      "table_name": "auth_group_permissions",
       "medallion_layer": null,
       "load_strategy": "Full Load",
       "columns": [
         {
-          "name": "card_txn_id",
-          "data_type": "STRING"
+          "name": "id",
+          "data_type": "int"
         },
         {
-          "name": "card_id",
-          "data_type": "STRING"
+          "name": "group_id",
+          "data_type": "int"
         },
         {
-          "name": "customer_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "txn_timestamp",
-          "data_type": "TIMESTAMP"
-        },
-        {
-          "name": "posting_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "currency_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "billing_amount_inr",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "fx_rate",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "merchant_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "merchant_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "merchant_category_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "merchant_city",
-          "data_type": "STRING"
-        },
-        {
-          "name": "merchant_country",
-          "data_type": "STRING"
-        },
-        {
-          "name": "entry_mode",
-          "data_type": "STRING"
-        },
-        {
-          "name": "auth_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "approval_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "decline_reason",
-          "data_type": "STRING"
-        },
-        {
-          "name": "is_international",
-          "data_type": "STRING"
-        },
-        {
-          "name": "is_emi_converted",
-          "data_type": "STRING"
-        },
-        {
-          "name": "fraud_score",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "is_fraud_flagged",
-          "data_type": "STRING"
+          "name": "permission_id",
+          "data_type": "int"
         }
       ]
     },
     {
-      "schema": "cards",
-      "table_name": "fact_dispute",
+      "schema": "dbo",
+      "table_name": "auth_permission",
       "medallion_layer": null,
       "load_strategy": "Full Load",
       "columns": [
         {
-          "name": "dispute_id",
-          "data_type": "STRING"
+          "name": "id",
+          "data_type": "int"
         },
         {
-          "name": "card_id",
-          "data_type": "STRING"
+          "name": "name",
+          "data_type": "nvarchar(255)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "card_txn_id",
-          "data_type": "STRING"
+          "name": "content_type_id",
+          "data_type": "int"
         },
         {
-          "name": "raised_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "dispute_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "reason_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "reason_description",
-          "data_type": "STRING"
-        },
-        {
-          "name": "dispute_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "chargeback_stage",
-          "data_type": "STRING"
-        },
-        {
-          "name": "resolution_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "resolved_in_favour_of",
-          "data_type": "STRING"
-        },
-        {
-          "name": "provisional_credit_given",
-          "data_type": "STRING"
-        },
-        {
-          "name": "recovery_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "analyst_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "sla_breached",
-          "data_type": "STRING"
+          "name": "codename",
+          "data_type": "nvarchar(100)(255)(255)(255)(255)(255)(255)(255)"
         }
       ]
     },
     {
-      "schema": "core_banking",
-      "table_name": "dim_account",
+      "schema": "dbo",
+      "table_name": "auth_user",
       "medallion_layer": null,
       "load_strategy": "Full Load",
       "columns": [
         {
-          "name": "account_id",
-          "data_type": "STRING"
+          "name": "id",
+          "data_type": "int"
         },
         {
-          "name": "account_number",
-          "data_type": "STRING"
+          "name": "password",
+          "data_type": "nvarchar(128)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "iban",
-          "data_type": "STRING"
+          "name": "last_login",
+          "data_type": "datetime2"
         },
         {
-          "name": "customer_id",
-          "data_type": "STRING"
+          "name": "is_superuser",
+          "data_type": "bit"
         },
         {
-          "name": "branch_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "ifsc_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "account_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "product_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "currency_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "open_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "close_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "current_balance",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "available_balance",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "avg_monthly_balance",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "overdraft_limit",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "interest_rate_pct",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "account_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "last_txn_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "is_dormant",
-          "data_type": "STRING"
-        },
-        {
-          "name": "nominee_name",
-          "data_type": "STRING"
-        }
-      ]
-    },
-    {
-      "schema": "core_banking",
-      "table_name": "dim_branch",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "branch_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "branch_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "branch_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "ifsc_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "city",
-          "data_type": "STRING"
-        },
-        {
-          "name": "state",
-          "data_type": "STRING"
-        },
-        {
-          "name": "pincode",
-          "data_type": "STRING"
-        },
-        {
-          "name": "region",
-          "data_type": "STRING"
-        },
-        {
-          "name": "branch_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "opened_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "is_active",
-          "data_type": "STRING"
-        }
-      ]
-    },
-    {
-      "schema": "core_banking",
-      "table_name": "dim_customer",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "customer_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "cif_number",
-          "data_type": "STRING"
+          "name": "username",
+          "data_type": "nvarchar(150)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
           "name": "first_name",
-          "data_type": "STRING"
+          "data_type": "nvarchar(150)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
           "name": "last_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "gender",
-          "data_type": "STRING"
-        },
-        {
-          "name": "date_of_birth",
-          "data_type": "DATE"
+          "data_type": "nvarchar(150)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
           "name": "email",
-          "data_type": "STRING"
+          "data_type": "nvarchar(254)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "mobile_number",
-          "data_type": "STRING"
-        },
-        {
-          "name": "pan_number",
-          "data_type": "STRING"
-        },
-        {
-          "name": "national_id_masked",
-          "data_type": "STRING"
-        },
-        {
-          "name": "address_line1",
-          "data_type": "STRING"
-        },
-        {
-          "name": "city",
-          "data_type": "STRING"
-        },
-        {
-          "name": "state",
-          "data_type": "STRING"
-        },
-        {
-          "name": "pincode",
-          "data_type": "STRING"
-        },
-        {
-          "name": "country",
-          "data_type": "STRING"
-        },
-        {
-          "name": "occupation",
-          "data_type": "STRING"
-        },
-        {
-          "name": "annual_income_inr",
-          "data_type": "LONG"
-        },
-        {
-          "name": "customer_segment",
-          "data_type": "STRING"
-        },
-        {
-          "name": "risk_rating",
-          "data_type": "STRING"
-        },
-        {
-          "name": "kyc_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "relationship_start_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "home_branch_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "is_pep",
-          "data_type": "STRING"
-        },
-        {
-          "name": "consent_marketing",
-          "data_type": "STRING"
-        },
-        {
-          "name": "created_ts",
-          "data_type": "TIMESTAMP"
-        },
-        {
-          "name": "updated_ts",
-          "data_type": "TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "schema": "core_banking",
-      "table_name": "fact_transaction",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "transaction_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "account_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "customer_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "txn_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "txn_timestamp",
-          "data_type": "TIMESTAMP"
-        },
-        {
-          "name": "value_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "txn_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "txn_channel",
-          "data_type": "STRING"
-        },
-        {
-          "name": "txn_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "currency_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "running_balance",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "counterparty_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "counterparty_account",
-          "data_type": "STRING"
-        },
-        {
-          "name": "counterparty_ifsc",
-          "data_type": "STRING"
-        },
-        {
-          "name": "merchant_category",
-          "data_type": "STRING"
-        },
-        {
-          "name": "narration",
-          "data_type": "STRING"
-        },
-        {
-          "name": "branch_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "is_reversed",
-          "data_type": "STRING"
-        },
-        {
-          "name": "is_flagged_suspicious",
-          "data_type": "STRING"
-        }
-      ]
-    },
-    {
-      "schema": "insurance",
-      "table_name": "dim_policy",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "policy_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "policy_number",
-          "data_type": "STRING"
-        },
-        {
-          "name": "customer_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "proposer_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "insured_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "insured_dob",
-          "data_type": "DATE"
-        },
-        {
-          "name": "relationship_to_proposer",
-          "data_type": "STRING"
-        },
-        {
-          "name": "policy_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "product_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "sum_assured",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "premium_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "premium_frequency",
-          "data_type": "STRING"
-        },
-        {
-          "name": "policy_start_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "policy_end_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "next_due_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "term_years",
-          "data_type": "INT"
-        },
-        {
-          "name": "policy_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "lapse_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "nominee_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "nominee_relationship",
-          "data_type": "STRING"
-        },
-        {
-          "name": "agent_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "agent_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "channel",
-          "data_type": "STRING"
-        },
-        {
-          "name": "medical_underwriting_flag",
-          "data_type": "STRING"
-        },
-        {
-          "name": "pre_existing_conditions",
-          "data_type": "STRING"
-        },
-        {
-          "name": "vehicle_registration_no",
-          "data_type": "STRING"
-        },
-        {
-          "name": "idv_value",
-          "data_type": "DOUBLE"
-        }
-      ]
-    },
-    {
-      "schema": "insurance",
-      "table_name": "fact_claim",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "claim_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "policy_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "customer_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "claim_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "intimation_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "incident_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "registration_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "claimed_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "assessed_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "approved_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "deductible",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "claim_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "rejection_reason",
-          "data_type": "STRING"
-        },
-        {
-          "name": "settlement_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "settlement_mode",
-          "data_type": "STRING"
-        },
-        {
-          "name": "hospital_or_garage_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "surveyor_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "tpa_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "fraud_indicator_score",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "is_investigated",
-          "data_type": "STRING"
-        },
-        {
-          "name": "turnaround_days",
-          "data_type": "INT"
-        }
-      ]
-    },
-    {
-      "schema": "insurance",
-      "table_name": "fact_premium",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "premium_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "policy_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "due_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "paid_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "installment_number",
-          "data_type": "INT"
-        },
-        {
-          "name": "base_premium",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "gst_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "total_premium",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "late_fee",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "payment_mode",
-          "data_type": "STRING"
-        },
-        {
-          "name": "payment_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "receipt_number",
-          "data_type": "STRING"
-        },
-        {
-          "name": "grace_period_end",
-          "data_type": "DATE"
-        },
-        {
-          "name": "commission_amount",
-          "data_type": "DOUBLE"
-        }
-      ]
-    },
-    {
-      "schema": "lending",
-      "table_name": "dim_loan",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "loan_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "application_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "customer_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "loan_account_number",
-          "data_type": "STRING"
-        },
-        {
-          "name": "product_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "disbursed_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "disbursement_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "tenure_months",
-          "data_type": "INT"
-        },
-        {
-          "name": "interest_rate_pct",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "rate_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "emi_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "first_emi_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "maturity_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "outstanding_principal",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "outstanding_interest",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "total_paid_to_date",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "emis_paid",
-          "data_type": "INT"
-        },
-        {
-          "name": "emis_remaining",
-          "data_type": "INT"
-        },
-        {
-          "name": "dpd_days",
-          "data_type": "INT"
-        },
-        {
-          "name": "dpd_bucket",
-          "data_type": "STRING"
-        },
-        {
-          "name": "asset_classification",
-          "data_type": "STRING"
-        },
-        {
-          "name": "loan_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "collateral_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "collateral_value",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "insurance_linked",
-          "data_type": "STRING"
-        },
-        {
-          "name": "branch_id",
-          "data_type": "STRING"
-        }
-      ]
-    },
-    {
-      "schema": "lending",
-      "table_name": "fact_collection_activity",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "activity_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "loan_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "activity_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "dpd_at_activity",
-          "data_type": "INT"
-        },
-        {
-          "name": "bucket",
-          "data_type": "STRING"
-        },
-        {
-          "name": "channel",
-          "data_type": "STRING"
-        },
-        {
-          "name": "agent_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "agency_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "outcome",
-          "data_type": "STRING"
-        },
-        {
-          "name": "promise_to_pay_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "promise_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "amount_collected",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "next_action_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "remarks",
-          "data_type": "STRING"
-        }
-      ]
-    },
-    {
-      "schema": "lending",
-      "table_name": "fact_loan_application",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "application_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "customer_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "application_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "product_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "requested_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "tenure_months",
-          "data_type": "INT"
-        },
-        {
-          "name": "purpose",
-          "data_type": "STRING"
-        },
-        {
-          "name": "employment_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "declared_income_monthly",
-          "data_type": "LONG"
-        },
-        {
-          "name": "existing_emi_total",
-          "data_type": "LONG"
-        },
-        {
-          "name": "bureau_score",
-          "data_type": "INT"
-        },
-        {
-          "name": "bureau_agency",
-          "data_type": "STRING"
-        },
-        {
-          "name": "foir_pct",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "ltv_pct",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "application_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "decision_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "decision_reason",
-          "data_type": "STRING"
-        },
-        {
-          "name": "sanctioned_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "approved_roi_pct",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "sourcing_channel",
-          "data_type": "STRING"
-        },
-        {
-          "name": "branch_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "dsa_code",
-          "data_type": "STRING"
-        }
-      ]
-    },
-    {
-      "schema": "lending",
-      "table_name": "fact_loan_repayment",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "repayment_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "loan_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "due_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "paid_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "emi_number",
-          "data_type": "INT"
-        },
-        {
-          "name": "emi_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "principal_component",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "interest_component",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "penal_charges",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "amount_paid",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "payment_mode",
-          "data_type": "STRING"
-        },
-        {
-          "name": "payment_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "bounce_reason",
-          "data_type": "STRING"
-        },
-        {
-          "name": "days_late",
-          "data_type": "INT"
-        }
-      ]
-    },
-    {
-      "schema": "payments",
-      "table_name": "fact_neft_rtgs",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "payment_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "utr_number",
-          "data_type": "STRING"
-        },
-        {
-          "name": "payment_rail",
-          "data_type": "STRING"
-        },
-        {
-          "name": "initiation_timestamp",
-          "data_type": "TIMESTAMP"
-        },
-        {
-          "name": "settlement_timestamp",
-          "data_type": "TIMESTAMP"
-        },
-        {
-          "name": "remitter_customer_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "remitter_account_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "remitter_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "remitter_ifsc",
-          "data_type": "STRING"
-        },
-        {
-          "name": "beneficiary_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "beneficiary_account",
-          "data_type": "STRING"
-        },
-        {
-          "name": "beneficiary_ifsc",
-          "data_type": "STRING"
-        },
-        {
-          "name": "beneficiary_bank",
-          "data_type": "STRING"
-        },
-        {
-          "name": "amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "currency_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "purpose_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "remarks",
-          "data_type": "STRING"
-        },
-        {
-          "name": "batch_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "return_reason",
-          "data_type": "STRING"
-        },
-        {
-          "name": "charges",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "is_cross_border",
-          "data_type": "STRING"
-        },
-        {
-          "name": "swift_bic",
-          "data_type": "STRING"
-        }
-      ]
-    },
-    {
-      "schema": "payments",
-      "table_name": "fact_upi_payment",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "upi_txn_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "rrn",
-          "data_type": "STRING"
-        },
-        {
-          "name": "payer_vpa",
-          "data_type": "STRING"
-        },
-        {
-          "name": "payee_vpa",
-          "data_type": "STRING"
-        },
-        {
-          "name": "payer_account_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "payer_customer_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "payee_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "payee_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "txn_timestamp",
-          "data_type": "TIMESTAMP"
-        },
-        {
-          "name": "txn_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "currency_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "txn_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "psp_app",
-          "data_type": "STRING"
-        },
-        {
-          "name": "payer_bank",
-          "data_type": "STRING"
-        },
-        {
-          "name": "payee_bank",
-          "data_type": "STRING"
-        },
-        {
-          "name": "txn_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "failure_reason",
-          "data_type": "STRING"
-        },
-        {
-          "name": "response_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "device_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "ip_address",
-          "data_type": "STRING"
-        },
-        {
-          "name": "latitude",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "longitude",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "is_p2m",
-          "data_type": "STRING"
-        },
-        {
-          "name": "mandate_id",
-          "data_type": "STRING"
-        }
-      ]
-    },
-    {
-      "schema": "risk_compliance",
-      "table_name": "dim_kyc",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "kyc_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "customer_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "kyc_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "id_proof_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "id_proof_number_masked",
-          "data_type": "STRING"
-        },
-        {
-          "name": "address_proof_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "pan_verified",
-          "data_type": "STRING"
-        },
-        {
-          "name": "ckyc_number",
-          "data_type": "STRING"
-        },
-        {
-          "name": "kyc_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "next_review_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "verification_method",
-          "data_type": "STRING"
-        },
-        {
-          "name": "verified_by",
-          "data_type": "STRING"
-        },
-        {
-          "name": "kyc_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "risk_category",
-          "data_type": "STRING"
-        },
-        {
-          "name": "pep_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "fatca_declaration",
-          "data_type": "STRING"
-        },
-        {
-          "name": "crs_tax_residency",
-          "data_type": "STRING"
-        },
-        {
-          "name": "source_of_funds",
-          "data_type": "STRING"
-        },
-        {
-          "name": "expected_annual_turnover",
-          "data_type": "LONG"
-        },
-        {
-          "name": "adverse_media_hit",
-          "data_type": "STRING"
-        },
-        {
-          "name": "ubo_declared",
-          "data_type": "STRING"
-        },
-        {
-          "name": "remarks",
-          "data_type": "STRING"
-        }
-      ]
-    },
-    {
-      "schema": "risk_compliance",
-      "table_name": "dim_sanctions_watchlist",
-      "medallion_layer": null,
-      "load_strategy": "Full Load",
-      "columns": [
-        {
-          "name": "watchlist_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "list_source",
-          "data_type": "STRING"
-        },
-        {
-          "name": "entity_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "entity_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "aliases",
-          "data_type": "STRING"
-        },
-        {
-          "name": "date_of_birth",
-          "data_type": "DATE"
-        },
-        {
-          "name": "nationality",
-          "data_type": "STRING"
-        },
-        {
-          "name": "country_of_residence",
-          "data_type": "STRING"
-        },
-        {
-          "name": "passport_number_masked",
-          "data_type": "STRING"
-        },
-        {
-          "name": "listing_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "delisting_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "programme",
-          "data_type": "STRING"
-        },
-        {
-          "name": "match_threshold_pct",
-          "data_type": "INT"
+          "name": "is_staff",
+          "data_type": "bit"
         },
         {
           "name": "is_active",
-          "data_type": "STRING"
+          "data_type": "bit"
+        },
+        {
+          "name": "date_joined",
+          "data_type": "datetime2"
         }
       ]
     },
     {
-      "schema": "risk_compliance",
-      "table_name": "fact_aml_alert",
+      "schema": "dbo",
+      "table_name": "auth_user_groups",
       "medallion_layer": null,
       "load_strategy": "Full Load",
       "columns": [
         {
-          "name": "alert_id",
-          "data_type": "STRING"
+          "name": "id",
+          "data_type": "int"
         },
         {
-          "name": "customer_id",
-          "data_type": "STRING"
+          "name": "user_id",
+          "data_type": "int"
         },
         {
-          "name": "account_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "alert_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "scenario_code",
-          "data_type": "STRING"
-        },
-        {
-          "name": "alert_type",
-          "data_type": "STRING"
-        },
-        {
-          "name": "alert_description",
-          "data_type": "STRING"
-        },
-        {
-          "name": "risk_score",
-          "data_type": "INT"
-        },
-        {
-          "name": "priority",
-          "data_type": "STRING"
-        },
-        {
-          "name": "aggregate_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "txn_count",
-          "data_type": "INT"
-        },
-        {
-          "name": "lookback_days",
-          "data_type": "INT"
-        },
-        {
-          "name": "detection_engine",
-          "data_type": "STRING"
-        },
-        {
-          "name": "assigned_analyst",
-          "data_type": "STRING"
-        },
-        {
-          "name": "alert_status",
-          "data_type": "STRING"
-        },
-        {
-          "name": "disposition_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "disposition_reason",
-          "data_type": "STRING"
-        },
-        {
-          "name": "sar_filed",
-          "data_type": "STRING"
-        },
-        {
-          "name": "sar_reference",
-          "data_type": "STRING"
-        },
-        {
-          "name": "escalated_to",
-          "data_type": "STRING"
-        },
-        {
-          "name": "regulator_reported",
-          "data_type": "STRING"
-        },
-        {
-          "name": "closure_narrative",
-          "data_type": "STRING"
+          "name": "group_id",
+          "data_type": "int"
         }
       ]
     },
     {
-      "schema": "sp_demo",
-      "table_name": "archived_orders",
+      "schema": "dbo",
+      "table_name": "auth_user_user_permissions",
       "medallion_layer": null,
       "load_strategy": "Full Load",
       "columns": [
         {
-          "name": "order_id",
-          "data_type": "LONG"
+          "name": "id",
+          "data_type": "int"
         },
         {
-          "name": "customer_id",
-          "data_type": "LONG"
+          "name": "user_id",
+          "data_type": "int"
         },
         {
-          "name": "order_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "amount",
-          "data_type": "DECIMAL"
-        },
-        {
-          "name": "status",
-          "data_type": "STRING"
+          "name": "permission_id",
+          "data_type": "int"
         }
       ]
     },
     {
-      "schema": "sp_demo",
-      "table_name": "customer_summary",
+      "schema": "dbo",
+      "table_name": "DE_Department",
       "medallion_layer": null,
       "load_strategy": "Full Load",
       "columns": [
         {
-          "name": "customer_id",
-          "data_type": "LONG"
+          "name": "DepartmentID",
+          "data_type": "int"
         },
         {
-          "name": "order_count",
-          "data_type": "INT"
-        },
-        {
-          "name": "total_amount",
-          "data_type": "DECIMAL"
-        },
-        {
-          "name": "last_order",
-          "data_type": "DATE"
-        },
-        {
-          "name": "updated_at",
-          "data_type": "TIMESTAMP"
+          "name": "DepartmentName",
+          "data_type": "nvarchar(100)(255)(255)(255)(255)(255)(255)(255)"
         }
       ]
     },
     {
-      "schema": "sp_demo",
-      "table_name": "etl_audit_log",
+      "schema": "dbo",
+      "table_name": "DE_Employee",
       "medallion_layer": null,
       "load_strategy": "Full Load",
       "columns": [
+        {
+          "name": "EmployeeID",
+          "data_type": "int"
+        },
+        {
+          "name": "FirstName",
+          "data_type": "nvarchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "LastName",
+          "data_type": "nvarchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DepartmentID",
+          "data_type": "int"
+        },
+        {
+          "name": "HireDate",
+          "data_type": "date"
+        },
+        {
+          "name": "Salary",
+          "data_type": "decimal"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "demo_motorvehicle_source",
+      "medallion_layer": null,
+      "load_strategy": "Incremental Load",
+      "columns": [
+        {
+          "name": "crash_date",
+          "data_type": "date"
+        },
+        {
+          "name": "crash_time",
+          "data_type": "datetime"
+        },
+        {
+          "name": "person_injury",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "person_age",
+          "data_type": "int"
+        },
+        {
+          "name": "bodily_injury",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "safety_equipment",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "person_sex",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "person_type",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ped_location",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "contributing_factor_2",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ejection",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "complaint",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "emotional_status",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "vehicle_id",
+          "data_type": "int"
+        },
+        {
+          "name": "person_id",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "contributing_factor_1",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "position_in_vehicle",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ped_role",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "unique_id",
+          "data_type": "int"
+        },
+        {
+          "name": "ped_action",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "collision_id",
+          "data_type": "int"
+        },
+        {
+          "name": "edh_rec_id",
+          "data_type": "bigint"
+        },
+        {
+          "name": "edh_rec_eff_dt",
+          "data_type": "date"
+        },
+        {
+          "name": "edh_run_id",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "edh_rec_cre_ts",
+          "data_type": "datetime"
+        },
+        {
+          "name": "edh_rec_upd_ts",
+          "data_type": "datetime"
+        },
+        {
+          "name": "edh_rec_end_dt",
+          "data_type": "date"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "departments",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "dept_name",
+          "data_type": "varchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "dept_no",
+          "data_type": "int"
+        },
+        {
+          "name": "dept_address",
+          "data_type": "varchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "django_admin_log",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int"
+        },
+        {
+          "name": "action_time",
+          "data_type": "datetime2"
+        },
+        {
+          "name": "object_id",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "object_repr",
+          "data_type": "nvarchar(200)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "action_flag",
+          "data_type": "smallint"
+        },
+        {
+          "name": "change_message",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "content_type_id",
+          "data_type": "int"
+        },
+        {
+          "name": "user_id",
+          "data_type": "int"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "django_content_type",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int"
+        },
+        {
+          "name": "app_label",
+          "data_type": "nvarchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "model",
+          "data_type": "nvarchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "django_migrations",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int"
+        },
+        {
+          "name": "app",
+          "data_type": "nvarchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "name",
+          "data_type": "nvarchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "applied",
+          "data_type": "datetime2"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "django_session",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "session_key",
+          "data_type": "nvarchar(40)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "session_data",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "expire_date",
+          "data_type": "datetime2"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "DQ_OBJ_PRPTY_ERR_DTL_test",
+      "medallion_layer": null,
+      "load_strategy": "Incremental Load",
+      "columns": [
+        {
+          "name": "BUSS_DT",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_ID",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPTY_ID",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PK_VALUE",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRIMARYKEY_NAME",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_ID",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_NBR",
+          "data_type": "int"
+        },
+        {
+          "name": "OBJ_PRPT_VAL_TXT",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ERR_ID",
+          "data_type": "int"
+        },
+        {
+          "name": "JOB_RUN_INS_ID",
+          "data_type": "bigint"
+        },
+        {
+          "name": "ETL_RECORDED_GMTS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "OBJ_PROP_COLN_TXT",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "DQ_OBJ_PRPTY_RSLT_SMRY_test",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "BUSS_DT",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPTY_ID",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_ID",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VLD_REC_CNT",
+          "data_type": "int"
+        },
+        {
+          "name": "RUL_MET_REC_CNT",
+          "data_type": "int"
+        },
+        {
+          "name": "OBJ_ID",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_NOT_MET_REC_CNT",
+          "data_type": "int"
+        },
+        {
+          "name": "DAT_QLTY_SCR_PCT",
+          "data_type": "int"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "Employee",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "EmployeeID",
+          "data_type": "int"
+        },
+        {
+          "name": "Name",
+          "data_type": "nvarchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "Position",
+          "data_type": "varchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ValidFrom",
+          "data_type": "datetime2"
+        },
+        {
+          "name": "ValidTo",
+          "data_type": "datetime2"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "EmployeeHistory",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "EmployeeID",
+          "data_type": "int"
+        },
+        {
+          "name": "Name",
+          "data_type": "nvarchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "Position",
+          "data_type": "varchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ValidFrom",
+          "data_type": "datetime2"
+        },
+        {
+          "name": "ValidTo",
+          "data_type": "datetime2"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "emps",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "emp_id",
+          "data_type": "int"
+        },
+        {
+          "name": "name",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "mgr_id",
+          "data_type": "int"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "gathi_user",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "id",
+          "data_type": "int"
+        },
+        {
+          "name": "password",
+          "data_type": "nvarchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "last_login",
+          "data_type": "datetime2"
+        },
+        {
+          "name": "is_superuser",
+          "data_type": "bit"
+        },
+        {
+          "name": "username",
+          "data_type": "nvarchar(150)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "first_name",
+          "data_type": "nvarchar(30)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "last_namee",
+          "data_type": "nvarchar(150)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "email",
+          "data_type": "nvarchar(254)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "is_staff",
+          "data_type": "bit"
+        },
+        {
+          "name": "is_active",
+          "data_type": "bit"
+        },
+        {
+          "name": "date_joined",
+          "data_type": "datetime2"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "src_tgt_cnt",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "src_tablename",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "src_rec_count",
+          "data_type": "bigint"
+        },
+        {
+          "name": "tgt_tablename",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "tgt_rec_count",
+          "data_type": "bigint"
+        },
+        {
+          "name": "run_dt",
+          "data_type": "bigint"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table_name": "sysdiagrams",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "name",
+          "data_type": "nvarchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "principal_id",
+          "data_type": "int"
+        },
+        {
+          "name": "diagram_id",
+          "data_type": "int"
+        },
+        {
+          "name": "version",
+          "data_type": "int"
+        },
+        {
+          "name": "definition",
+          "data_type": "varbinary"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "APPL_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "APPL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "APPL_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "APPL_DESC",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "APPL_CNCT_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "APPL_CNCT_EMAIL",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "BSN_TERM_ASSET_RELN",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "BSN_TERM_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ASSET_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ASSET_TYP",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_ACTV_FLG",
+          "data_type": "varchar(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "BSN_TERM_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "BSN_TERM_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BSN_TERM_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BSN_TERM_DESC_TXT",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SRC_SYS_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BSN_TERM_TYPE_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BSN_TERM_CATG_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BSN_TERM_SUB_CATG_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BSN_TERM_CNCT_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BSN_TERM_CNCT_EMAIL",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BSN_TERM_APPRD_ABBR_CD",
+          "data_type": "varchar(20)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "EXAMPLE",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "CONN_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "CONN_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CONN_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DB_PLTFRM_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "HST_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PORT_NBR",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CONN_OPTNL_CONF",
+          "data_type": "varchar(500)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "container_size_logs",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "container_name",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "blobs",
+          "data_type": "bigint"
+        },
+        {
+          "name": "size",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "buss_dt",
+          "data_type": "int"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "DATA_EXTRACTION_MD",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "ID",
+          "data_type": "int"
+        },
+        {
+          "name": "SOURCE_CONN_NAME",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "TARGET_CONN_NAME",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_NAME",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SQL_INPUT",
+          "data_type": "text"
+        },
+        {
+          "name": "DATE_CREATED",
+          "data_type": "datetime"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "DATA_TYP_MAP",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "SRC_DB_PLTFRM_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SRC_DATA_TYP",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "TGT_DB_PLTFRM_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "TGT_DATA_TYP",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "DATAPULL_WATERMARK",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "JOB_NM",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "EXTRACT_COL_NM",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "EXTRACT_COL_VALUE",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PREV_EXTRACT_COL_VALUE",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CREATE_TIMESTAMP",
+          "data_type": "datetime"
+        },
+        {
+          "name": "BUS_DT",
+          "data_type": "date"
+        },
+        {
+          "name": "PREV_BUS_DT",
+          "data_type": "date"
+        },
+        {
+          "name": "ROW_COUNT",
+          "data_type": "bigint"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUN_ID",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_PREV_EXT_VAL_REQ",
+          "data_type": "varchar(1)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "DQ_OBJ_PRPTY_CDE_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPTY_ID",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ACCURACY_THR_PCT",
+          "data_type": "int"
+        },
+        {
+          "name": "CONSISTENCY_THR_PCT",
+          "data_type": "int"
+        },
+        {
+          "name": "COMPLETENESS_THR_PCT",
+          "data_type": "int"
+        },
+        {
+          "name": "INTEGRITY_THR_PCT",
+          "data_type": "int"
+        },
+        {
+          "name": "TIMLINESS_THR_PCT",
+          "data_type": "int"
+        },
+        {
+          "name": "UNIQUENESS_THR_PCT",
+          "data_type": "int"
+        },
+        {
+          "name": "INFO_STEWARD_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "MANAGING_INFO_STEWARD_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CDE_BUS_CATEGORY",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CDE_USAGE_OPE_TYP_IND",
+          "data_type": "varchar(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CDE_USAGE_REGULATORY_TYP_IND",
+          "data_type": "varchar(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CDE_USAGE_EXECUTIVE_TYP_IND",
+          "data_type": "varchar(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CDE_USAGE_OTHERS_TYP_IND",
+          "data_type": "varchar(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_LST_UPDT_BY_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "INFOR_STEWARD_NM",
+          "data_type": "varchar(11)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "MANAGING_INFO_STEWRADS_NM",
+          "data_type": "varchar(13)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CDE_USAGE_OPERATIONS_TYPE_IND",
+          "data_type": "varchar(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CDE_USAGE_REGULATORY_TYPE_IND",
+          "data_type": "varchar(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CDE_USAGE_EXECUTIVE_TYPE_IND",
+          "data_type": "varchar(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CDE_USAGE_OTHERS_TYPE_IND",
+          "data_type": "varchar(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "DQ_OBJ_PRPTY_ERR_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Incremental Load",
+      "columns": [
+        {
+          "name": "BUSS_DT",
+          "data_type": "date"
+        },
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPTY_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PK_VALUE",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRIMARYKEY_NAME",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_NBR",
+          "data_type": "bigint"
+        },
+        {
+          "name": "OBJ_PRPT_VAL_TXT",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ERR_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_RUN_INS_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(150)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "DQ_OBJ_PRPTY_RPT_MAP",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "OBJ_PRPTY_ID",
+          "data_type": "text"
+        },
+        {
+          "name": "RPT_NM",
+          "data_type": "text"
+        },
+        {
+          "name": "RPT_EXEC_NAME",
+          "data_type": "text"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "timestamp"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "DQ_OBJ_PRPTY_RSLT_SMRY",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "BUSS_DT",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPTY_ID",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_ID",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VLD_REC_CNT",
+          "data_type": "int"
+        },
+        {
+          "name": "RUL_MET_REC_CNT",
+          "data_type": "int"
+        },
+        {
+          "name": "OBJ_ID",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_NOT_MET_REC_CNT",
+          "data_type": "int"
+        },
+        {
+          "name": "DAT_QLTY_SCR_PCT",
+          "data_type": "decimal"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_RSLVD_TXT",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "DQ_OBJ_PRPTY_RUL_MAP",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPTY_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "TFM_RUL_TXT",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPT_RUL_MAP_BY_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPT_RUL_MAP_DT",
+          "data_type": "date"
+        },
+        {
+          "name": "OBJ_PRPT_RUL_MAP_VRFD_BY_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPT_RUL_MAP_VRFD_DT",
+          "data_type": "date"
+        },
+        {
+          "name": "OBJ_PRPT_RUL_MAP_APPRD_BY_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPT_RUL_MAP_APPRD_DT",
+          "data_type": "date"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_ACTV_FLG",
+          "data_type": "varchar(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "COL_THRESHOLD",
+          "data_type": "int"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "DQ_RUL_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "RUL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_TYPE_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_DESC_TXT",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUL_CATG_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DQ_TYPE",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PARM_TYPE",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PARAMS",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RULE_DEF",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DIALECT",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "JOB_CHK_PNT",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BUSS_DT",
+          "data_type": "date"
+        },
+        {
+          "name": "RUN_ID",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "STP_ID",
+          "data_type": "smallint"
+        },
+        {
+          "name": "STP_STS",
+          "data_type": "varchar(20)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "JOB_CNTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "JOB_CNTL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "STP_ID",
+          "data_type": "smallint"
+        },
+        {
+          "name": "STP_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PARM_SEQ",
+          "data_type": "smallint"
+        },
+        {
+          "name": "PARM_NM",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PARM_VAL",
+          "data_type": "varchar(4000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "smallint"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "JOB_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SRC_SYS_OR_APPL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_DESC",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_TYP",
+          "data_type": "varchar(20)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "TMPL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SUP_GRP_EMAIL",
+          "data_type": "varchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "smallint"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "JOB_DTL_EXTD",
+      "medallion_layer": null,
+      "load_strategy": "Incremental Load",
+      "columns": [
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "LOGIC_JSON",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "FLOW_JSON",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_SQL",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "smallint"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "JOB_EXEC_STS",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BUSS_DT",
+          "data_type": "date"
+        },
+        {
+          "name": "RUN_ID",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_STRT_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "JOB_END_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "JOB_STS",
+          "data_type": "varchar(30)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "STRT_STP_ID",
+          "data_type": "smallint"
+        },
+        {
+          "name": "PREV_RUN_ID",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_ERR_MSG",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CNTLM_FLDR_NM",
+          "data_type": "varchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CNTLM_JOB_NM",
+          "data_type": "varchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "JOB_OBJ_PRPTY_RELN",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPTY_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPTY_IN_OUT_IND",
+          "data_type": "char(7)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "TRANSFORM_LOGIC",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "TRANSFORM_TXT",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "JOB_OBJ_RELN",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_IN_OUT_IND",
+          "data_type": "char(5)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "JOB_PRSS_EXEC_STS",
+      "medallion_layer": null,
+      "load_strategy": "Incremental Load",
+      "columns": [
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BUSS_DT",
+          "data_type": "date"
+        },
+        {
+          "name": "RUN_ID",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "STP_ID",
+          "data_type": "smallint"
+        },
+        {
+          "name": "STP_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_LVL_ID",
+          "data_type": "smallint"
+        },
+        {
+          "name": "PRSS_MSG_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_MSG_VAL",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "JOB_TMPL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "TMPL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "TMPL_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "STP_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_SEQ_NUM",
+          "data_type": "smallint"
+        },
+        {
+          "name": "OVRD_PARM_VALS",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "METADATA_MISMATCH_REPORT",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "SYSTEM",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DB_PLATFORM_NAME",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SCHEMA_NAME",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DATABASE_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "TABLE_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "COLUMN_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "COLUMN_ORDER",
+          "data_type": "smallint"
+        },
+        {
+          "name": "MDR_COLUMN_DATATYPE",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SRC_COLUMN_DATATYPE",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "MDR_COLUMN_LENGTH",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SRC_COLUMN_LENGTH",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "MDR_NULL_FLAG",
+          "data_type": "varchar(5)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DATA_STWD_EMAIL",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "MISMATCH_REASON",
+          "data_type": "varchar(3000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BUS_DT",
+          "data_type": "date"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "OBJ_CLBRTN",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "CLBRTN_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLBRTN_TYPE",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLBRTN_TXT",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RATING",
+          "data_type": "int"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "OBJ_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_DESC",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_TYP",
+          "data_type": "varchar(20)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SRC_SYS_OR_APPL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DB_PLTFRM_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VW_DB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SCHEMA_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_SNPSHT_LOAD_TYP",
+          "data_type": "varchar(20)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "FRMT_TYP_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLMN_DLMTR",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ROW_DLMTR",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REG_ZN",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "FILE_PATH",
+          "data_type": "varchar(256)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "FILE_NM",
+          "data_type": "varchar(250)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CNTL_FILE_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CNTL_FILE_DLMTR",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DLVR_MDE",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "HDR_REC_CNT",
+          "data_type": "smallint"
+        },
+        {
+          "name": "TRLR_REC_CNT",
+          "data_type": "smallint"
+        },
+        {
+          "name": "RTTN_DAY_CNT",
+          "data_type": "smallint"
+        },
+        {
+          "name": "ERR_THRSHD_PCT_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "WRNG_THRSHD_PCT_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "DATA_STWD_ID",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DATA_STWD_EMAIL",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "NOTF_GRP_EMAIL",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "OBJ_PRPTY_CLBRTN",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "CLBRTN_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_PRPTY_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLBRTN_TYPE",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLBRTN_TXT",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RATING",
+          "data_type": "int"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "OBJ_PRPTY_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "OBJ_PRPTY_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLMN_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLMN_SEQ_NUM",
+          "data_type": "smallint"
+        },
+        {
+          "name": "DATA_TYP",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLMN_LEN",
+          "data_type": "int"
+        },
+        {
+          "name": "DEC_SCAL",
+          "data_type": "smallint"
+        },
+        {
+          "name": "DEC_PREC",
+          "data_type": "smallint"
+        },
+        {
+          "name": "DATA_FRMT",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DFLT_VAL",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_NULL_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_PK_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_WARN_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_ERR_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_CDC_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DATA_SNSTVTY_CTGRY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VLDTN_REQ_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLMN_DESC",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "int"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_CDE_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "PARM_DESC",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "PARM_NM",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PARM_DESC",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PARM_EXPMLE",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "PRSS_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "PRSS_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_SHRT_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_SCP_TYP",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_CTGRY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_DESC",
+          "data_type": "varchar(1000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_PATH",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "PRSS_PARM_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "PRSS_PARM_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PRSS_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PARM_NM",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PARM_VAL",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "PARM_TYP",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_EDTBL_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "RECON_CONFIG",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "recon_val_id",
+          "data_type": "varchar(32)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "src_sys_nm",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "table_nm",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "metric_nm",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "validation_type",
+          "data_type": "varchar(30)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "validation_desc",
+          "data_type": "varchar(300)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "src_query",
+          "data_type": "varchar(6000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "tgt_query",
+          "data_type": "varchar(6000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "custom_query1",
+          "data_type": "varchar(6000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "custom_query2",
+          "data_type": "varchar(6000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "custom_query3",
+          "data_type": "varchar(6000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "threshold_type",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "threshold_value",
+          "data_type": "int"
+        },
+        {
+          "name": "success_message",
+          "data_type": "varchar(300)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "warning_message",
+          "data_type": "varchar(300)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "error_message",
+          "data_type": "varchar(300)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "active_flag",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "success_mail",
+          "data_type": "varchar(1000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "failure_mail",
+          "data_type": "varchar(1000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "last_update_tms",
+          "data_type": "timestamp"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "RECON_RESULTS",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "recon_val_id",
+          "data_type": "varchar(32)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "business_date",
+          "data_type": "date"
+        },
+        {
+          "name": "custom_validation",
+          "data_type": "int"
+        },
+        {
+          "name": "src_qry_results",
+          "data_type": "numeric"
+        },
+        {
+          "name": "tgt_qry_results",
+          "data_type": "numeric"
+        },
+        {
+          "name": "total_matching_cnt",
+          "data_type": "numeric"
+        },
+        {
+          "name": "total_mismatch_cnt",
+          "data_type": "numeric"
+        },
+        {
+          "name": "variance",
+          "data_type": "numeric"
+        },
+        {
+          "name": "threshold_type",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "threshold_value",
+          "data_type": "int"
+        },
+        {
+          "name": "validation_status",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "validation_message",
+          "data_type": "varchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
         {
           "name": "run_id",
-          "data_type": "STRING"
+          "data_type": "int"
         },
         {
-          "name": "proc_name",
-          "data_type": "STRING"
+          "name": "last_update_tms",
+          "data_type": "timestamp"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "REFINED_ZONE_SQL_FUNCTIONS",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "FUNCTION",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "USAGE",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "EXTENDED_USAGE",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "SCHEDULE",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SCHEDULE_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SCHEDULE",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SCHEDULE_DESC",
+          "data_type": "varchar(250)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "EFF_START_DT",
+          "data_type": "datetime"
+        },
+        {
+          "name": "EFF_END_DT",
+          "data_type": "datetime"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "SOURCE_TARGET_COUNT_REPORT",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "source_db_name",
+          "data_type": "nvarchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "source_table",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "source_record_count",
+          "data_type": "bigint"
+        },
+        {
+          "name": "target_db_name",
+          "data_type": "nvarchar(100)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "target_table",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "target_record_count",
+          "data_type": "bigint"
+        },
+        {
+          "name": "count_difference",
+          "data_type": "bigint"
         },
         {
           "name": "status",
-          "data_type": "STRING"
+          "data_type": "nvarchar(10)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "rows_affected",
-          "data_type": "LONG"
-        },
-        {
-          "name": "message",
-          "data_type": "STRING"
-        },
-        {
-          "name": "logged_at",
-          "data_type": "TIMESTAMP"
+          "name": "buss_dt",
+          "data_type": "bigint"
         }
       ]
     },
     {
-      "schema": "sp_demo",
-      "table_name": "orders",
+      "schema": "MDR_T",
+      "table_name": "SRC_SYS_DTL",
       "medallion_layer": null,
       "load_strategy": "Full Load",
       "columns": [
         {
-          "name": "order_id",
-          "data_type": "LONG"
+          "name": "SRC_SYS_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "customer_id",
-          "data_type": "LONG"
+          "name": "SRC_SYS_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "order_date",
-          "data_type": "DATE"
+          "name": "SRC_SYS_DESC",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "amount",
-          "data_type": "DECIMAL"
+          "name": "SRC_SYS_CNCT_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "status",
-          "data_type": "STRING"
+          "name": "SRC_SYS_CNCT_EMAIL",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
         }
       ]
     },
     {
-      "schema": "wealth",
-      "table_name": "dim_portfolio",
+      "schema": "MDR_T",
+      "table_name": "term_bkp",
       "medallion_layer": null,
       "load_strategy": "Full Load",
       "columns": [
         {
-          "name": "portfolio_id",
-          "data_type": "STRING"
+          "name": "BSN_TERM_NM",
+          "data_type": "varchar(32)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "customer_id",
-          "data_type": "STRING"
+          "name": "BSN_TERM_DESC_TXT",
+          "data_type": "varchar(256)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "demat_account_number",
-          "data_type": "STRING"
-        },
-        {
-          "name": "dp_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "client_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "portfolio_name",
-          "data_type": "STRING"
-        },
-        {
-          "name": "risk_profile",
-          "data_type": "STRING"
-        },
-        {
-          "name": "investment_objective",
-          "data_type": "STRING"
-        },
-        {
-          "name": "inception_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "aum_value",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "invested_amount",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "unrealised_gain_loss",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "xirr_pct",
-          "data_type": "DOUBLE"
-        },
-        {
-          "name": "advisor_id",
-          "data_type": "STRING"
-        },
-        {
-          "name": "advisory_model",
-          "data_type": "STRING"
-        },
-        {
-          "name": "fee_structure",
-          "data_type": "STRING"
-        },
-        {
-          "name": "fee_bps",
-          "data_type": "INT"
-        },
-        {
-          "name": "review_frequency",
-          "data_type": "STRING"
-        },
-        {
-          "name": "last_review_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "is_discretionary",
-          "data_type": "STRING"
-        },
-        {
-          "name": "tax_residency",
-          "data_type": "STRING"
+          "name": "Category",
+          "data_type": "varchar(16)(255)(255)(255)(255)(255)(255)(255)"
         }
       ]
     },
     {
-      "schema": "wealth",
-      "table_name": "fact_trade",
+      "schema": "MDR_T",
+      "table_name": "TMP_SRC_TGT_CNT",
       "medallion_layer": null,
       "load_strategy": "Full Load",
       "columns": [
         {
-          "name": "trade_id",
-          "data_type": "STRING"
+          "name": "src_table",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "portfolio_id",
-          "data_type": "STRING"
+          "name": "src_rec_cnt",
+          "data_type": "bigint"
         },
         {
-          "name": "customer_id",
-          "data_type": "STRING"
+          "name": "run_dt",
+          "data_type": "bigint"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_T",
+      "table_name": "USER_JOB_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Incremental Load",
+      "columns": [
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "trade_date",
-          "data_type": "DATE"
+          "name": "LOGIC_JSON",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "settlement_date",
-          "data_type": "DATE"
+          "name": "FLOW_JSON",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "instrument_type",
-          "data_type": "STRING"
+          "name": "JOB_SQL",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "isin",
-          "data_type": "STRING"
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
         },
         {
-          "name": "ticker",
-          "data_type": "STRING"
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "security_name",
-          "data_type": "STRING"
+          "name": "SRC_SYS_OR_APPL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "exchange",
-          "data_type": "STRING"
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "buy_sell",
-          "data_type": "STRING"
+          "name": "VER_NBR",
+          "data_type": "smallint"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_V",
+      "table_name": "OBJECT_PRPT_SRC_TGT_INFO_TEST",
+      "medallion_layer": null,
+      "load_strategy": "Incremental Load",
+      "columns": [
+        {
+          "name": "FILE_PATH",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "quantity",
-          "data_type": "INT"
+          "name": "OBJ_NM",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "price",
-          "data_type": "DOUBLE"
+          "name": "SRC_SYS_NM",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "trade_value",
-          "data_type": "DOUBLE"
+          "name": "CLMN_NM",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "brokerage",
-          "data_type": "DOUBLE"
+          "name": "CLMN_SEQ_NUM",
+          "data_type": "smallint"
         },
         {
-          "name": "stt",
-          "data_type": "DOUBLE"
+          "name": "DATA_TYP",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "gst",
-          "data_type": "DOUBLE"
+          "name": "SRC_DATA_TYP",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "stamp_duty",
-          "data_type": "DOUBLE"
+          "name": "CLMN_LEN",
+          "data_type": "int"
         },
         {
-          "name": "net_amount",
-          "data_type": "DOUBLE"
+          "name": "DEC_SCAL",
+          "data_type": "smallint"
         },
         {
-          "name": "order_type",
-          "data_type": "STRING"
+          "name": "DEC_PREC",
+          "data_type": "smallint"
         },
         {
-          "name": "order_id",
-          "data_type": "STRING"
+          "name": "DATA_FRMT",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "broker_code",
-          "data_type": "STRING"
+          "name": "SRC_DATA_FRMT",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "folio_number",
-          "data_type": "STRING"
+          "name": "DFLT_VAL",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "sip_flag",
-          "data_type": "STRING"
+          "name": "IS_NULL_FLG",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
         },
         {
-          "name": "holding_period_days",
-          "data_type": "INT"
+          "name": "KEY_TYP",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VLDTN_REQ_FLG",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLMN_TYP",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DATA_SNSTVTY_CTGRY",
+          "data_type": "nvarchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_W",
+      "table_name": "DATA_COMPARISION_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "TEST_CASE_ID",
+          "data_type": "int"
+        },
+        {
+          "name": "TEST_CASE_NAME",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "COLUMN_NAME",
+          "data_type": "varchar(255)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "COLUMN_VALUE",
+          "data_type": "varchar(MAX)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "BUSS_DT",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "RUN_ID",
+          "data_type": "varchar(30)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_W",
+      "table_name": "JOB_OBJ_RELN_BKP_DBNM_CHG",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_IN_OUT_IND",
+          "data_type": "char(5)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_W",
+      "table_name": "OBJ_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_DESC",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_TYP",
+          "data_type": "varchar(20)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SRC_SYS_OR_APPL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DB_PLTFRM_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VW_DB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SCHEMA_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "FRMT_TYP_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLMN_DLMTR",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ROW_DLMTR",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REG_ZN",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "FILE_PATH",
+          "data_type": "varchar(256)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "FILE_NM",
+          "data_type": "varchar(250)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CNTL_FILE_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CNTL_FILE_DLMTR",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DLVR_MDE",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "HDR_REC_CNT",
+          "data_type": "smallint"
+        },
+        {
+          "name": "TRLR_REC_CNT",
+          "data_type": "smallint"
+        },
+        {
+          "name": "RTTN_DAY_CNT",
+          "data_type": "smallint"
+        },
+        {
+          "name": "ERR_THRSHD_PCT_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "WRNG_THRSHD_PCT_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "DATA_STWD_ID",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DATA_STWD_EMAIL",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "NOTF_GRP_EMAIL",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_SNPSHT_LOAD_TYP",
+          "data_type": "varchar(20)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_W",
+      "table_name": "OBJ_DTL_BKP_DBNM_CHG",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_DESC",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_TYP",
+          "data_type": "varchar(20)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SRC_SYS_OR_APPL_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DB_PLTFRM_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VW_DB_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "SCHEMA_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_SNPSHT_LOAD_TYP",
+          "data_type": "varchar(20)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "FRMT_TYP_NM",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLMN_DLMTR",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ROW_DLMTR",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REG_ZN",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "FILE_PATH",
+          "data_type": "varchar(256)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "FILE_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CNTL_FILE_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CNTL_FILE_DLMTR",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DLVR_MDE",
+          "data_type": "varchar(10)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "HDR_REC_CNT",
+          "data_type": "smallint"
+        },
+        {
+          "name": "TRLR_REC_CNT",
+          "data_type": "smallint"
+        },
+        {
+          "name": "RTTN_DAY_CNT",
+          "data_type": "smallint"
+        },
+        {
+          "name": "ERR_THRSHD_PCT_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "WRNG_THRSHD_PCT_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "DATA_STWD_ID",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DATA_STWD_EMAIL",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "NOTF_GRP_EMAIL",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "smallint"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        }
+      ]
+    },
+    {
+      "schema": "MDR_W",
+      "table_name": "OBJ_PRPTY_DTL",
+      "medallion_layer": null,
+      "load_strategy": "Full Load",
+      "columns": [
+        {
+          "name": "OBJ_PRPTY_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "OBJ_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLMN_NM",
+          "data_type": "varchar(128)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLMN_SEQ_NUM",
+          "data_type": "smallint"
+        },
+        {
+          "name": "DATA_TYP",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "CLMN_LEN",
+          "data_type": "int"
+        },
+        {
+          "name": "DEC_SCAL",
+          "data_type": "smallint"
+        },
+        {
+          "name": "DEC_PREC",
+          "data_type": "smallint"
+        },
+        {
+          "name": "DATA_FRMT",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DFLT_VAL",
+          "data_type": "varchar(50)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_NULL_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_PK_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_WARN_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_ERR_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_CDC_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "IS_CDE_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "DATA_SNSTVTY_CTGRY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VLDTN_REQ_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "VER_NBR",
+          "data_type": "int"
+        },
+        {
+          "name": "CLMN_DESC",
+          "data_type": "varchar(2000)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "ACTV_FLG",
+          "data_type": "char(1)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "REC_CRE_TS",
+          "data_type": "datetime"
+        },
+        {
+          "name": "REC_CRE_BY",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
+        },
+        {
+          "name": "JOB_ID",
+          "data_type": "varchar(35)(255)(255)(255)(255)(255)(255)(255)"
         }
       ]
     }
   ],
-  "views": [
-    {
-      "schema": "sp_demo",
-      "view_name": "archived_orders_view",
-      "columns": [
-        {
-          "name": "order_id",
-          "data_type": "LONG"
-        },
-        {
-          "name": "customer_id",
-          "data_type": "LONG"
-        },
-        {
-          "name": "order_date",
-          "data_type": "DATE"
-        },
-        {
-          "name": "amount",
-          "data_type": "DECIMAL"
-        },
-        {
-          "name": "status",
-          "data_type": "STRING"
-        }
-      ],
-      "definition": "select * from bfsi_dev.sp_demo.archived_orders",
-      "is_materialized": false
-    }
-  ],
+  "views": [],
   "functions": [],
-  "procedures": [
-    {
-      "schema": "sp_demo",
-      "procedure_name": "archive_old_orders",
-      "definition": "Not available"
-    }
-  ],
-  "volumes": [
-    {
-      "schema": "cards",
-      "volume_name": "volumes_credit_card_details_ext",
-      "volume_type": "Unknown",
-      "storage_location": "Unknown"
-    },
-    {
-      "schema": "core_banking",
-      "volume_name": "loan_details_ext_vol",
-      "volume_type": "Unknown",
-      "storage_location": "Unknown"
-    }
-  ]
+  "procedures": [],
+  "volumes": []
 }

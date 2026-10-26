@@ -350,4 +350,149 @@ export class Scanner {
       payload
     );
   }
+
+  /**
+   * Phase 1 (Discovery): Extracts schema metadata, table sizing, and ER relations.
+   */
+  extractMetadata(payload?: any) {
+    return this.http.post<{
+      status: string;
+      connected?: boolean;
+      error?: string;
+      message?: string;
+      connection_status?: string;
+      connection_message?: string;
+      connection_logs?: string[];
+      logs?: string[];
+      live_connected?: boolean;
+      platform: string;
+      server?: string;
+      database: string;
+      summary?: {
+        tables: number;
+        views: number;
+        procedures: number;
+        functions: number;
+        volumes: number;
+        columns: number;
+        total_rows: number;
+        total_volume_mb: number;
+        est_fabric_volume_mb: number;
+        compression_ratio: string;
+        schemas: string[];
+      };
+      tables?: any[];
+      views?: any[];
+      procedures?: any[];
+      er_summary?: {
+        nodes: number;
+        edges: number;
+        cycles: number;
+      };
+      next_step?: {
+        phase: number;
+        agent: string;
+        route: string;
+        instruction: string;
+      };
+    }>(`${this.api.baseUrl}/extract-metadata/`, payload || {});
+  }
+
+  /**
+   * Phase 2 (Constraint & Governance): Evaluates Layer 1 Harness rules, constraints, and Fabric compatibility.
+   */
+  validateConstraints() {
+    return this.http.post<{
+      status: string;
+      decision: string;
+      compliance_score: number;
+      rules: Array<{ id: string; desc: string; status: 'pass' | 'warn' | 'fail' | 'info' }>;
+      metrics: Array<{ label: string; value: string }>;
+      remediations: string;
+      report_text: string;
+      harness_result: any;
+    }>(`${this.api.baseUrl}/validate-constraints/`, {});
+  }
+
+  /**
+   * Phase 3 (Assessment Agent): Generates Table-Wise Summaries, sizing classification, and Word Assessment Report.
+   */
+  generateAssessmentReport() {
+    return this.http.post<{
+      status: string;
+      report_file: string;
+      report_url: string;
+      download_url: string;
+      summary: {
+        total_tables: number;
+        total_columns: number;
+        total_size_mb: number;
+        total_rows: number;
+        top_tables_by_size: string[];
+        top_tables_by_rows: string[];
+        complexity_breakdown: {
+          simple: number;
+          medium: number;
+          complex: number;
+        };
+      };
+      table_assessments: Array<{
+        name: string;
+        schema: string;
+        row_count: number;
+        size_mb: number;
+        size_category: string;
+        complexity: string;
+        direct_lake_ready: boolean;
+      }>;
+    }>(`${this.api.baseUrl}/assessment-report/`, {});
+  }
+
+  /**
+   * Phase 4/5 (Migration Plan Generator): Synthesizes Medallion architecture, execution waves, Word Migration Plan, and migration_plan.json.
+   */
+  generateMigrationPlan() {
+    return this.http.post<{
+      status: string;
+      plan_file: string;
+      plan_url: string;
+      download_url: string;
+      json_plan_file: string;
+      medallion_architecture: {
+        bronze: string[];
+        silver: string[];
+        gold: string[];
+      };
+      execution_waves: Array<{
+        wave: number;
+        name: string;
+        tables: string[];
+      }>;
+      risk_mitigations: Array<{
+        risk: string;
+        mitigation: string;
+      }>;
+    }>(`${this.api.baseUrl}/migration-plan/`, {});
+  }
+
+  /**
+   * Telemetry state across all phases.
+   */
+  getPipelineState() {
+    return this.http.get<{
+      source_connected: boolean;
+      platform: string;
+      platform_slug: string;
+      server: string;
+      database: string;
+      connected_at: string;
+      has_metadata: boolean;
+      metadata_summary: any;
+      has_constraints: boolean;
+      has_assessment: boolean;
+      assessment_report_file?: string;
+      has_migration_plan: boolean;
+      migration_plan_file?: string;
+    }>(`${this.api.baseUrl}/pipeline-state/`);
+  }
 }

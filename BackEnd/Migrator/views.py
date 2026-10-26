@@ -27,6 +27,15 @@ from AI_Agent_Pipeline.Agents_PipeLine import Agents_PipeLine
 from HarnessLayers.layer1.Layer import layer1_Harness
 from HarnessLayers.Harness_Json_Log_Formatter import format_harness_report
 from Logs import Logs,reset_Logs
+from Migrator.pipeline_services import (
+    connect_source_service,
+    extract_metadata_service,
+    validate_constraints_service,
+    generate_assessment_report_service,
+    generate_migration_plan_service,
+    get_pipeline_state_service,
+    active_pipeline
+)
 
 DEFAULT_HARNESS_LAYER2_LOGS = [
     "HARNESS LAYER 2:",
@@ -301,10 +310,11 @@ def serve_generated_document(request, filename):
     except ValueError as exc:
         raise Http404("Invalid file path.") from exc
 
-    if file_path.suffix.lower() != ".docx" or not file_path.is_file():
+    allowed_suffixes = {".docx", ".json", ".sql", ".py", ".md", ".txt"}
+    if file_path.suffix.lower() not in allowed_suffixes or not file_path.is_file():
         raise Http404("Document not found.")
 
-    if request.GET.get("view") == "1":
+    if request.GET.get("view") == "1" and file_path.suffix.lower() == ".docx":
         host = request.get_host()
         if "localhost" not in host and "127.0.0.1" not in host:
             from django.http import HttpResponseRedirect
@@ -315,7 +325,14 @@ def serve_generated_document(request, filename):
             viewer_url = f"https://view.officeapps.live.com/op/view.aspx?src={urllib.parse.quote(public_url)}"
             return HttpResponseRedirect(viewer_url)
 
-    response = FileResponse(file_path.open("rb"), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    if file_path.suffix.lower() == ".docx":
+        content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif file_path.suffix.lower() == ".json":
+        content_type = "application/json"
+    else:
+        content_type = "text/plain; charset=utf-8"
+
+    response = FileResponse(file_path.open("rb"), content_type=content_type)
     disposition = "inline" if request.GET.get("view") == "1" else "attachment"
     response["Content-Disposition"] = f'{disposition}; filename="{file_path.name}"'
     response["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -338,11 +355,20 @@ def er_diagram(request):
     if file_path.parent != output_dir or not file_path.name.endswith("Fabric_Migration_Metadata.json"):
         return Response({"status": "error", "message": "Invalid metadata file."}, status=400)
     if not file_path.is_file():
-        return Response({"status": "error", "message": f"{filename} not found - run a scan first."}, status=404)
+        for cand in output_dir.glob("*Fabric_Migration_Metadata.json"):
+            file_path = cand
+            break
+        if not file_path.is_file():
+            extract_metadata_service()
+            file_path = output_dir / "Fabric_Migration_Metadata.json"
+
+    if not file_path.is_file():
+        return Response({"status": "error", "message": f"{filename} not found - please extract metadata first."}, status=404)
 
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             model = build_er_model(json.load(f))
+            model["entities"] = model.get("tables", [])
     except Exception as exc:
         return Response({"status": "error", "message": f"Could not build the ER diagram: {exc}"}, status=500)
     return Response({"status": "success", "file": file_path.name, **model})
@@ -399,22 +425,24 @@ def _get_connection_log_lines(db_type, creds):
 
 @api_view(["POST"])
 def connect_database(request):
-
     global source
     reset_Logs()
 
     print("[INFO]: Connect request received")
     Logs["Scan Info"].append("[INFO]: Connect request received")
 
-    source = request.data.get("source")
-    clean_source = (source or "").strip().lower().replace(" ", "").replace("_", "")
-    remember_me = str(request.data.get("remember_me", "false")).strip().lower() == "true"
-    Creds.set_servername(request.data.get("server"))
-    Creds.set_database_name(request.data.get("database"))
-    Creds.set_username (request.data.get("username"))
-    Creds.set_password (request.data.get("password") or request.data.get("token") or "")
-    Creds.set_port(request.data.get("port") or None)
-    extra_payload = request.data.get("extra") or {}
+    # Delegate to unified connection service which handles all 7 platforms, timeouts and pipeline state
+    conn_result = connect_source_service(request.data)
+
+    source = conn_result.get("source")
+    cfg = conn_result.get("config", {})
+    Creds.set_servername(cfg.get("server") or request.data.get("server"))
+    Creds.set_database_name(cfg.get("database") or request.data.get("database"))
+    Creds.set_username(cfg.get("username") or request.data.get("username") or "")
+    Creds.set_password(request.data.get("password") or request.data.get("token") or "")
+    Creds.set_port(cfg.get("port") or request.data.get("port") or None)
+
+    extra_payload = cfg.get("extra") or request.data.get("extra") or {}
     if not isinstance(extra_payload, dict):
         extra_payload = {}
     if request.data.get("httpPath") and "http_path" not in extra_payload:
@@ -422,110 +450,107 @@ def connect_database(request):
     if request.data.get("http_path") and "http_path" not in extra_payload:
         extra_payload["http_path"] = request.data.get("http_path")
     Creds.set_extra_dict(extra_payload)
-    print("[INFO]: Connection Details recieved")
-    Logs["Scan Info"].append("[INFO]: Connection Details recieved")
+
+    print("[INFO]: Connection Details received")
+    Logs["Scan Info"].append("[INFO]: Connection Details received")
     for conn_line in _get_connection_log_lines(source, Creds):
         Logs["Scan Info"].append(conn_line)
 
-    try:
-        server = Creds.get_servername()
-        database = Creds.get_database_name()
+    Logs["Scan Info"].append(f"[INFO] {conn_result.get('message')}")
 
-        # Field requirements differ by DB type family:
-        #   - SQLite: only needs a file path (in `database`)
-        #   - Dynamics 365: needs the org URL (in `server`) + tenant/client
-        #     id/secret in `extra` - no `database`/username/password
-        #   - Everything else: needs both server and database
-        if clean_source == "sqlite":
-            if not database:
-                Logs["Scan Info"].append("[Err]: Database file path is required.")
-                return Response(
-                    {"status": "error", "message": "Database file path is required."},
-                    status=400
-                )
-        elif clean_source in ("dynamics365", "dynamics 365", "d365", "dynamics"):
-            if not server:
-                Logs["Scan Info"].append("[Err]: Org URL is required.")
-                return Response(
-                    {"status": "error", "message": "Org URL (Server field) is required."},
-                    status=400
-                )
-        elif not server or not database:
-            Logs["Scan Info"].append("[Err]: Server or database name are required.")
-            return Response(
-                {"status": "error", "message": "Server and database name are required."},
-                status=400
-            )
-
-        db_type = clean_source
-
-        if db_type in ("sqlserver", "mssql"):
-            test_extractor = SQLServerExtractor(Creds)
-
-        elif db_type in ("synapse", "azuresynapse"):
-            test_extractor = SynapseExtractor(Creds)
-
-        elif db_type == "snowflake":
-            test_extractor = SnowflakeExtractor(Creds)
-
-        elif db_type == "databricks":
-            test_extractor = DatabricksExtractor(Creds)
-
-        elif db_type in ("dynamics365", "dynamics 365", "d365", "dynamics"):
-            test_extractor = Dynamics365Extractor(Creds)
-
-        elif db_type == "sqlite":
-            # SQLite uses local file, bypass connect check
-            test_extractor = None
-
-        else:
-            Logs["Scan Info"].append(f"[Err]: Unsupported database type: '{source}'")
-            return Response(
-                {
-                    "status": "error",
-                    "message": (
-                        f"Unsupported database type: '{source}'. Supported: sqlserver, "
-                        f"oracle, mysql, postgres, sqlite, synapse, snowflake, "
-                        f"databricks, dynamics365, sap"
-                    )
-                },
-                status=400
-            )
-
-        if test_extractor:
-            test_extractor.connect()
-            print("[INFO]: Successfully Connected To the Database")
-            Logs["Scan Info"].append("[INFO]: Successfully Connected To the Database")
-            test_extractor.close()
-        else:
-            print("[INFO]: Successfully Connected To the Database")
-            Logs["Scan Info"].append("[INFO]: Successfully Connected To the Database")
-
-        # Remember-me is now handled on the browser side with localStorage so
-        # credentials are never stored in the repo or committed to GitHub.
-        # The backend only writes to a temp file when explicitly requested.
-        if remember_me:
-            save_connection(source, {
-                "server": server,
-                "database": database,
-                "username": Creds.get_username(),
-                "password": Creds.get_password(),
-                "extra": Creds.get_extra_dict(),
-            })
-
-    except Exception as e:
-         print(e)
-         Logs["Scan Info"].append(str(e))
-         return Response({"status": "error", "message": str(e)}, status=400)
-
-    
-    Logs["Scan Info"].append(f"[INFO] Connected to {database} on {server} successfully.")
     return Response({
-        "status": "success",
-        "message": f"Connected to {database} on {server} successfully.",
+        "status": conn_result.get("status", "success"),
+        "connected": conn_result.get("connected", False),
+        "connection_status": conn_result.get("connection_status", "failed"),
+        "message": conn_result.get("message"),
+        "error": conn_result.get("error"),
         "source": source,
-        "Logs":Logs
-    })
+        "config": cfg,
+        "logs": conn_result.get("logs", []),
+        "connection_logs": conn_result.get("connection_logs", []),
+        "Logs": Logs
+    }, status=200)
+
+
+@api_view(["GET", "POST"])
+def extract_metadata(request):
+    """
+    Extracts comprehensive metadata (tables, columns, datatypes, views, procedures, volumes, ER edges)
+    across SQL Server, Databricks, Dynamics 365, Snowflake, Synapse, Oracle, SAP HANA.
+    Caches the extracted metadata and updates Fabric_Migration_Metadata.json.
+    """
+    try:
+        data = request.data if request.method == "POST" else None
+        result = extract_metadata_service(data)
+        return Response(result, status=200)
+    except Exception as exc:
+        traceback.print_exc()
+        return Response({
+            "status": "error",
+            "connected": False,
+            "connection_status": "failed",
+            "message": str(exc),
+            "error": str(exc),
+            "logs": [f"[ERROR] Exception during extraction: {exc}"],
+            "connection_logs": [f"[ERROR] Exception during extraction: {exc}"]
+        }, status=400)
+
+
+@api_view(["GET", "POST"])
+def validate_constraints(request):
+    """
+    Runs Harness Layer 1 Constraint & Governance validation:
+    Primary & Foreign keys preservation, Microsoft Fabric datatype compatibility,
+    destructive statement checks, and enterprise governance compliance.
+    """
+    try:
+        result = validate_constraints_service()
+        return Response(result, status=200)
+    except Exception as exc:
+        traceback.print_exc()
+        return Response({"status": "error", "message": str(exc)}, status=400)
+
+
+@api_view(["GET", "POST"])
+def generate_assessment(request):
+    """
+    Analyzes table definitions, data volume sizing, column definitions, and dependencies
+    to produce structured migration readiness assessments and generates the Assessment Report (.docx).
+    """
+    try:
+        result = generate_assessment_report_service()
+        return Response(result, status=200)
+    except Exception as exc:
+        traceback.print_exc()
+        return Response({"status": "error", "message": str(exc)}, status=400)
+
+
+@api_view(["GET", "POST"])
+def generate_migration_plan_view(request):
+    """
+    Generates the comprehensive Medallion Architecture roadmap (Bronze, Silver, Gold),
+    execution waves DAG, risk mitigations, Migration Plan document (.docx), and migration_plan.json.
+    """
+    try:
+        result = generate_migration_plan_service()
+        return Response(result, status=200)
+    except Exception as exc:
+        traceback.print_exc()
+        return Response({"status": "error", "message": str(exc)}, status=400)
+
+
+@api_view(["GET"])
+def pipeline_state(request):
+    """
+    Returns current telemetry state across all 6 migration phases for seamless cross-agent handoffs.
+    """
+    try:
+        result = get_pipeline_state_service()
+        return Response(result, status=200)
+    except Exception as exc:
+        traceback.print_exc()
+        return Response({"status": "error", "message": str(exc)}, status=400)
+
 
 @api_view(["GET"])
 def saved_connection(request):
