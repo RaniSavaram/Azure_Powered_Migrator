@@ -311,7 +311,7 @@ def connect_source_service(data: dict) -> dict:
 
     server = (data.get("server") or data.get("account") or "").strip()
     database = (data.get("database") or data.get("catalog") or "").strip()
-    username = (data.get("username") or "").strip()
+    username = (data.get("username") or data.get("user") or "").strip()
     password = (data.get("password") or "").strip()
     port = data.get("port")
     remember_me = bool(data.get("rememberMe") or data.get("remember_me"))
@@ -343,6 +343,35 @@ def connect_source_service(data: dict) -> dict:
     creds.set_port(port)
     creds.set_extra_dict(extra)
 
+    conn_details_lines = []
+    if slug == "snowflake":
+        account = extra.get("account") or server
+        warehouse = extra.get("warehouse")
+        role = extra.get("role")
+        if account: conn_details_lines.append(f"Account   : {repr(account)}")
+        if database: conn_details_lines.append(f"Database  : {repr(database)}")
+        if warehouse: conn_details_lines.append(f"Warehouse : {repr(warehouse)}")
+        if username: conn_details_lines.append(f"User      : {repr(username)}")
+        if role: conn_details_lines.append(f"Role      : {repr(role)}")
+    elif slug == "databricks":
+        catalog = database
+        http_path = extra.get("http_path") or extra.get("httpPath")
+        if server: conn_details_lines.append(f"Server   : {repr(server)}")
+        if catalog: conn_details_lines.append(f"Catalog  : {repr(catalog)}")
+        if http_path: conn_details_lines.append(f"HTTP Path: {repr(http_path)}")
+        if username: conn_details_lines.append(f"User     : {repr(username)}")
+    elif slug in ("dynamics365", "dynamics 365", "d365", "dynamics"):
+        if server: conn_details_lines.append(f"Org URL  : {repr(server)}")
+    elif slug == "sqlite":
+        if database: conn_details_lines.append(f"Database : {repr(database)}")
+    else:
+        if server: conn_details_lines.append(f"Server   : {repr(server)}")
+        if database: conn_details_lines.append(f"Database : {repr(database)}")
+        if username: conn_details_lines.append(f"User     : {repr(username)}")
+
+    print("[INFO]: Connect request received")
+    print("[INFO]: Connection Details recieved")
+
     extractor = None
     live_connected = False
     conn_error = None
@@ -373,6 +402,7 @@ def connect_source_service(data: dict) -> dict:
                 print("[INFO]: Successfully Connected To the Database")
                 live_connected = True
         except Exception as ex:
+            print(ex)
             conn_error = str(ex)
     elif not is_demo:
         conn_error = "Server host address or account identifier is required."
@@ -401,18 +431,18 @@ def connect_source_service(data: dict) -> dict:
             }
 
         demo_logs = [
-            f"[INFO] Connect request received for {display_name} (Demo Simulation Mode)",
-            f"[INFO] Target Catalog: {active_pipeline['database']} (Pre-indexed catalog)",
-            f"[SUCCESS] Demo schema catalog loaded and verified.",
-            f"[SUCCESS] Source connected in Demo Mode.",
-            f"[NEXT STEP] Review constraint level checks in the form of logs in Constraint Agent (Phase 2)."
+            "[INFO]: Connect request received",
+            "[INFO]: Connection Details recieved",
         ]
+        demo_logs.extend(conn_details_lines)
+        demo_logs.append("[INFO]: Successfully Connected To the Database (Demo Mode)")
+        demo_logs.append(f"[INFO] Connected to {active_pipeline['database']} on {active_pipeline['server']} successfully.")
         return {
             "status": "success",
             "connected": True,
             "is_demo": True,
             "connection_status": "success",
-            "message": f"Connected to {display_name} in Demo Simulation Mode.",
+            "message": f"Connected to {database} on {server} successfully.",
             "source": display_name,
             "platform_slug": slug,
             "live_connected": False,
@@ -424,11 +454,6 @@ def connect_source_service(data: dict) -> dict:
     # If real connection failed
     if conn_error or not live_connected:
         fail_reason = conn_error or "Authentication handshake failed or server host unreachable."
-        fail_str = str(fail_reason)
-        if "18456" in fail_str or "Login failed" in fail_str:
-            fail_reason = f"Login failed for user '{username}' on '{server}'. Please check your username and password."
-        elif "20002" in fail_str or "Adaptive Server connection failed" in fail_str:
-            fail_reason = f"Could not establish connection to '{server}'. Server unreachable or firewall blocking port."
 
         with _pipeline_lock:
             active_pipeline["source_connected"] = False
@@ -446,30 +471,19 @@ def connect_source_service(data: dict) -> dict:
             }
 
         error_logs = [
-            f"[INFO] Connect request received for source platform: {display_name}",
-            f"[INFO] Target Server / Endpoint: {server}",
-            f"[INFO] Target Database: {database}",
+            "[INFO]: Connect request received",
+            "[INFO]: Connection Details recieved",
         ]
-        if username:
-            error_logs.append(f"[INFO] Authenticated User: {username}")
-        if port:
-            error_logs.append(f"[INFO] Port: {port}")
-        error_logs.extend([
-            f"[ERROR] Connection handshake failed: {fail_reason}",
-            f"[ERROR] Source is NOT connected.",
-            f"[ACTION REQUIRED] Please verify host endpoint, port, credentials, and network reachability."
-        ])
-
-        for l in error_logs:
-            print(l)
+        error_logs.extend(conn_details_lines)
+        error_logs.append(str(fail_reason))
 
         return {
             "status": "error",
             "connected": False,
             "connection_status": "failed",
             "live_connected": False,
-            "message": f"Connection to {display_name} failed: {fail_reason}",
-            "error": fail_reason,
+            "message": str(fail_reason),
+            "error": str(fail_reason),
             "source": display_name,
             "platform_slug": slug,
             "logs": error_logs,
@@ -509,24 +523,16 @@ def connect_source_service(data: dict) -> dict:
             "extra": extra,
         })
 
-    msg = f"Successfully connected to {display_name} ({active_pipeline['database']} on {active_pipeline['server']})."
-    success_logs = [
-        f"[INFO] Connect request received for source platform: {display_name}",
-        f"[INFO] Target Server / Endpoint: {active_pipeline['server']}",
-        f"[INFO] Target Database: {active_pipeline['database']}",
-    ]
-    if username:
-        success_logs.append(f"[INFO] Authenticated User: {username}")
-    if port:
-        success_logs.append(f"[INFO] Port: {port}")
-    success_logs.extend([
-        f"[SUCCESS] Handshake verified with {display_name} (Live database session established)",
-        f"[SUCCESS] Source is connected successfully.",
-        f"[NEXT STEP] Review constraint level checks in the form of logs in Constraint Agent (Phase 2)."
-    ])
+    msg = f"Connected to {database} on {server} successfully."
+    print(f"[INFO] {msg}")
 
-    for l in success_logs:
-        print(l)
+    success_logs = [
+        "[INFO]: Connect request received",
+        "[INFO]: Connection Details recieved",
+    ]
+    success_logs.extend(conn_details_lines)
+    success_logs.append("[INFO]: Successfully Connected To the Database")
+    success_logs.append(f"[INFO] {msg}")
 
     return {
         "status": "success",
@@ -543,7 +549,18 @@ def connect_source_service(data: dict) -> dict:
 
 
 def extract_metadata_service(data: dict = None) -> dict:
-    if data:
+    needs_connect = not active_pipeline.get("source_connected", False)
+    if data and not needs_connect:
+        req_server = (data.get("server") or data.get("account") or "").strip()
+        req_db = (data.get("database") or data.get("catalog") or "").strip()
+        curr_server = (active_pipeline.get("server") or "").strip()
+        curr_db = (active_pipeline.get("database") or "").strip()
+        if req_server and req_server != curr_server:
+            needs_connect = True
+        elif req_db and req_db != curr_db:
+            needs_connect = True
+
+    if needs_connect and data:
         if data.get("platform") or data.get("server") or data.get("source"):
             conn_res = connect_source_service(data)
             # If the user attempted connection with credentials and it failed:
@@ -758,7 +775,16 @@ def extract_metadata_service(data: dict = None) -> dict:
         f"[NEXT STEP] Review constraint level checks in the form of logs in Constraint Agent (Phase 2)."
     ])
 
-    for l in connection_logs:
+    extraction_logs = [
+        f"[INFO] Commencing schema catalog extraction...",
+        f"[SUCCESS] Discovered {total_tables} tables, {total_views} views, {total_procs} stored procedures",
+        f"[INFO] Indexed {total_columns} columns across schema(s): {', '.join(schemas_list)}",
+        f"[INFO] Calculated data storage profile: {total_size_mb} MB ({total_rows:,} rows)",
+        f"[SUCCESS] Metadata synchronized and saved to {meta_json_path.name} & Fabric_Migration_Metadata.json",
+        f"[SUCCESS] Phase 1 Discovery Complete. Source catalog is ready.",
+    ]
+
+    for l in extraction_logs:
         print(l)
 
     return _sanitize_for_json({

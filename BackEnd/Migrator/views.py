@@ -428,10 +428,7 @@ def connect_database(request):
     global source
     reset_Logs()
 
-    print("[INFO]: Connect request received")
-    Logs["Scan Info"].append("[INFO]: Connect request received")
-
-    # Delegate to unified connection service which handles all platforms, timeouts and pipeline state
+    # Delegate to unified connection service which handles all platforms and pipeline state
     conn_result = connect_source_service(request.data)
 
     source = conn_result.get("source") or request.data.get("source")
@@ -463,12 +460,8 @@ def connect_database(request):
     Creds.set_port(cfg.get("port") or request.data.get("port") or None)
     Creds.set_extra_dict(extra_payload)
 
-    print("[INFO]: Connection Details received")
-    Logs["Scan Info"].append("[INFO]: Connection Details received")
-    for conn_line in _get_connection_log_lines(source, Creds):
+    for conn_line in conn_result.get("logs", []):
         Logs["Scan Info"].append(conn_line)
-
-    Logs["Scan Info"].append(f"[INFO] {conn_result.get('message')}")
 
     is_connected = conn_result.get("connected", False)
     if is_connected and remember_me:
