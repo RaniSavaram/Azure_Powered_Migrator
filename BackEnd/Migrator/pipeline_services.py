@@ -707,7 +707,7 @@ def extract_metadata_service(data: dict = None) -> dict:
             tables_df=tables_df,
             columns_df=columns_df,
             stats_df=stats_df,
-            dep_df=dep_df,
+            dep_df=None,  # Defer ER dependency graph construction from Phase 1 Discovery
             views_df=views_df,
             procedures_df=procedures_df,
             agent_writeups=sample_agent_writeups,
@@ -759,7 +759,6 @@ def extract_metadata_service(data: dict = None) -> dict:
         f"[SUCCESS] Discovered {total_tables} tables, {total_views} views, {total_procs} stored procedures",
         f"[INFO] Indexed {total_columns} columns across schema(s): {', '.join(schemas_list)}",
         f"[INFO] Calculated data storage profile: {total_size_mb} MB ({total_rows:,} rows)",
-        f"[INFO] Constructed Entity-Relationship graph ({total_tables} nodes, {edges_count} foreign key edges)",
         f"[SUCCESS] Metadata synchronized and saved to {meta_json_path.name} & Fabric_Migration_Metadata.json",
         f"[SUCCESS] Phase 1 Discovery Complete. Source connection is ready.",
         f"[NEXT STEP] Review constraint level checks in the form of logs in Constraint Agent (Phase 2)."
@@ -785,11 +784,7 @@ def extract_metadata_service(data: dict = None) -> dict:
         "tables": tables_catalog,
         "views": views_catalog,
         "procedures": procs_catalog,
-        "er_summary": {
-            "nodes": total_tables,
-            "edges": edges_count,
-            "cycles": 0,
-        },
+        "er_summary": None,
         "next_step": {
             "phase": 2,
             "agent": "Constraint Agent",

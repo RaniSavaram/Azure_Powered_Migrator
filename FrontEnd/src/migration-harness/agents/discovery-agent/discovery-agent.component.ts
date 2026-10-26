@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -69,12 +69,15 @@ export class DiscoveryAgentComponent implements OnInit {
   private router = inject(Router);
   public harnessDataService = inject(HarnessDataService);
   private scanner = inject(Scanner);
+  private cdr = inject(ChangeDetectorRef);
 
   public lastExtractedMetadata: any = null;
   public connectionFailed: boolean = false;
   public connectionErrorMessage: string = '';
   public showInlineConnectCard: boolean = false;
   public isConnecting: boolean = false;
+  public isExtractingMetadata: boolean = false;
+  public typingText: string = 'Validating credentials & establishing connection...';
   public fieldErrors: Record<string, boolean> = {};
 
   agentName = 'Discovery Agent';
@@ -330,32 +333,12 @@ export class DiscoveryAgentComponent implements OnInit {
   private initWelcomeMessage(): void {
     if (this.isSourceConnected) {
       const cfg = this.connectionConfig || this.connectionForm;
-      const tableCount = this.lastExtractedMetadata?.summary?.tables?.toString() || '68';
-      const viewProcCount = this.lastExtractedMetadata?.summary ? ((this.lastExtractedMetadata.summary.views || 23) + (this.lastExtractedMetadata.summary.procedures || 6)).toString() : '29';
       this.messages = [
         {
           id: 'disc-connected-1',
           sender: 'agent',
-          text: `👋 Welcome back! Source platform **${cfg.platform}** is currently connected to **${cfg.server} / ${cfg.database}**.<br><br>Schema inventory and metadata are ready for downstream analysis. You may proceed to Constraint Agent to review constraint level checks in logs, or update connection details below.`,
-          timestamp: new Date(),
-          metrics: [
-            { label: 'Discovered Tables', value: tableCount },
-            { label: 'Views & Procedures', value: viewProcCount },
-            { label: 'Total Volume', value: '881.3 MB' },
-            { label: 'ER Relations', value: '15 Edges' }
-          ],
-          rules: [
-            { id: 'CONN-01', desc: `Handshake verified with ${cfg.platform}`, status: 'pass' },
-            { id: 'DISC-01', desc: 'Metadata Catalog Extraction & Information Schema Sync', status: 'pass' },
-            { id: 'DISC-02', desc: 'Row Count Profiling & Storage Distribution', status: 'pass' },
-            { id: 'DISC-03', desc: 'Entity-Relationship (ER) Graph Construction', status: 'pass' }
-          ],
-          actions: [
-            { label: 'Proceed to Constraint Agent', action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true },
-            { label: 'Inspect ER Graph', action: 'er', icon: 'bi-diagram-3' },
-            { label: 'Change Connection', action: 'connect', icon: 'bi-arrow-repeat' },
-            { label: 'Disconnect Source', action: 'disconnect', icon: 'bi-plug' }
-          ]
+          text: `👋 Source platform **${cfg.platform}** is connected to **${cfg.server} / ${cfg.database}**.<br><br><span class="status-pill-success"><i class="bi bi-check-circle-fill"></i> Source Connection: SUCCESS (${cfg.platform} · Online &amp; Verified)</span>`,
+          timestamp: new Date()
         }
       ];
     } else {
@@ -363,7 +346,7 @@ export class DiscoveryAgentComponent implements OnInit {
         {
           id: 'disc-init-1',
           sender: 'agent',
-          text: `👋 Welcome to the **Discovery Agent** workspace (Phase 1 · Schema Intelligence).\n\nI am the first agent in your migration journey. I discover and catalog source schema metadata across **SQL Server, Databricks, Dynamics 365, Snowflake, Oracle, SAP HANA, and Azure Synapse**.\n\nPlease configure your source database connection details below to initiate discovery, or click **Use Demo Simulation** for pre-indexed enterprise data.`,
+          text: `👋 Welcome to the **Discovery Agent** workspace (Phase 1 · Schema Intelligence).\n\nI am the first agent in your migration journey. I discover and catalog source schema metadata across **SQL Server, Databricks, Dynamics 365, Snowflake, Oracle, SAP HANA, and Azure Synapse**.\n\nPlease configure your source database connection details below to initiate discovery.`,
           timestamp: new Date()
         }
       ];
@@ -577,39 +560,36 @@ export class DiscoveryAgentComponent implements OnInit {
       }
     };
 
-    // Execute backend extraction and connection
-    this.scanner.extractMetadata(connPayload).subscribe({
-      next: (metaRes) => {
+    // Step 1: Execute fast backend connection handshake first
+    this.typingText = 'Validating credentials & verifying connection handshake...';
+    this.scanner.connectDatabase(this.connectionForm.platform, connPayload, this.connectionForm.rememberMe).subscribe({
+      next: (connRes) => {
         this.isConnecting = false;
         this.isTyping = false;
-        const isSuccess = metaRes && metaRes.status === 'success' && metaRes.connected !== false;
+        const isSuccess = connRes && connRes.connected !== false && connRes.status === 'success';
         if (isSuccess) {
           this.connectionFailed = false;
           this.connectionErrorMessage = '';
           this.showInlineConnectCard = false;
-          const tblCount = metaRes?.summary?.tables || 68;
-          const vwCount = metaRes?.summary?.views || 23;
-          const procCount = metaRes?.summary?.procedures || 6;
-          const logs = metaRes.connection_logs || metaRes.logs || [
-            `[INFO] Connection request received for source platform: ${this.connectionForm.platform}`,
-            `[INFO] Target Server/Host: ${this.connectionForm.server || this.connectionForm.account || 'Demo Host'}`,
+          const logs = connRes.connection_logs || connRes.logs || [
+            `[INFO] Connect request received for source platform: ${this.connectionForm.platform}`,
+            `[INFO] Target Server / Endpoint: ${this.connectionForm.server || this.connectionForm.account}`,
             `[INFO] Target Database: ${this.connectionForm.database || this.connectionForm.catalog || 'Default'}`,
-            `[SUCCESS] Authentication handshake verified with ${this.connectionForm.platform}`,
-            `[SUCCESS] Source database connection established successfully`,
-            `[INFO] Initiating schema inventory scan & table catalog indexing...`,
-            `[SUCCESS] Discovered ${tblCount} tables, ${vwCount} views, ${procCount} stored procedures`,
-            `[INFO] ER dependency graph generated: ${metaRes?.er_summary?.edges || 15} foreign key edges`,
-            `[SUCCESS] Metadata synchronized and stored in Fabric_Migration_Metadata.json`,
-            `[READY] Next Step: Proceed to Constraint Agent to check constraint level checks in logs`
+            `[SUCCESS] Handshake verified with ${this.connectionForm.platform} (Live database session established)`,
+            `[SUCCESS] Source is connected successfully.`
           ];
           this.harnessDataService.setSourceConnected(true, cfg, logs);
-          this.lastExtractedMetadata = metaRes;
-          this.renderDiscoverySuccess(metaRes, detailBullets, logs);
+          this.renderConnectionSuccess(connRes, detailBullets);
+          this.cdr.detectChanges();
+          this.scrollToBottom();
+
+          // Step 2: Extract metadata silently in background; do not post any messages to chat
+          this.startBackgroundMetadataExtraction(connPayload);
         } else {
           this.connectionFailed = true;
-          const failMsg = metaRes?.error || metaRes?.message || 'Connection handshake failed with source database platform.';
+          const failMsg = connRes?.error || connRes?.message || 'Connection handshake failed with source database platform.';
           this.connectionErrorMessage = failMsg;
-          const failLogs = metaRes?.connection_logs || metaRes?.logs || [
+          const failLogs = connRes?.connection_logs || connRes?.logs || [
             `[INFO] Connect request received for source platform: ${this.connectionForm.platform}`,
             `[INFO] Target Server: ${this.connectionForm.server || this.connectionForm.account}`,
             `[INFO] Target Database: ${this.connectionForm.database || this.connectionForm.catalog || 'Default'}`,
@@ -619,6 +599,8 @@ export class DiscoveryAgentComponent implements OnInit {
           ];
           this.harnessDataService.setConnectionFailed(failLogs);
           this.renderDiscoveryFailure(failMsg, failLogs);
+          this.cdr.detectChanges();
+          this.scrollToBottom();
         }
       },
       error: (err) => {
@@ -638,6 +620,8 @@ export class DiscoveryAgentComponent implements OnInit {
         ];
         this.harnessDataService.setConnectionFailed(failLogs);
         this.renderDiscoveryFailure(failMsg, failLogs);
+        this.cdr.detectChanges();
+        this.scrollToBottom();
       }
     });
   }
@@ -649,7 +633,45 @@ export class DiscoveryAgentComponent implements OnInit {
     this.connectSourcePlatform(true);
   }
 
-  private renderDiscoverySuccess(metaRes: any, detailBullets: string, logs?: string[]): void {
+  private renderConnectionSuccess(connRes: any, detailBullets: string): void {
+    this.messages.push({
+      id: 'bot-conn-' + Date.now(),
+      sender: 'agent',
+      text: `### ✅ Source Connection Successful!
+
+Successfully authenticated and established a live session with **${this.connectionForm.platform}**.
+
+${detailBullets}
+
+<div style="margin: 10px 0;">
+  <span class="status-pill-success"><i class="bi bi-check-circle-fill"></i> Source Connection: SUCCESS (${this.connectionForm.platform} · Online &amp; Verified)</span>
+</div>`,
+      timestamp: new Date()
+    });
+
+    this.scrollToBottom();
+  }
+
+  private startBackgroundMetadataExtraction(connPayload: any): void {
+    if (this.isExtractingMetadata) return;
+    this.isExtractingMetadata = true;
+
+    // Silent background schema extraction: populate lastExtractedMetadata without outputting messages or logs to chat
+    this.scanner.extractMetadata(connPayload).subscribe({
+      next: (metaRes) => {
+        this.isExtractingMetadata = false;
+        if (metaRes && metaRes.status === 'success' && metaRes.connected !== false) {
+          this.lastExtractedMetadata = metaRes;
+        }
+      },
+      error: (err) => {
+        this.isExtractingMetadata = false;
+        console.warn('Background metadata extraction notice:', err);
+      }
+    });
+  }
+
+  private renderDiscoverySuccess(metaRes: any, detailBullets?: string, logs?: string[]): void {
     const tableCount = metaRes?.summary?.tables ? metaRes.summary.tables.toString() : '68';
     const viewProcCount = metaRes?.summary ? ((metaRes.summary.views || 23) + (metaRes.summary.procedures || 6)).toString() : '29';
     let volStr = '881.3 MB';
@@ -657,71 +679,43 @@ export class DiscoveryAgentComponent implements OnInit {
       const mb = metaRes.summary.total_volume_mb;
       volStr = mb > 1024 ? (mb / 1024).toFixed(1) + ' GB' : mb.toFixed(1) + ' MB';
     }
-    const edgeCount = metaRes?.er_summary?.edges ? `${metaRes.er_summary.edges} Edges` : '15 Edges';
 
-    const connLogs = logs && logs.length > 0 ? logs : [
-      `[INFO] Connection request received for source platform: ${this.connectionForm.platform}`,
-      `[INFO] Target Server: ${this.connectionForm.server || this.connectionForm.account}`,
-      `[INFO] Database: ${this.connectionForm.database || this.connectionForm.catalog || 'Default'}`,
-      `[SUCCESS] Handshake verified with ${this.connectionForm.platform}`,
-      `[SUCCESS] Source database connection established successfully`,
+    const connLogs = logs && logs.length > 0 ? logs : (metaRes?.connection_logs || metaRes?.logs || [
       `[INFO] Commencing schema catalog extraction...`,
       `[SUCCESS] Discovered ${tableCount} tables, ${viewProcCount} views & procedures`,
-      `[INFO] ER dependency graph generated: ${edgeCount}`,
       `[SUCCESS] Metadata synchronized and saved to Fabric_Migration_Metadata.json`,
-      `[READY] Phase 1 Discovery complete. Next Step: Review constraint level checks in logs in Constraint Agent.`
-    ];
+      `[SUCCESS] Phase 1 Discovery complete. Source connection is ready.`
+    ]);
 
     const logText = connLogs.join('\n');
 
     this.messages.push({
       id: 'bot-' + Date.now(),
       sender: 'agent',
-      text: `### ✅ Source Connection Successful & Schema Discovered!
+      text: `### 📊 Schema Catalog Discovery Complete!
 
-Successfully authenticated with **${this.connectionForm.platform}** and synchronized the schema catalog.
-
-${detailBullets}
+Synchronized schema inventory and metadata catalog for **${this.connectionForm.platform}**.
 
 <div style="margin: 10px 0;">
-  <span class="status-pill-success"><i class="bi bi-check-circle-fill"></i> Source Connection: SUCCESS (${this.connectionForm.platform} · Online &amp; Verified)</span>
+  <span class="status-pill-success"><i class="bi bi-database-check"></i> Schema Inventory: CATALOGED (${tableCount} Tables)</span>
 </div>
 
-**Connection &amp; Extraction Execution Logs:**`,
+**Catalog Discovery Execution Logs:**`,
       timestamp: new Date(),
       codeBlock: logText,
       metrics: [
         { label: 'Discovered Tables', value: tableCount },
         { label: 'Views & Procedures', value: viewProcCount },
-        { label: 'Total Volume', value: volStr },
-        { label: 'ER Relations', value: edgeCount }
+        { label: 'Total Volume', value: volStr }
       ],
       rules: [
-        { id: 'CONN-01', desc: `Handshake verified with ${this.connectionForm.platform}`, status: 'pass' },
         { id: 'DISC-01', desc: 'Metadata Catalog Extraction & Information Schema Sync', status: 'pass' },
-        { id: 'DISC-02', desc: 'Row Count Profiling & Storage Distribution', status: 'pass' },
-        { id: 'DISC-03', desc: 'Entity-Relationship (ER) Graph Construction', status: 'pass' }
+        { id: 'DISC-02', desc: 'Row Count Profiling & Storage Distribution', status: 'pass' }
       ],
       actions: [
-        { label: 'Proceed to Constraint Agent (Check Logs)', action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true },
-        { label: 'Inspect ER Graph', action: 'er', icon: 'bi-diagram-3' },
-        { label: 'Change Connection', action: 'connect', icon: 'bi-arrow-repeat' },
-        { label: 'Disconnect Source', action: 'disconnect', icon: 'bi-plug' }
-      ]
-    });
-
-    // Explicit Next Step Prompt to Guide User
-    this.messages.push({
-      id: 'bot-next-' + Date.now(),
-      sender: 'agent',
-      text: `### 🎯 Next Step Recommended: Check Constraint Level Checks in Constraint Agent
-
-Your source database is successfully connected and schema intelligence is cataloged.
-
-👉 **Next Step**: Move to **Constraint Agent (Phase 2)** to check the **deterministic constraint-level checks in the form of logs** (Primary &amp; Foreign key preservation, Microsoft Fabric datatype mapping compatibility, and non-destructive DDL guardrails).`,
-      timestamp: new Date(),
-      actions: [
-        { label: 'Move to Constraint Agent Now', action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true }
+        { label: 'Explore Schema Inventory', action: 'inventory', icon: 'bi-table', primary: true },
+        { label: 'Analyze Data Volume', action: 'volume', icon: 'bi-bar-chart' },
+        { label: 'Change Connection', action: 'connect', icon: 'bi-arrow-repeat' }
       ]
     });
 
@@ -750,15 +744,10 @@ Could not establish connection to **${this.connectionForm.platform}** (${this.co
 
 **Backend Error Reason**: \`${errMsg}\`
 
-Please review your credentials and endpoint details above, then click **Connect** to retry, or click **Use Demo Simulation** for offline evaluation.`,
+Please review your credentials and endpoint details above, then click **Connect** to retry.`,
       timestamp: new Date(),
-      codeBlock: errorLogs,
-      rules: [
-        { id: 'CONN-01', desc: `Handshake with ${this.connectionForm.platform}`, status: 'fail' }
-      ],
       actions: [
-        { label: 'Edit Credentials / Retry', action: 'connect', icon: 'bi-arrow-clockwise', primary: true },
-        { label: 'Use Demo Simulation', action: 'demo', icon: 'bi-box-seam' }
+        { label: 'Edit Credentials / Retry', action: 'connect', icon: 'bi-arrow-clockwise', primary: true }
       ]
     });
 
@@ -853,8 +842,8 @@ Please review your credentials and endpoint details above, then click **Connect*
       this.disconnectSource();
     } else if (action === 'inventory') {
       this.sendMessage('Extract full schema inventory and table statistics');
-    } else if (action === 'er') {
-      this.sendMessage('Inspect ER relationships and table dependency graph');
+    } else if (action === 'constraints') {
+      this.router.navigate(['/agents/constraint']);
     } else if (action === 'volume') {
       this.sendMessage('Analyze row counts and storage volume across schemas');
     }
@@ -909,8 +898,25 @@ Please review your credentials and endpoint details above, then click **Connect*
       this.messages.push({
         id: 'bot-' + Date.now(),
         sender: 'agent',
-        text: `⚠️ **Source connection required**: Please connect your database using the form above to unlock schema analysis, row counts, and ER relationships.`,
+        text: `⚠️ **Source connection required**: Please connect your database using the form above to catalog schemas, tables, and storage profiles.`,
         timestamp: new Date()
+      });
+      return;
+    }
+
+    if (q.includes('next') || q.includes('proceed') || q.includes('continue') || q.includes('constraint') || q.includes('phase 2') || q.includes('phase2') || q.includes('what next')) {
+      this.messages.push({
+        id: 'bot-' + Date.now(),
+        sender: 'agent',
+        text: `### 🎯 Next Phase: Constraint Agent (Phase 2)
+
+Source platform **${this.connectionConfig?.platform || 'Database'}** is connected and schema discovery is complete.
+
+When you are ready, proceed to **Constraint Agent** to review the deterministic Layer 1 constraint-level validation logs (Primary & Foreign key preservation, Microsoft Fabric datatype mapping compatibility, and non-destructive DDL guardrails).`,
+        timestamp: new Date(),
+        actions: [
+          { label: 'Proceed to Constraint Agent', action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true }
+        ]
       });
       return;
     }
@@ -940,37 +946,29 @@ Extraction completed across source database catalogs:
         ],
         codeBlock: `Schema Distribution:\n├── dbo (${tbl} tables, ~4.0M rows)\n├── views (${vws} definitions)\n└── procedures (${prc} routines)`,
         actions: [
-          { label: 'Proceed to Constraint Agent', action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true },
-          { label: 'Inspect ER Graph', action: 'er', icon: 'bi-diagram-3' }
+          { label: 'Analyze Data Volume', action: 'volume', icon: 'bi-bar-chart', primary: true },
+          { label: 'Review Constraints (Phase 2)', action: 'constraints', icon: 'bi-shield-check' }
         ]
       });
     } else if (q.includes('er') || q.includes('dependency') || q.includes('relationship') || q.includes('foreign')) {
       this.messages.push({
         id: 'bot-' + Date.now(),
         sender: 'agent',
-        text: `### 🕸️ Entity-Relationship (ER) Intelligence Graph
+        text: `### ℹ️ Entity-Relationship Modeling Deferred to Downstream Phases
 
-Foreign key dependency analysis has mapped the complete structural relationship graph:
+Entity-Relationship (ER) graph construction and referential dependency mapping are deferred from Phase 1 Discovery:
 
-- **Architecture**: Normalized relational schema with 15 foreign key constraints
-- **Referential Depth**: Maximum 4 hierarchy levels
-- **Circular Cycles**: **0 detected** (Clean DAG validated)
-- **Constraint Preservation**: Ready for Layer 1 validation in Constraint Agent.`,
+- **Phase 1 (Discovery Agent)**: Exclusively performs source connectivity verification and schema catalog discovery (schemas, tables, views, stored procedures, column datatypes, and storage sizing).
+- **Phase 2 (Constraint Agent)**: Validates primary keys, foreign keys, and referential constraints.
+- **Phase 3 (Assessment)**: Generates ER diagrams and table dependency ordering for Microsoft Fabric migration.`,
         timestamp: new Date(),
         metrics: [
-          { label: 'Nodes (Tables)', value: (this.lastExtractedMetadata?.summary?.tables || 68).toString() },
-          { label: 'Edges (Relations)', value: '15' },
-          { label: 'Max Depth', value: '4 Levels' },
-          { label: 'Cycles', value: '0 (Clean DAG)' }
-        ],
-        rules: [
-          { id: 'ER-01', desc: 'Star Schema & Snowflake Topology Normalization', status: 'pass' },
-          { id: 'ER-02', desc: 'Direct Lake Parquet Join Path Feasibility', status: 'pass' },
-          { id: 'ER-03', desc: 'Foreign Key Integrity Graph Construction', status: 'pass' }
+          { label: 'Phase 1 Scope', value: 'Schema Catalog' },
+          { label: 'ER Modeling', value: 'Phase 2 & 3' }
         ],
         actions: [
-          { label: 'Proceed to Constraint Agent', action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true },
-          { label: 'Analyze Volume', action: 'volume', icon: 'bi-bar-chart' }
+          { label: 'Explore Schema Inventory', action: 'inventory', icon: 'bi-table', primary: true },
+          { label: 'Analyze Data Volume', action: 'volume', icon: 'bi-bar-chart' }
         ]
       });
     } else if (q.includes('volume') || q.includes('row') || q.includes('size') || q.includes('storage')) {
@@ -992,8 +990,8 @@ Statistical profile of row counts, data storage footprint, and growth velocity:
           { label: 'Compression Ratio', value: '4.0x' }
         ],
         actions: [
-          { label: 'Proceed to Constraint Agent', action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true },
-          { label: 'Inspect ER Graph', action: 'er', icon: 'bi-diagram-3' }
+          { label: 'Explore Schema Inventory', action: 'inventory', icon: 'bi-table', primary: true },
+          { label: 'Review Constraints (Phase 2)', action: 'constraints', icon: 'bi-shield-check' }
         ]
       });
     } else {
@@ -1006,17 +1004,16 @@ Discovery scan synchronization is active for **${this.connectionConfig?.platform
 
 - **Server Endpoint**: \`${this.connectionConfig?.server || 'ic4metarepo.database.windows.net'}\`
 - **Database Catalog**: \`${this.connectionConfig?.database || 'ic4_metarepo'}\`
-- **Connection Status**: **ACTIVE (Online & Verified)**
-- **Next Phase**: Move to **Constraint Agent (Phase 2)** to review constraint-level validation logs.`,
+- **Connection Status**: **ACTIVE (Online & Verified)**`,
         timestamp: new Date(),
         metrics: [
           { label: 'Sync Status', value: 'ONLINE' },
           { label: 'Confidence', value: '100%' },
-          { label: 'Next Phase', value: 'Constraint & Governance' }
+          { label: 'Tables Cataloged', value: (this.lastExtractedMetadata?.summary?.tables || 68).toString() }
         ],
         actions: [
-          { label: 'Proceed to Constraint Agent', action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true },
-          { label: 'Extract Schema Inventory', action: 'inventory', icon: 'bi-search' }
+          { label: 'Extract Schema Inventory', action: 'inventory', icon: 'bi-search', primary: true },
+          { label: 'Analyze Data Volume', action: 'volume', icon: 'bi-bar-chart' }
         ]
       });
     }

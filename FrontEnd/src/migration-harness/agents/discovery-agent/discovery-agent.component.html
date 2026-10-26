@@ -18,7 +18,7 @@
         <div class="phase-tag blue-tag">{{ phase }}</div>
         <h1 class="workspace-title">{{ agentName }}</h1>
         <p class="workspace-subtitle">
-          Extracts comprehensive schema catalog metadata across SQL Server, Databricks, Snowflake, and Synapse — capturing tables, views, procedures, volumes, and interactive ER relationships.
+          Extracts comprehensive schema catalog metadata across SQL Server, Databricks, Snowflake, and Synapse — capturing tables, views, procedures, column schemas, and storage volumes.
         </p>
       </div>
     </div>
@@ -37,36 +37,9 @@
     </div>
   </div>
 
-  <!-- Prominent Next Step Guidance Banner -->
-  @if (isSourceConnected) {
-    <div class="next-step-prompt-banner">
-      <div class="prompt-banner-left">
-        <div class="prompt-badge-icon">
-          <i class="bi bi-shield-check"></i>
-        </div>
-        <div class="prompt-banner-text">
-          <div class="prompt-banner-tag">
-            <span class="badge-dot"></span> Next Step Required · Phase 2 Constraint &amp; Governance
-          </div>
-          <div class="prompt-banner-title">
-            Check Constraint Level Checks in Constraint Agent
-          </div>
-          <div class="prompt-banner-sub">
-            Source <strong>{{ connectionConfig?.platform || 'Database' }}</strong> is connected successfully! Move to <strong>Constraint Agent</strong> to review the deterministic Layer 1 constraint-level validation logs.
-          </div>
-        </div>
-      </div>
-      <div class="prompt-banner-actions">
-        <button type="button" class="btn-proceed-agent" (click)="handleActionClick('next')">
-          <span>Proceed to Constraint Agent</span>
-          <i class="bi bi-arrow-right-circle-fill"></i>
-        </button>
-      </div>
-    </div>
-  }
 
   <!-- Main Conversational Workspace -->
-  <div class="agent-chat-layout" style="--agent-accent-color: #0ea5e9; --agent-focus-shadow: rgba(14, 165, 233, 0.15);">
+  <div class="agent-chat-layout full-width" style="--agent-accent-color: #0ea5e9; --agent-focus-shadow: rgba(14, 165, 233, 0.15); grid-template-columns: 1fr;">
     <!-- Chat Card -->
     <div class="chat-main-card">
       <!-- Toolbar -->
@@ -153,29 +126,6 @@
                 </div>
               }
 
-              <!-- Code Block / Logs Console -->
-              @if (msg.codeBlock) {
-                <div class="terminal-console-card">
-                  <div class="terminal-console-header">
-                    <div class="terminal-dots">
-                      <span class="dot-red"></span>
-                      <span class="dot-yellow"></span>
-                      <span class="dot-green"></span>
-                    </div>
-                    <span class="terminal-title">
-                      <i class="bi bi-terminal-fill text-info"></i>
-                      <span>Connection &amp; Schema Extraction Logs</span>
-                    </span>
-                    <div class="terminal-actions">
-                      <button type="button" class="btn-terminal-copy" (click)="copyLogs(msg.codeBlock)" title="Copy Logs">
-                        <i class="bi bi-clipboard"></i>
-                        <span>Copy Logs</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="terminal-body">{{ msg.codeBlock }}</div>
-                </div>
-              }
 
               <!-- Action buttons -->
               @if (msg.actions && msg.actions.length > 0) {
@@ -619,23 +569,13 @@
                   <div class="conn-failed-body">
                     <div class="conn-failed-title">Connection Error</div>
                     <div class="conn-failed-msg">{{ connectionErrorMessage }}</div>
-                    <div class="conn-failed-help">Please complete the required details highlighted above and click <strong>Connect</strong>, or click <strong>Use Demo Simulation</strong>.</div>
+                    <div class="conn-failed-help">Please complete the required details highlighted above and click <strong>Connect</strong> to establish a connection.</div>
                   </div>
                 </div>
               }
 
               <!-- Actions Bar -->
-              <div class="conn-actions-bar">
-                <div class="conn-actions-left">
-                  <button type="button" 
-                          class="btn-conn-demo"
-                          (click)="connectDemoCatalog()" 
-                          [disabled]="isConnecting"
-                          title="Connect with pre-indexed demo dataset">
-                    <i class="bi bi-box-seam"></i>
-                    <span>Use Demo Simulation</span>
-                  </button>
-                </div>
+              <div class="conn-actions-bar" style="justify-content: flex-end;">
                 <div class="conn-actions-right">
                   @if (isSourceConnected) {
                     <button type="button" class="btn-conn-cancel" (click)="closeInlineConnectCard()">
@@ -669,7 +609,7 @@
                 <span class="typing-dot"></span>
                 <span class="typing-dot"></span>
               </div>
-              <span>Validating credentials &amp; cataloging schema...</span>
+              <span>{{ typingText }}</span>
             </div>
           </div>
         }
@@ -700,76 +640,6 @@
                 title="Send Message">
           <i class="bi bi-send-fill"></i>
         </button>
-      </div>
-    </div>
-
-    <!-- Right Telemetry Panel -->
-    <div class="telemetry-sidebar-card">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <h4 class="telemetry-card-title" style="margin: 0;">
-          <i class="bi bi-search text-primary"></i>
-          <span>Catalog Telemetry</span>
-        </h4>
-        @if (isSourceConnected) {
-          <span class="badge bg-success" style="font-size: 10px;">ONLINE</span>
-        } @else {
-          <span class="badge bg-warning text-dark" style="font-size: 10px;">STANDBY</span>
-        }
-      </div>
-
-      <div class="telemetry-stat-box">
-        <div class="stat-box-num" [style.color]="isSourceConnected ? '#0ea5e9' : '#94a3b8'">
-          {{ lastExtractedMetadata?.summary?.tables ? (lastExtractedMetadata.summary.tables + ' Tables') : (isSourceConnected ? '68 Tables' : '-- Tables') }}
-        </div>
-        <div class="stat-box-lbl">Schema Inventory Count</div>
-      </div>
-
-      <div class="telemetry-stat-box">
-        <div class="stat-box-num" [style.color]="isSourceConnected ? '#10b981' : '#94a3b8'">
-          {{ isSourceConnected ? '4.01M' : '-- Records' }}
-        </div>
-        <div class="stat-box-lbl">Total Records Discovered</div>
-      </div>
-
-      <div class="telemetry-stat-box">
-        <div class="stat-box-num" [style.color]="isSourceConnected ? '#f59e0b' : '#94a3b8'">
-          {{ isSourceConnected ? '881.3 MB' : '-- Volume' }}
-        </div>
-        <div class="stat-box-lbl">Source Storage Volume</div>
-      </div>
-
-      <div class="telemetry-stat-box">
-        <div class="stat-box-num" [style.color]="isSourceConnected ? '#0ea5e9' : '#94a3b8'">
-          {{ isSourceConnected ? '15 Edges' : '-- Edges' }}
-        </div>
-        <div class="stat-box-lbl">ER Graph Relationships</div>
-      </div>
-
-      <h5 class="telemetry-card-title" style="font-size: 12px; margin-top: 6px;">
-        <i class="bi bi-check2-all"></i>
-        <span>Source Connectors</span>
-      </h5>
-
-      <div class="telemetry-checklist">
-        @for (platform of availablePlatforms; track platform) {
-          <div class="telemetry-check-item">
-            <span>{{ platform }}</span>
-            <span class="badge" 
-                  [ngClass]="isSourceConnected && connectionConfig?.platform === platform ? 'bg-success' : 'bg-light text-muted'" 
-                  style="font-size: 10px;">
-              {{ isSourceConnected && connectionConfig?.platform === platform ? 'CONNECTED' : 'READY' }}
-            </span>
-          </div>
-        }
-      </div>
-
-      <div style="margin-top: auto; padding-top: 12px;">
-        <a routerLink="/dbscanner" 
-           class="btn btn-outline-primary w-100 btn-sm d-flex align-items-center justify-content-center gap-2"
-           [class.disabled]="!isSourceConnected">
-          <i class="bi bi-database-check"></i>
-          <span>Open Full DB Scanner</span>
-        </a>
       </div>
     </div>
   </div>

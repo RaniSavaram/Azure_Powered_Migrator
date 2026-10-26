@@ -26,6 +26,20 @@
   overflow-y: auto;
   overflow-x: hidden;
   background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.harness-content-area > router-outlet {
+  display: none !important;
+}
+
+.harness-content-area > :not(router-outlet) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .harness-content-area::-webkit-scrollbar {

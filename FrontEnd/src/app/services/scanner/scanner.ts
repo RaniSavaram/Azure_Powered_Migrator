@@ -41,6 +41,12 @@ export interface ConnectResponse {
   status: string;
   message: string;
   source?: string;
+  connected?: boolean;
+  connection_status?: string;
+  error?: string;
+  logs?: string[];
+  connection_logs?: string[];
+  config?: any;
 }
 
 export interface SavedConnectionProfile {
@@ -211,25 +217,34 @@ export class Scanner {
    * (request.data.get("server"), .get("database"), etc.) - not a nested
    * "connection" object - so the payload here is deliberately flat to match.
    */
-  connectDatabase(source: string, connection: ConnectionDetails, rememberMe = false) {
-    const extra: { http_path?: string; tenant_id?: string; client_id?: string; client_secret?: string; account?: string; warehouse?: string; role?: string; token?: string } = {};
+  connectDatabase(source: string, connection: any, rememberMe = false) {
+    const extra: any = { ...(connection.extra || {}) };
     if (connection.httpPath) extra.http_path = connection.httpPath;
+    if (connection.http_path) extra.http_path = connection.http_path;
     if (connection.tenantId) extra.tenant_id = connection.tenantId;
+    if (connection.tenant_id) extra.tenant_id = connection.tenant_id;
     if (connection.clientId) extra.client_id = connection.clientId;
+    if (connection.client_id) extra.client_id = connection.client_id;
     if (connection.clientSecret) extra.client_secret = connection.clientSecret;
+    if (connection.client_secret) extra.client_secret = connection.client_secret;
     if (connection.account) extra.account = connection.account;
     if (connection.warehouse) extra.warehouse = connection.warehouse;
     if (connection.role) extra.role = connection.role;
     if (connection.token) extra.token = connection.token;
+    if (connection.personalAccessToken) extra.personalAccessToken = connection.personalAccessToken;
 
     const payload = {
       source,
+      platform: source,
       server: connection.server,
       database: connection.database,
+      catalog: connection.catalog,
       username: connection.username,
       password: connection.password,
+      port: connection.port,
       extra,
-      remember_me: rememberMe,
+      remember_me: rememberMe || connection.remember_me || connection.rememberMe,
+      demo_mode: connection.demo_mode || connection.demoMode
     };
     return this.http.post<ConnectResponse>(`${this.api.baseUrl}/connect/`, payload);
   }

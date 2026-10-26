@@ -1,7 +1,7 @@
 {
   "metadata": {
     "scan_id": null,
-    "generated_at": "2026-10-26T06:16:41.045227Z",
+    "generated_at": "2026-10-26T12:19:55.227608Z",
     "source_platform": "SQL Server",
     "target_platform": "Microsoft Fabric (OneLake)",
     "total_tables": 68,
@@ -123,10 +123,7 @@
           "ordinal_position": 3
         }
       ],
-      "dependencies": [
-        "auth_group",
-        "auth_permission"
-      ]
+      "dependencies": []
     },
     {
       "name": "auth_permission",
@@ -183,9 +180,7 @@
           "ordinal_position": 4
         }
       ],
-      "dependencies": [
-        "django_content_type"
-      ]
+      "dependencies": []
     },
     {
       "name": "auth_user",
@@ -340,11 +335,7 @@
           "ordinal_position": 3
         }
       ],
-      "dependencies": [
-        "auth_user",
-        "gathi_user",
-        "auth_group"
-      ]
+      "dependencies": []
     },
     {
       "name": "auth_user_user_permissions",
@@ -405,11 +396,7 @@
           "ordinal_position": 3
         }
       ],
-      "dependencies": [
-        "auth_user",
-        "gathi_user",
-        "auth_permission"
-      ]
+      "dependencies": []
     },
     {
       "name": "DE_Department",
@@ -849,11 +836,7 @@
           "ordinal_position": 8
         }
       ],
-      "dependencies": [
-        "django_content_type",
-        "auth_user",
-        "gathi_user"
-      ]
+      "dependencies": []
     },
     {
       "name": "django_content_type",
@@ -3013,9 +2996,7 @@
           "ordinal_position": 11
         }
       ],
-      "dependencies": [
-        "JOB_TMPL"
-      ]
+      "dependencies": []
     },
     {
       "name": "JOB_DTL_EXTD",
@@ -3721,9 +3702,7 @@
           "ordinal_position": 7
         }
       ],
-      "dependencies": [
-        "OBJ_PRPTY_CLBRTN"
-      ]
+      "dependencies": []
     },
     {
       "name": "OBJ_DTL",
@@ -4031,9 +4010,7 @@
           "ordinal_position": 8
         }
       ],
-      "dependencies": [
-        "OBJ_CLBRTN"
-      ]
+      "dependencies": []
     },
     {
       "name": "OBJ_PRPTY_DTL",
@@ -6213,151 +6190,20 @@
       "dependencies": []
     }
   ],
-  "relationships": [
-    {
-      "fk_name": "FK_auth_group_permissions_group_id_auth_group",
-      "parent_schema": "dbo",
-      "parent_table": "auth_group_permissions",
-      "parent_column": "FK_auth_group_permissions_group_id_auth_group",
-      "referenced_schema": "dbo",
-      "referenced_table": "auth_group",
-      "referenced_column": "FK_auth_group_permissions_group_id_auth_group"
-    },
-    {
-      "fk_name": "FK_auth_group_permissions_permission_id_auth_permission",
-      "parent_schema": "dbo",
-      "parent_table": "auth_group_permissions",
-      "parent_column": "FK_auth_group_permissions_permission_id_auth_permission",
-      "referenced_schema": "dbo",
-      "referenced_table": "auth_permission",
-      "referenced_column": "FK_auth_group_permissions_permission_id_auth_permission"
-    },
-    {
-      "fk_name": "FK_auth_permission_content_type_id_django_content_type",
-      "parent_schema": "dbo",
-      "parent_table": "auth_permission",
-      "parent_column": "FK_auth_permission_content_type_id_django_content_type",
-      "referenced_schema": "dbo",
-      "referenced_table": "django_content_type",
-      "referenced_column": "FK_auth_permission_content_type_id_django_content_type"
-    },
-    {
-      "fk_name": "FK_auth_user_groups_user_id_auth_user",
-      "parent_schema": "dbo",
-      "parent_table": "auth_user_groups",
-      "parent_column": "FK_auth_user_groups_user_id_auth_user",
-      "referenced_schema": "dbo",
-      "referenced_table": "auth_user",
-      "referenced_column": "FK_auth_user_groups_user_id_auth_user"
-    },
-    {
-      "fk_name": "FK_auth_user_groups_user_id_gathi_user",
-      "parent_schema": "dbo",
-      "parent_table": "auth_user_groups",
-      "parent_column": "FK_auth_user_groups_user_id_gathi_user",
-      "referenced_schema": "dbo",
-      "referenced_table": "gathi_user",
-      "referenced_column": "FK_auth_user_groups_user_id_gathi_user"
-    },
-    {
-      "fk_name": "FK_auth_user_groups_group_id_auth_group",
-      "parent_schema": "dbo",
-      "parent_table": "auth_user_groups",
-      "parent_column": "FK_auth_user_groups_group_id_auth_group",
-      "referenced_schema": "dbo",
-      "referenced_table": "auth_group",
-      "referenced_column": "FK_auth_user_groups_group_id_auth_group"
-    },
-    {
-      "fk_name": "FK_auth_user_user_permissions_user_id_auth_user",
-      "parent_schema": "dbo",
-      "parent_table": "auth_user_user_permissions",
-      "parent_column": "FK_auth_user_user_permissions_user_id_auth_user",
-      "referenced_schema": "dbo",
-      "referenced_table": "auth_user",
-      "referenced_column": "FK_auth_user_user_permissions_user_id_auth_user"
-    },
-    {
-      "fk_name": "FK_auth_user_user_permissions_user_id_gathi_user",
-      "parent_schema": "dbo",
-      "parent_table": "auth_user_user_permissions",
-      "parent_column": "FK_auth_user_user_permissions_user_id_gathi_user",
-      "referenced_schema": "dbo",
-      "referenced_table": "gathi_user",
-      "referenced_column": "FK_auth_user_user_permissions_user_id_gathi_user"
-    },
-    {
-      "fk_name": "FK_auth_user_user_permissions_permission_id_auth_permission",
-      "parent_schema": "dbo",
-      "parent_table": "auth_user_user_permissions",
-      "parent_column": "FK_auth_user_user_permissions_permission_id_auth_permission",
-      "referenced_schema": "dbo",
-      "referenced_table": "auth_permission",
-      "referenced_column": "FK_auth_user_user_permissions_permission_id_auth_permission"
-    },
-    {
-      "fk_name": "FK_django_admin_log_content_type_id_django_content_type",
-      "parent_schema": "dbo",
-      "parent_table": "django_admin_log",
-      "parent_column": "FK_django_admin_log_content_type_id_django_content_type",
-      "referenced_schema": "dbo",
-      "referenced_table": "django_content_type",
-      "referenced_column": "FK_django_admin_log_content_type_id_django_content_type"
-    },
-    {
-      "fk_name": "FK_django_admin_log_user_id_auth_user",
-      "parent_schema": "dbo",
-      "parent_table": "django_admin_log",
-      "parent_column": "FK_django_admin_log_user_id_auth_user",
-      "referenced_schema": "dbo",
-      "referenced_table": "auth_user",
-      "referenced_column": "FK_django_admin_log_user_id_auth_user"
-    },
-    {
-      "fk_name": "FK_django_admin_log_user_id_gathi_user",
-      "parent_schema": "dbo",
-      "parent_table": "django_admin_log",
-      "parent_column": "FK_django_admin_log_user_id_gathi_user",
-      "referenced_schema": "dbo",
-      "referenced_table": "gathi_user",
-      "referenced_column": "FK_django_admin_log_user_id_gathi_user"
-    },
-    {
-      "fk_name": "FK_JOB_DTL_TMPL_ID_JOB_TMPL",
-      "parent_schema": "MDR_T",
-      "parent_table": "JOB_DTL",
-      "parent_column": "FK_JOB_DTL_TMPL_ID_JOB_TMPL",
-      "referenced_schema": "MDR_T",
-      "referenced_table": "JOB_TMPL",
-      "referenced_column": "FK_JOB_DTL_TMPL_ID_JOB_TMPL"
-    },
-    {
-      "fk_name": "FK_OBJ_CLBRTN_CLBRTN_ID_OBJ_PRPTY_CLBRTN",
-      "parent_schema": "MDR_T",
-      "parent_table": "OBJ_CLBRTN",
-      "parent_column": "FK_OBJ_CLBRTN_CLBRTN_ID_OBJ_PRPTY_CLBRTN",
-      "referenced_schema": "MDR_T",
-      "referenced_table": "OBJ_PRPTY_CLBRTN",
-      "referenced_column": "FK_OBJ_CLBRTN_CLBRTN_ID_OBJ_PRPTY_CLBRTN"
-    },
-    {
-      "fk_name": "FK_OBJ_PRPTY_CLBRTN_CLBRTN_ID_OBJ_CLBRTN",
-      "parent_schema": "MDR_T",
-      "parent_table": "OBJ_PRPTY_CLBRTN",
-      "parent_column": "FK_OBJ_PRPTY_CLBRTN_CLBRTN_ID_OBJ_CLBRTN",
-      "referenced_schema": "MDR_T",
-      "referenced_table": "OBJ_CLBRTN",
-      "referenced_column": "FK_OBJ_PRPTY_CLBRTN_CLBRTN_ID_OBJ_CLBRTN"
-    }
-  ],
+  "relationships": [],
   "execution_plan": {
     "migration_sequence": [
       "auth_group",
+      "auth_group_permissions",
+      "auth_permission",
       "auth_user",
+      "auth_user_groups",
+      "auth_user_user_permissions",
       "DE_Department",
       "DE_Employee",
       "demo_motorvehicle_source",
       "departments",
+      "django_admin_log",
       "django_content_type",
       "django_migrations",
       "django_session",
@@ -6385,6 +6231,7 @@
       "DQ_RUL_DTL",
       "JOB_CHK_PNT",
       "JOB_CNTL",
+      "JOB_DTL",
       "JOB_DTL_EXTD",
       "JOB_EXEC_STS",
       "JOB_OBJ_PRPTY_RELN",
@@ -6392,7 +6239,9 @@
       "JOB_PRSS_EXEC_STS",
       "JOB_TMPL",
       "METADATA_MISMATCH_REPORT",
+      "OBJ_CLBRTN",
       "OBJ_DTL",
+      "OBJ_PRPTY_CLBRTN",
       "OBJ_PRPTY_DTL",
       "PARM_DESC",
       "PRSS_DTL",
@@ -6411,24 +6260,21 @@
       "JOB_OBJ_RELN_BKP_DBNM_CHG",
       "OBJ_DTL",
       "OBJ_DTL_BKP_DBNM_CHG",
-      "OBJ_PRPTY_DTL",
-      "auth_permission",
-      "auth_user_groups",
-      "django_admin_log",
-      "JOB_DTL",
-      "auth_group_permissions",
-      "auth_user_user_permissions",
-      "OBJ_CLBRTN",
-      "OBJ_PRPTY_CLBRTN"
+      "OBJ_PRPTY_DTL"
     ],
     "batches": {
       "Batch 1 (Independent Tables)": [
         "auth_group",
+        "auth_group_permissions",
+        "auth_permission",
         "auth_user",
+        "auth_user_groups",
+        "auth_user_user_permissions",
         "DE_Department",
         "DE_Employee",
         "demo_motorvehicle_source",
         "departments",
+        "django_admin_log",
         "django_content_type",
         "django_migrations",
         "django_session",
@@ -6456,6 +6302,7 @@
         "DQ_RUL_DTL",
         "JOB_CHK_PNT",
         "JOB_CNTL",
+        "JOB_DTL",
         "JOB_DTL_EXTD",
         "JOB_EXEC_STS",
         "JOB_OBJ_PRPTY_RELN",
@@ -6463,7 +6310,9 @@
         "JOB_PRSS_EXEC_STS",
         "JOB_TMPL",
         "METADATA_MISMATCH_REPORT",
+        "OBJ_CLBRTN",
         "OBJ_DTL",
+        "OBJ_PRPTY_CLBRTN",
         "OBJ_PRPTY_DTL",
         "PARM_DESC",
         "PRSS_DTL",
@@ -6485,16 +6334,7 @@
         "OBJ_PRPTY_DTL"
       ],
       "Batch 2 (Medium Dependency Tables)": [],
-      "Batch 3 (Highly Dependent Tables)": [
-        "auth_group_permissions",
-        "auth_permission",
-        "auth_user_groups",
-        "auth_user_user_permissions",
-        "django_admin_log",
-        "JOB_DTL",
-        "OBJ_CLBRTN",
-        "OBJ_PRPTY_CLBRTN"
-      ],
+      "Batch 3 (Highly Dependent Tables)": [],
       "Batch 4 (Views)": [
         "CONN_DTL",
         "DATA_TYP_MAP",
