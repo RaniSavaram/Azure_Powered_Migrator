@@ -374,6 +374,7 @@ def connect_source_service(data: dict) -> dict:
 
                 import threading
                 th = threading.Thread(target=_try_conn, daemon=True)
+                th.start()
                 conn_timeout = 30.0 if slug == "databricks" else 10.0
                 th.join(timeout=conn_timeout)
                 if th.is_alive():
