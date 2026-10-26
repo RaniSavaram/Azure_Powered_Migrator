@@ -431,16 +431,17 @@ def connect_database(request):
     print("[INFO]: Connect request received")
     Logs["Scan Info"].append("[INFO]: Connect request received")
 
-    # Delegate to unified connection service which handles all 7 platforms, timeouts and pipeline state
+    # Delegate to unified connection service which handles all platforms, timeouts and pipeline state
     conn_result = connect_source_service(request.data)
 
-    source = conn_result.get("source")
+    source = conn_result.get("source") or request.data.get("source")
     cfg = conn_result.get("config", {})
+    clean_source = (source or "").strip().lower().replace(" ", "").replace("_", "")
+    remember_me = str(request.data.get("remember_me", request.data.get("rememberMe", "false"))).strip().lower() == "true"
+
     Creds.set_servername(cfg.get("server") or request.data.get("server"))
     Creds.set_database_name(cfg.get("database") or request.data.get("database"))
     Creds.set_username(cfg.get("username") or request.data.get("username") or "")
-    Creds.set_password(request.data.get("password") or request.data.get("token") or "")
-    Creds.set_port(cfg.get("port") or request.data.get("port") or None)
 
     extra_payload = cfg.get("extra") or request.data.get("extra") or {}
     if not isinstance(extra_payload, dict):
@@ -449,6 +450,17 @@ def connect_database(request):
         extra_payload["http_path"] = request.data.get("httpPath")
     if request.data.get("http_path") and "http_path" not in extra_payload:
         extra_payload["http_path"] = request.data.get("http_path")
+
+    pwd = (
+        request.data.get("password")
+        or request.data.get("token")
+        or extra_payload.get("token")
+        or extra_payload.get("access_token")
+        or cfg.get("password")
+        or ""
+    )
+    Creds.set_password(pwd)
+    Creds.set_port(cfg.get("port") or request.data.get("port") or None)
     Creds.set_extra_dict(extra_payload)
 
     print("[INFO]: Connection Details received")
@@ -458,10 +470,21 @@ def connect_database(request):
 
     Logs["Scan Info"].append(f"[INFO] {conn_result.get('message')}")
 
+    is_connected = conn_result.get("connected", False)
+    if is_connected and remember_me:
+        save_connection(source, {
+            "server": Creds.get_servername(),
+            "database": Creds.get_database_name(),
+            "username": Creds.get_username(),
+            "password": Creds.get_password(),
+            "extra": Creds.get_extra_dict(),
+        })
+
+    resp_status = 200 if is_connected else 400
     return Response({
-        "status": conn_result.get("status", "success"),
-        "connected": conn_result.get("connected", False),
-        "connection_status": conn_result.get("connection_status", "failed"),
+        "status": conn_result.get("status", "success" if is_connected else "error"),
+        "connected": is_connected,
+        "connection_status": conn_result.get("connection_status", "success" if is_connected else "failed"),
         "message": conn_result.get("message"),
         "error": conn_result.get("error"),
         "source": source,
@@ -469,7 +492,7 @@ def connect_database(request):
         "logs": conn_result.get("logs", []),
         "connection_logs": conn_result.get("connection_logs", []),
         "Logs": Logs
-    }, status=200)
+    }, status=resp_status)
 
 
 @api_view(["GET", "POST"])

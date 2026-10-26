@@ -438,6 +438,12 @@ SCAN STATUS + ACTION BUTTONS
 
                 <ng-container *ngIf="source === 'Databricks'">
 
+                    <!-- Hidden fields to trap browser password managers from auto-filling credentials into Catalog and Token fields -->
+                    <div style="opacity: 0; position: absolute; top: 0; left: 0; height: 0; width: 0; z-index: -1; pointer-events: none;" aria-hidden="true">
+                        <input type="text" name="chrome_fake_user" tabindex="-1" autocomplete="off" />
+                        <input type="password" name="chrome_fake_pwd" tabindex="-1" autocomplete="off" />
+                    </div>
+
                     <div class="form-group">
 
                         <label>Server</label>
@@ -447,7 +453,9 @@ SCAN STATUS + ACTION BUTTONS
                             [(ngModel)]="connection.server"
                             (input)="connectionErrorMessage = ''"
                             placeholder="dbc-xxxxxxxx-xxxx.cloud.databricks.com"
-                            autocomplete="off">
+                            autocomplete="off"
+                            name="db_server_host"
+                            data-lpignore="true">
 
                         <small class="field-hint">
                             <i class="bi bi-info-circle"></i> Workspace URL without https:// (e.g. <code>dbc-xxxxxxxx-xxxx.cloud.databricks.com</code>).
@@ -465,21 +473,39 @@ SCAN STATUS + ACTION BUTTONS
                             (input)="connectionErrorMessage = ''"
                             placeholder="main"
                             autocomplete="off"
-                            name="db_catalog">
+                            name="db_catalog_name"
+                            data-lpignore="true">
 
                     </div>
 
                     <div class="form-group">
 
-                        <label>Personal Access Token</label>
+                        <div class="field-label-row">
+                            <label>Personal Access Token</label>
+                            <button
+                                type="button"
+                                class="btn-toggle-token-mask"
+                                (click)="showDatabricksToken = !showDatabricksToken"
+                                [title]="showDatabricksToken ? 'Hide token' : 'Show token'"
+                                [attr.aria-label]="showDatabricksToken ? 'Hide token' : 'Show token'">
+                                <i class="bi" [ngClass]="showDatabricksToken ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                <span>{{ showDatabricksToken ? 'Hide' : 'Show' }}</span>
+                            </button>
+                        </div>
 
-                        <input
-                            type="password"
-                            [(ngModel)]="connection.password"
-                            (input)="connectionErrorMessage = ''"
-                            placeholder="dapi..."
-                            autocomplete="new-password"
-                            name="db_pat">
+                        <div class="input-with-action">
+                            <input
+                                [type]="showDatabricksToken ? 'text' : 'password'"
+                                [(ngModel)]="connection.password"
+                                (input)="connectionErrorMessage = ''"
+                                placeholder="dapi..."
+                                autocomplete="new-password"
+                                autocorrect="off"
+                                autocapitalize="off"
+                                spellcheck="false"
+                                data-lpignore="true"
+                                name="db_personal_access_token">
+                        </div>
 
                         <small class="field-hint">
                             <i class="bi bi-key-fill"></i> Databricks Personal Access Token (starts with <strong>dapi</strong>). Generate via <em>User Settings &rarr; Developer &rarr; Access tokens</em>.
@@ -496,7 +522,9 @@ SCAN STATUS + ACTION BUTTONS
                             [(ngModel)]="connection.httpPath"
                             (input)="connectionErrorMessage = ''"
                             placeholder="/sql/1.0/warehouses/xxxxxxxxxxxxxxxx"
-                            autocomplete="off">
+                            autocomplete="off"
+                            name="db_http_path"
+                            data-lpignore="true">
 
                         <small class="field-hint">
                             <i class="bi bi-info-circle"></i> Found under Databricks <em>SQL Warehouses &rarr; Connection details &rarr; HTTP path</em>.

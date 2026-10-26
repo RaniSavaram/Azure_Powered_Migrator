@@ -226,15 +226,21 @@ class DatabricksExtractor(BaseExtractor):
             )
         except Exception as e:
             err_msg = str(e)
-            if "unsupported type for this API" in err_msg or "Invalid access token" in err_msg or "401" in err_msg:
+            token_diag = f"Token received: length={token_len}, starts with '{token_prefix}'"
+            if "unsupported type for this API" in err_msg or "401" in err_msg:
                 raise ValueError(
-                    f"Databricks Authentication Failed: Credential was rejected by '{self.server_hostname}'. "
-                    "Please verify that: "
-                    "1. You are using a valid Databricks Personal Access Token (PAT) (which starts with 'dapi...', generated from Databricks User Settings -> Developer -> Access tokens). "
-                    "2. The token is active, has not expired, and has access to SQL warehouse endpoint '" + (self.http_path or "") + "'. "
-                    "3. An Azure AD password or client secret was not entered instead of a Databricks PAT."
+                    f"Databricks Authentication Failed: Credential was rejected by '{self.server_hostname}'. [{token_diag}]. "
+                    "Databricks SQL Warehouses require a Personal Access Token (PAT) starting with 'dapi...' "
+                    "(generated from Databricks: User Settings -> Developer -> Access tokens). "
+                    "Please verify that a valid Databricks PAT was entered, and check that your browser did not autofill an account login password."
                 ) from e
-            raise
+            elif "Invalid access token" in err_msg or "403" in err_msg:
+                raise ValueError(
+                    f"Databricks Access Denied: Credential rejected by '{self.server_hostname}'. [{token_diag}]. "
+                    "The Personal Access Token is invalid, expired, or revoked. Please verify the token is active in "
+                    f"Databricks User Settings and has permissions for SQL warehouse endpoint '{self.http_path}'."
+                ) from e
+            raise ValueError(f"Databricks Connection Failed: {err_msg} [{token_diag}]") from e
 
     def close(self):
         if self.connection:

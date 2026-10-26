@@ -316,6 +316,7 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
   // saved profiles; 'new' falls back to plain editable inputs (used when
   // there's nothing saved yet, or the user picks "+ Add new connection").
   databricksMode: 'select' | 'new' = 'new';
+  showDatabricksToken = false;
 
   databricksConnections: SavedConnectionProfile[] = [];
 
@@ -1043,11 +1044,18 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
         );
 
     if (missingFields) {
-
       alert('Please fill all mandatory fields.');
-
       return;
+    }
 
+    if (isDatabricks) {
+      const patToken = (this.connection.password || '').trim();
+      if (!patToken.startsWith('dapi') && !patToken.startsWith('ey') && !patToken.startsWith('dapa')) {
+        const prefix = patToken.slice(0, 5) || '(empty)';
+        this.connectionErrorMessage = `Invalid Personal Access Token format: received token starts with "${prefix}" (length ${patToken.length}). Databricks SQL Warehouses require a Personal Access Token (PAT) starting with "dapi...". If your browser autofilled a saved account login password, please click the "Show" eye icon to unmask and paste your Databricks PAT.`;
+        this.cdr.detectChanges();
+        return;
+      }
     }
 
     if (isSnowflake) {

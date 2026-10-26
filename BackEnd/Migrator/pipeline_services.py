@@ -374,10 +374,10 @@ def connect_source_service(data: dict) -> dict:
 
                 import threading
                 th = threading.Thread(target=_try_conn, daemon=True)
-                th.start()
-                th.join(timeout=6.0)
+                conn_timeout = 30.0 if slug == "databricks" else 10.0
+                th.join(timeout=conn_timeout)
                 if th.is_alive():
-                    conn_error = "Connection test timed out after 6.0s (server host unreachable or port blocked by firewall)"
+                    conn_error = f"Connection test timed out after {int(conn_timeout)}s (server unreachable or SQL warehouse provisioning)"
         except Exception as ex:
             conn_error = str(ex)
     elif not is_demo:

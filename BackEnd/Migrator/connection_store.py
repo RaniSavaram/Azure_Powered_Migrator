@@ -83,12 +83,27 @@ def save_connection(source: str, connection: dict) -> None:
     _write_all(connections)
 
 
+DEFAULT_PROFILES = {
+    "databricks": [
+        {
+            "server": "dbc-a58bcebf-ff15.cloud.databricks.com",
+            "database": "bfsi_dev",
+            "username": "",
+            "password": "",
+            "extra": {
+                "http_path": "/sql/1.0/warehouses/570872a58c83ef23"
+            }
+        }
+    ]
+}
+
+
 def get_saved_connection(source: str) -> dict | None:
     """Most recently saved profile for `source` - back-compat single-result
     lookup for callers that only want one connection to pre-fill with."""
     if not source:
         return None
-    profiles = _get_profiles_for_source(_load_all(), source)
+    profiles = get_saved_connections(source)
     return profiles[-1] if profiles else None
 
 
@@ -97,5 +112,10 @@ def get_saved_connections(source: str) -> list:
     offer a picker instead of just the last-used connection."""
     if not source:
         return []
-    return _get_profiles_for_source(_load_all(), source)
+    profiles = _get_profiles_for_source(_load_all(), source)
+    if not profiles:
+        s_lower = source.strip().lower()
+        if s_lower in DEFAULT_PROFILES:
+            return [dict(p) for p in DEFAULT_PROFILES[s_lower]]
+    return profiles
 
