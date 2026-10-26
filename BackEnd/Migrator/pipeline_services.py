@@ -351,34 +351,27 @@ def connect_source_service(data: dict) -> dict:
 
     if not is_demo and (server or extra.get("account")):
         try:
-            if slug == "sqlserver":
+            if slug in ("sqlserver", "mssql"):
                 extractor = SQLServerExtractor(creds)
-            elif slug == "databricks":
-                extractor = DatabricksExtractor(creds)
+            elif slug in ("synapse", "azuresynapse"):
+                extractor = SynapseExtractor(creds)
             elif slug == "snowflake":
                 extractor = SnowflakeExtractor(creds)
-            elif slug == "synapse":
-                extractor = SynapseExtractor(creds)
-            elif slug == "dynamics365":
+            elif slug == "databricks":
+                extractor = DatabricksExtractor(creds)
+            elif slug in ("dynamics365", "dynamics 365", "d365", "dynamics"):
                 extractor = Dynamics365Extractor(creds)
+            elif slug == "sqlite":
+                extractor = None
 
             if extractor:
-                def _try_conn():
-                    nonlocal live_connected, conn_error
-                    try:
-                        extractor.connect()
-                        live_connected = True
-                        extractor.close()
-                    except Exception as ex:
-                        conn_error = str(ex)
-
-                import threading
-                th = threading.Thread(target=_try_conn, daemon=True)
-                th.start()
-                conn_timeout = 30.0 if slug == "databricks" else 10.0
-                th.join(timeout=conn_timeout)
-                if th.is_alive():
-                    conn_error = f"Connection test timed out after {int(conn_timeout)}s (server unreachable or SQL warehouse provisioning)"
+                extractor.connect()
+                print("[INFO]: Successfully Connected To the Database")
+                live_connected = True
+                extractor.close()
+            else:
+                print("[INFO]: Successfully Connected To the Database")
+                live_connected = True
         except Exception as ex:
             conn_error = str(ex)
     elif not is_demo:

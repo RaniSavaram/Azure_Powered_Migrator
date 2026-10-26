@@ -31,46 +31,17 @@ class SQLServerExtractor(BaseExtractor):
         if not self.username:
             raise ValueError("Username is empty.")
 
-        if not self.password:
-            raise ValueError(f"Password is empty for user '{self.username}'. Please enter your database password.")
+        if self.password is None:
+            raise ValueError("Password is None.")
 
-        clean_user = self.username.strip()
-        users_to_try = [clean_user]
-        if ".database.windows.net" in (self.server or "").lower():
-            server_prefix = self.server.split(".")[0]
-            if "@" not in clean_user:
-                users_to_try = [f"{clean_user}@{server_prefix}", clean_user]
-
-        last_err = None
-        for u in users_to_try:
-            try:
-                self.connection = pymssql.connect(
-                    server=self.server,
-                    database=self.database,
-                    user=u,
-                    password=self.password,
-                    timeout=30,
-                    login_timeout=15,
-                    as_dict=True
-                )
-                return
-            except Exception as ex:
-                last_err = ex
-
-        # If pymssql failed, fallback to pyodbc with modern SQL driver
-        try:
-            import pyodbc
-            drivers = pyodbc.drivers()
-            driver_name = "ODBC Driver 18 for SQL Server" if "ODBC Driver 18 for SQL Server" in drivers else ("SQL Server" if "SQL Server" in drivers else None)
-            if driver_name:
-                conn_str = f"DRIVER={{{driver_name}}};SERVER={self.server};DATABASE={self.database};UID={clean_user};PWD={self.password};Encrypt=yes;TrustServerCertificate=yes"
-                self.connection = pyodbc.connect(conn_str, timeout=15)
-                return
-        except Exception:
-            pass
-
-        if last_err:
-            raise last_err
+        self.connection = pymssql.connect(
+            server=self.server,
+            database=self.database,
+            user=self.username,
+            password=self.password,
+            timeout=600,
+            as_dict=True
+        )
 
     def close(self):
 
