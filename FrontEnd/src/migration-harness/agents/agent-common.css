@@ -1088,6 +1088,47 @@ button.btn-view-results-active:disabled {
   transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
 }
 
+.conn-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.conn-password-wrapper .conn-field-input {
+  width: 100%;
+  padding-right: 36px;
+}
+
+.conn-password-wrapper .btn-toggle-pwd {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border-radius: 4px;
+  transition: color 0.15s, background-color 0.15s;
+  z-index: 2;
+}
+
+.conn-password-wrapper .btn-toggle-pwd:hover {
+  color: #0284c7;
+  background-color: rgba(2, 132, 199, 0.08);
+}
+
+.conn-password-wrapper .btn-toggle-pwd:focus {
+  outline: none;
+  color: #0284c7;
+}
+
 .conn-field-input:focus {
   border-color: #0ea5e9;
   background: #ffffff;

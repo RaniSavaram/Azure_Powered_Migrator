@@ -79,6 +79,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   form: FabricConnectionDetails = this.emptyForm();
   rememberMe = true;
   showAdvanced = false;
+  showSecret = false;
   userInput = '';
 
   private nextId = 1;

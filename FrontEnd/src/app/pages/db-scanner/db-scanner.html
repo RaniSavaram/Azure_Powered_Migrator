@@ -597,12 +597,25 @@ SCAN STATUS + ACTION BUTTONS
 
                         <div class="form-group">
 
-                            <label>Client Secret</label>
+                            <div class="field-label-row">
+                                <label>Client Secret</label>
+                                <button
+                                    type="button"
+                                    class="btn-toggle-token-mask"
+                                    (click)="toggleShowPassword('d365_secret')"
+                                    [title]="isPasswordVisible('d365_secret') ? 'Hide secret' : 'Show secret'"
+                                    [attr.aria-label]="isPasswordVisible('d365_secret') ? 'Hide secret' : 'Show secret'">
+                                    <i class="bi" [ngClass]="isPasswordVisible('d365_secret') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                    <span>{{ isPasswordVisible('d365_secret') ? 'Hide' : 'Show' }}</span>
+                                </button>
+                            </div>
 
-                            <input
-                                type="password"
-                                [(ngModel)]="connection.clientSecret"
-                                placeholder="Client secret value">
+                            <div class="input-with-action">
+                                <input
+                                    [type]="isPasswordVisible('d365_secret') ? 'text' : 'password'"
+                                    [(ngModel)]="connection.clientSecret"
+                                    placeholder="Client secret value">
+                            </div>
 
                         </div>
 
@@ -623,12 +636,25 @@ SCAN STATUS + ACTION BUTTONS
 
                         <div class="form-group">
 
-                            <label>Password</label>
+                            <div class="field-label-row">
+                                <label>Password</label>
+                                <button
+                                    type="button"
+                                    class="btn-toggle-token-mask"
+                                    (click)="toggleShowPassword('d365_pwd')"
+                                    [title]="isPasswordVisible('d365_pwd') ? 'Hide password' : 'Show password'"
+                                    [attr.aria-label]="isPasswordVisible('d365_pwd') ? 'Hide password' : 'Show password'">
+                                    <i class="bi" [ngClass]="isPasswordVisible('d365_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                    <span>{{ isPasswordVisible('d365_pwd') ? 'Hide' : 'Show' }}</span>
+                                </button>
+                            </div>
 
-                            <input
-                                type="password"
-                                [(ngModel)]="connection.password"
-                                placeholder="Dynamics 365 account password">
+                            <div class="input-with-action">
+                                <input
+                                    [type]="isPasswordVisible('d365_pwd') ? 'text' : 'password'"
+                                    [(ngModel)]="connection.password"
+                                    placeholder="Dynamics 365 account password">
+                            </div>
 
                         </div>
 
@@ -721,12 +747,25 @@ SCAN STATUS + ACTION BUTTONS
 
                         <div class="form-group">
 
-                            <label>Programmatic Access Token</label>
+                            <div class="field-label-row">
+                                <label>Programmatic Access Token</label>
+                                <button
+                                    type="button"
+                                    class="btn-toggle-token-mask"
+                                    (click)="toggleShowPassword('sf_token')"
+                                    [title]="isPasswordVisible('sf_token') ? 'Hide token' : 'Show token'"
+                                    [attr.aria-label]="isPasswordVisible('sf_token') ? 'Hide token' : 'Show token'">
+                                    <i class="bi" [ngClass]="isPasswordVisible('sf_token') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                    <span>{{ isPasswordVisible('sf_token') ? 'Hide' : 'Show' }}</span>
+                                </button>
+                            </div>
 
-                            <input
-                                type="password"
-                                [(ngModel)]="connection.token"
-                                placeholder="Snowflake PAT">
+                            <div class="input-with-action">
+                                <input
+                                    [type]="isPasswordVisible('sf_token') ? 'text' : 'password'"
+                                    [(ngModel)]="connection.token"
+                                    placeholder="Snowflake PAT">
+                            </div>
 
                         </div>
 
@@ -736,11 +775,24 @@ SCAN STATUS + ACTION BUTTONS
 
                         <div class="form-group">
 
-                            <label>Password</label>
+                            <div class="field-label-row">
+                                <label>Password</label>
+                                <button
+                                    type="button"
+                                    class="btn-toggle-token-mask"
+                                    (click)="toggleShowPassword('sf_pwd')"
+                                    [title]="isPasswordVisible('sf_pwd') ? 'Hide password' : 'Show password'"
+                                    [attr.aria-label]="isPasswordVisible('sf_pwd') ? 'Hide password' : 'Show password'">
+                                    <i class="bi" [ngClass]="isPasswordVisible('sf_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                    <span>{{ isPasswordVisible('sf_pwd') ? 'Hide' : 'Show' }}</span>
+                                </button>
+                            </div>
 
-                            <input
-                                type="password"
-                                [(ngModel)]="connection.password">
+                            <div class="input-with-action">
+                                <input
+                                    [type]="isPasswordVisible('sf_pwd') ? 'text' : 'password'"
+                                    [(ngModel)]="connection.password">
+                            </div>
 
                         </div>
 
@@ -797,11 +849,24 @@ SCAN STATUS + ACTION BUTTONS
 
                     <div class="form-group">
 
-                        <label>Password</label>
+                        <div class="field-label-row">
+                            <label>Password</label>
+                            <button
+                                type="button"
+                                class="btn-toggle-token-mask"
+                                (click)="toggleShowPassword('gen_pwd')"
+                                [title]="isPasswordVisible('gen_pwd') ? 'Hide password' : 'Show password'"
+                                [attr.aria-label]="isPasswordVisible('gen_pwd') ? 'Hide password' : 'Show password'">
+                                <i class="bi" [ngClass]="isPasswordVisible('gen_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                <span>{{ isPasswordVisible('gen_pwd') ? 'Hide' : 'Show' }}</span>
+                            </button>
+                        </div>
 
-                        <input
-                            type="password"
-                            [(ngModel)]="connection.password">
+                        <div class="input-with-action">
+                            <input
+                                [type]="isPasswordVisible('gen_pwd') ? 'text' : 'password'"
+                                [(ngModel)]="connection.password">
+                        </div>
 
                     </div>
 
@@ -915,14 +980,27 @@ SCAN STATUS + ACTION BUTTONS
                     </div>
 
                     <div class="form-group">
-                        <label>
-                            Client Secret <span class="required-star">*</span>
-                        </label>
-                        <input
-                            type="password"
-                            [(ngModel)]="fabricConnection.clientSecret"
-                            placeholder="Client secret value"
-                            autocomplete="new-password">
+                        <div class="field-label-row">
+                            <label>
+                                Client Secret <span class="required-star">*</span>
+                            </label>
+                            <button
+                                type="button"
+                                class="btn-toggle-token-mask"
+                                (click)="toggleShowPassword('fabric_secret')"
+                                [title]="isPasswordVisible('fabric_secret') ? 'Hide secret' : 'Show secret'"
+                                [attr.aria-label]="isPasswordVisible('fabric_secret') ? 'Hide secret' : 'Show secret'">
+                                <i class="bi" [ngClass]="isPasswordVisible('fabric_secret') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                <span>{{ isPasswordVisible('fabric_secret') ? 'Hide' : 'Show' }}</span>
+                            </button>
+                        </div>
+                        <div class="input-with-action">
+                            <input
+                                [type]="isPasswordVisible('fabric_secret') ? 'text' : 'password'"
+                                [(ngModel)]="fabricConnection.clientSecret"
+                                placeholder="Client secret value"
+                                autocomplete="new-password">
+                        </div>
                         <small class="field-hint">Client secret generated in the Azure App Registration.</small>
                     </div>
                 </ng-container>

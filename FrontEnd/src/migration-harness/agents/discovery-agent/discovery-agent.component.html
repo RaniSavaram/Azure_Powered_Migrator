@@ -248,11 +248,16 @@
                   </div>
                   <div class="conn-field-group conn-field-full">
                     <label class="conn-field-label">Password</label>
-                    <input type="password" 
-                           class="conn-field-input" 
-                           [class.input-error]="fieldErrors['password']"
-                           [(ngModel)]="connectionForm.password" 
-                           placeholder="••••••••••••">
+                    <div class="conn-password-wrapper">
+                      <input [type]="isPasswordVisible('sqlserver_pwd') ? 'text' : 'password'" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['password']"
+                             [(ngModel)]="connectionForm.password" 
+                             placeholder="••••••••••••">
+                      <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('sqlserver_pwd')" [title]="isPasswordVisible('sqlserver_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('sqlserver_pwd') ? 'Hide password' : 'Show password'">
+                        <i class="bi" [ngClass]="isPasswordVisible('sqlserver_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                      </button>
+                    </div>
                     @if (fieldErrors['password']) {
                       <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Password is required</div>
                     }
@@ -281,11 +286,16 @@
                   </div>
                   <div class="conn-field-group conn-field-full">
                     <label class="conn-field-label">Personal Access Token</label>
-                    <input type="password" 
-                           class="conn-field-input" 
-                           [class.input-error]="fieldErrors['personalAccessToken']"
-                           [(ngModel)]="connectionForm.personalAccessToken" 
-                           placeholder="dapi...">
+                    <div class="conn-password-wrapper">
+                      <input [type]="isPasswordVisible('databricks_pat') ? 'text' : 'password'" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['personalAccessToken']"
+                             [(ngModel)]="connectionForm.personalAccessToken" 
+                             placeholder="dapi...">
+                      <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('databricks_pat')" [title]="isPasswordVisible('databricks_pat') ? 'Hide token' : 'Show token'" [attr.aria-label]="isPasswordVisible('databricks_pat') ? 'Hide token' : 'Show token'">
+                        <i class="bi" [ngClass]="isPasswordVisible('databricks_pat') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                      </button>
+                    </div>
                     @if (fieldErrors['personalAccessToken']) {
                       <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Personal Access Token is required</div>
                     }
@@ -338,11 +348,16 @@
                     </div>
                     <div class="conn-field-group conn-field-full">
                       <label class="conn-field-label">Client Secret</label>
-                      <input type="password" 
-                             class="conn-field-input" 
-                             [class.input-error]="fieldErrors['clientSecret']"
-                             [(ngModel)]="connectionForm.clientSecret" 
-                             placeholder="Client secret value">
+                      <div class="conn-password-wrapper">
+                        <input [type]="isPasswordVisible('dynamics_secret') ? 'text' : 'password'" 
+                               class="conn-field-input" 
+                               [class.input-error]="fieldErrors['clientSecret']"
+                               [(ngModel)]="connectionForm.clientSecret" 
+                               placeholder="Client secret value">
+                        <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('dynamics_secret')" [title]="isPasswordVisible('dynamics_secret') ? 'Hide secret' : 'Show secret'" [attr.aria-label]="isPasswordVisible('dynamics_secret') ? 'Hide secret' : 'Show secret'">
+                          <i class="bi" [ngClass]="isPasswordVisible('dynamics_secret') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                        </button>
+                      </div>
                     </div>
                   } @else {
                     <div class="conn-field-group">
@@ -355,11 +370,16 @@
                     </div>
                     <div class="conn-field-group">
                       <label class="conn-field-label">Password</label>
-                      <input type="password" 
-                             class="conn-field-input" 
-                             [class.input-error]="fieldErrors['password']"
-                             [(ngModel)]="connectionForm.password" 
-                             placeholder="Dynamics 365 password">
+                      <div class="conn-password-wrapper">
+                        <input [type]="isPasswordVisible('dynamics_pwd') ? 'text' : 'password'" 
+                               class="conn-field-input" 
+                               [class.input-error]="fieldErrors['password']"
+                               [(ngModel)]="connectionForm.password" 
+                               placeholder="Dynamics 365 password">
+                        <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('dynamics_pwd')" [title]="isPasswordVisible('dynamics_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('dynamics_pwd') ? 'Hide password' : 'Show password'">
+                          <i class="bi" [ngClass]="isPasswordVisible('dynamics_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                        </button>
+                      </div>
                     </div>
                   }
                 }
@@ -402,11 +422,16 @@
                   @if (connectionForm.snowflakeAuthMode === 'token') {
                     <div class="conn-field-group conn-field-full">
                       <label class="conn-field-label">Access Token</label>
-                      <input type="password" 
-                             class="conn-field-input" 
-                             [class.input-error]="fieldErrors['token']"
-                             [(ngModel)]="connectionForm.token" 
-                             placeholder="eyJhbGciOi...">
+                      <div class="conn-password-wrapper">
+                        <input [type]="isPasswordVisible('snowflake_token') ? 'text' : 'password'" 
+                               class="conn-field-input" 
+                               [class.input-error]="fieldErrors['token']"
+                               [(ngModel)]="connectionForm.token" 
+                               placeholder="eyJhbGciOi...">
+                        <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('snowflake_token')" [title]="isPasswordVisible('snowflake_token') ? 'Hide token' : 'Show token'" [attr.aria-label]="isPasswordVisible('snowflake_token') ? 'Hide token' : 'Show token'">
+                          <i class="bi" [ngClass]="isPasswordVisible('snowflake_token') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                        </button>
+                      </div>
                     </div>
                   } @else {
                     <div class="conn-field-group">
@@ -419,11 +444,16 @@
                     </div>
                     <div class="conn-field-group">
                       <label class="conn-field-label">Password</label>
-                      <input type="password" 
-                             class="conn-field-input" 
-                             [class.input-error]="fieldErrors['password']"
-                             [(ngModel)]="connectionForm.password" 
-                             placeholder="••••••••••••">
+                      <div class="conn-password-wrapper">
+                        <input [type]="isPasswordVisible('snowflake_pwd') ? 'text' : 'password'" 
+                               class="conn-field-input" 
+                               [class.input-error]="fieldErrors['password']"
+                               [(ngModel)]="connectionForm.password" 
+                               placeholder="••••••••••••">
+                        <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('snowflake_pwd')" [title]="isPasswordVisible('snowflake_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('snowflake_pwd') ? 'Hide password' : 'Show password'">
+                          <i class="bi" [ngClass]="isPasswordVisible('snowflake_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                        </button>
+                      </div>
                     </div>
                   }
                 }
@@ -462,11 +492,16 @@
                   </div>
                   <div class="conn-field-group">
                     <label class="conn-field-label">Password</label>
-                    <input type="password" 
-                           class="conn-field-input" 
-                           [class.input-error]="fieldErrors['password']"
-                           [(ngModel)]="connectionForm.password" 
-                           placeholder="••••••••••••">
+                    <div class="conn-password-wrapper">
+                      <input [type]="isPasswordVisible('oracle_pwd') ? 'text' : 'password'" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['password']"
+                             [(ngModel)]="connectionForm.password" 
+                             placeholder="••••••••••••">
+                      <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('oracle_pwd')" [title]="isPasswordVisible('oracle_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('oracle_pwd') ? 'Hide password' : 'Show password'">
+                        <i class="bi" [ngClass]="isPasswordVisible('oracle_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                      </button>
+                    </div>
                   </div>
                 }
 
@@ -504,11 +539,16 @@
                   </div>
                   <div class="conn-field-group">
                     <label class="conn-field-label">Password</label>
-                    <input type="password" 
-                           class="conn-field-input" 
-                           [class.input-error]="fieldErrors['password']"
-                           [(ngModel)]="connectionForm.password" 
-                           placeholder="••••••••••••">
+                    <div class="conn-password-wrapper">
+                      <input [type]="isPasswordVisible('hana_pwd') ? 'text' : 'password'" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['password']"
+                             [(ngModel)]="connectionForm.password" 
+                             placeholder="••••••••••••">
+                      <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('hana_pwd')" [title]="isPasswordVisible('hana_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('hana_pwd') ? 'Hide password' : 'Show password'">
+                        <i class="bi" [ngClass]="isPasswordVisible('hana_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                      </button>
+                    </div>
                   </div>
                 }
 
@@ -539,11 +579,16 @@
                   </div>
                   <div class="conn-field-group">
                     <label class="conn-field-label">Password</label>
-                    <input type="password" 
-                           class="conn-field-input" 
-                           [class.input-error]="fieldErrors['password']"
-                           [(ngModel)]="connectionForm.password" 
-                           placeholder="••••••••••••">
+                    <div class="conn-password-wrapper">
+                      <input [type]="isPasswordVisible('synapse_pwd') ? 'text' : 'password'" 
+                             class="conn-field-input" 
+                             [class.input-error]="fieldErrors['password']"
+                             [(ngModel)]="connectionForm.password" 
+                             placeholder="••••••••••••">
+                      <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('synapse_pwd')" [title]="isPasswordVisible('synapse_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('synapse_pwd') ? 'Hide password' : 'Show password'">
+                        <i class="bi" [ngClass]="isPasswordVisible('synapse_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                      </button>
+                    </div>
                   </div>
                 }
 

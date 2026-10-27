@@ -234,10 +234,15 @@
                       </div>
                       <div class="conn-field-group conn-field-full">
                         <label class="conn-field-label" for="agSecret">Client Secret <span class="req">*</span></label>
-                        <input id="agSecret" type="password" class="conn-field-input"
-                               [class.input-error]="fieldErrors()['clientSecret']"
-                               [(ngModel)]="form.clientSecret"
-                               placeholder="••••••••••••" autocomplete="new-password">
+                        <div class="conn-password-wrapper">
+                          <input id="agSecret" [type]="showSecret ? 'text' : 'password'" class="conn-field-input"
+                                 [class.input-error]="fieldErrors()['clientSecret']"
+                                 [(ngModel)]="form.clientSecret"
+                                 placeholder="••••••••••••" autocomplete="new-password">
+                          <button type="button" class="btn-toggle-pwd" (click)="showSecret = !showSecret" [title]="showSecret ? 'Hide secret' : 'Show secret'" [attr.aria-label]="showSecret ? 'Hide secret' : 'Show secret'">
+                            <i class="bi" [ngClass]="showSecret ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                          </button>
+                        </div>
                         @if (fieldErrors()['clientSecret']) {
                           <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Client secret is required</div>
                         }

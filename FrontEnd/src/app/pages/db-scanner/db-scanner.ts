@@ -316,6 +316,15 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
   // there's nothing saved yet, or the user picks "+ Add new connection").
   databricksMode: 'select' | 'new' = 'new';
   showDatabricksToken = false;
+  showPasswordMap: Record<string, boolean> = {};
+
+  toggleShowPassword(key: string): void {
+    this.showPasswordMap[key] = !this.showPasswordMap[key];
+  }
+
+  isPasswordVisible(key: string): boolean {
+    return !!this.showPasswordMap[key];
+  }
 
   databricksConnections: SavedConnectionProfile[] = [];
 

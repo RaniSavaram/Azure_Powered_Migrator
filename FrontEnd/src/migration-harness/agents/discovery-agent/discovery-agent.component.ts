@@ -80,6 +80,15 @@ export class DiscoveryAgentComponent implements OnInit {
   public isExtractingMetadata: boolean = false;
   public typingText: string = 'Validating credentials & establishing connection...';
   public fieldErrors: Record<string, boolean> = {};
+  public showPasswordMap: Record<string, boolean> = {};
+
+  toggleShowPassword(key: string): void {
+    this.showPasswordMap[key] = !this.showPasswordMap[key];
+  }
+
+  isPasswordVisible(key: string): boolean {
+    return !!this.showPasswordMap[key];
+  }
 
   agentName = 'Discovery Agent';
   phase = 'Phase 1 · Schema Intelligence';
