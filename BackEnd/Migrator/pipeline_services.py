@@ -325,6 +325,21 @@ def connect_source_service(data: dict) -> dict:
     port = data.get("port")
     remember_me = bool(data.get("rememberMe") or data.get("remember_me"))
 
+    # Token-authenticated sources (Databricks PAT, Snowflake PAT) send their
+    # secret as a token, not a password - the Discovery Agent puts it in
+    # extra.personalAccessToken. Read it before the saved-profile lookup
+    # below, so a freshly typed token always wins over an older saved one.
+    if not password:
+        req_extra = data.get("extra") or {}
+        password = str(
+            req_extra.get("personalAccessToken")
+            or req_extra.get("token")
+            or req_extra.get("access_token")
+            or data.get("personalAccessToken")
+            or data.get("token")
+            or ""
+        ).strip()
+
     # Auto-lookup remembered password if empty and server is given
     if not password and server:
         for profile in get_saved_connections(slug):

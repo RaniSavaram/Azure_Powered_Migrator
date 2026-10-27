@@ -451,6 +451,7 @@ def connect_database(request):
     pwd = (
         request.data.get("password")
         or request.data.get("token")
+        or extra_payload.get("personalAccessToken")
         or extra_payload.get("token")
         or extra_payload.get("access_token")
         or cfg.get("password")

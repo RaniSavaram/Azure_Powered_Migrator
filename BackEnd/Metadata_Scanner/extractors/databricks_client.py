@@ -91,6 +91,7 @@ class DatabricksExtractor(BaseExtractor):
         self.catalog = (Creds.get_database_name() or "").strip().strip('"').strip("'")
         self.access_token = (
             Creds.get_password()
+            or Creds.get_extra("personalAccessToken")
             or Creds.get_extra("token")
             or Creds.get_extra("access_token")
             or ""
