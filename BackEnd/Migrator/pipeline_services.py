@@ -60,6 +60,8 @@ active_pipeline = {
     "connection_config": {},
     "metadata": None,
     "metadata_summary": None,
+    "metadata_origin": None,
+    "metadata_extracted_at": None,
     "dataframes": None,
     "constraints_report": None,
     "assessment_report": None,
@@ -152,15 +154,22 @@ def _convert_fabric_json_to_raw_metadata(fabric_meta: dict, slug: str) -> dict:
                     "precision": c.get("precision"),
                     "scale": c.get("scale", 0),
                 })
-            schemas_dict[schema_name]["tables"].append({
+            table_entry = {
                 "name": obj.get("name"),
                 "type": "BASE TABLE",
                 "row_count": obj.get("row_count") or 125000,
                 "size_mb": obj.get("size_mb") or 14.5,
-                "primary_key": obj.get("primary_key"),
-                "foreign_keys": obj.get("foreign_keys") or [],
+                # The metadata JSON's plain "primary_key" is a name-based guess;
+                # kept separately so it is never reported as a declared key.
+                "inferred_primary_key": obj.get("primary_key"),
                 "columns": cols,
-            })
+            }
+            # Same contract as the live extractors (declared_keys.py): keys are
+            # only set when the source catalog was read - absent means unknown.
+            if obj.get("declared_primary_key") is not None:
+                table_entry["primary_key"] = obj.get("declared_primary_key") or []
+                table_entry["foreign_keys"] = obj.get("declared_foreign_keys") or []
+            schemas_dict[schema_name]["tables"].append(table_entry)
         elif obj_type == "view":
             schemas_dict[schema_name]["views"].append({
                 "name": obj.get("name"),
@@ -621,6 +630,15 @@ def extract_metadata_service(data: dict = None) -> dict:
         except Exception as ex:
             print(f"[WARN] Live extraction failed: {ex}. Falling back to high-fidelity schema catalog.")
 
+    # Where the metadata came from - the Constraint Agent reports this so a
+    # fallback catalog is never presented as the user's real schema.
+    if metadata:
+        metadata_origin = "live"
+    elif cfg.get("is_demo"):
+        metadata_origin = "demo"
+    else:
+        metadata_origin = "catalog_fallback"
+
     if not metadata:
         metadata = get_default_platform_metadata(slug)
 
@@ -750,6 +768,10 @@ def extract_metadata_service(data: dict = None) -> dict:
         active_pipeline["metadata"] = metadata
         active_pipeline["metadata_summary"] = summary
         active_pipeline["dataframes"] = dfs
+        active_pipeline["metadata_origin"] = metadata_origin
+        active_pipeline["metadata_extracted_at"] = datetime.now().isoformat(timespec="seconds")
+        # New metadata invalidates the previous constraint run.
+        active_pipeline["constraints_report"] = None
 
     connection_logs = [
         f"[INFO] Connect request received for source platform: {display_name}",
@@ -815,86 +837,95 @@ def extract_metadata_service(data: dict = None) -> dict:
 
 
 
-def validate_constraints_service() -> dict:
+def _log_level(line: str) -> str:
+    """Maps an '[ERROR] ...' style connection log line onto a console level."""
+    for tag, level in (("[ERROR]", "ERROR"), ("[WARN", "WARN"), ("[SUCCESS]", "PASS"),
+                       ("[NEXT STEP]", "INFO"), ("[ACTION", "WARN")):
+        if line.startswith(tag):
+            return level
+    return "INFO"
+
+
+def validate_constraints_service(data: dict = None) -> dict:
+    """
+    Runs Harness Layer 1 on the connected source's metadata and returns the
+    Constraint Agent report (see HarnessLayers/layer1/constraint_report.py).
+
+    `data` (optional):
+      connection - the source connection the Discovery Agent made
+                   (platform, server, database, username, ... - no password
+                   needed when the profile was remembered). Used to
+                   reconnect and re-extract when this process holds no
+                   metadata, e.g. after a backend restart.
+      refresh    - re-extract metadata from the source before checking,
+                   instead of reusing what Discovery already extracted.
+    """
+    from HarnessLayers.layer1.constraint_report import build_constraint_report
+
+    data = data or {}
+    connection = data.get("connection") or {}
+    refresh = bool(data.get("refresh"))
+
     with _pipeline_lock:
         meta = active_pipeline.get("metadata")
-    if not meta:
-        extract_result = extract_metadata_service()
+        backend_connected = active_pipeline.get("source_connected")
+
+    connection_logs: list[str] = []
+    has_connection_details = bool(connection.get("platform") and (connection.get("server") or connection.get("account")))
+
+    if refresh or not meta:
+        if has_connection_details and (refresh or not backend_connected):
+            extract_result = extract_metadata_service(connection)
+        elif backend_connected:
+            extract_result = extract_metadata_service()
+        else:
+            return {
+                "status": "error",
+                "code": "SOURCE_NOT_CONNECTED",
+                "message": "No source database is connected. Connect one in the Discovery Agent first.",
+                "logs": [],
+            }
+
+        connection_logs = list(extract_result.get("connection_logs") or extract_result.get("logs") or [])
+        if extract_result.get("status") != "success":
+            return _sanitize_for_json({
+                "status": "error",
+                "code": "CONNECTION_FAILED",
+                "message": extract_result.get("message") or extract_result.get("error") or "Could not reconnect to the source.",
+                "logs": [{"time": datetime.now().strftime("%H:%M:%S"), "level": _log_level(l), "step": "connect", "text": l}
+                         for l in connection_logs],
+            })
+
         with _pipeline_lock:
             meta = active_pipeline.get("metadata")
 
+    with _pipeline_lock:
+        cfg = active_pipeline.get("connection_config") or {}
+        source = {
+            "platform": active_pipeline.get("platform"),
+            "platform_slug": active_pipeline.get("platform_slug"),
+            "server": active_pipeline.get("server"),
+            "database": active_pipeline.get("database"),
+            "connected_at": active_pipeline.get("connected_at"),
+            "live_connected": bool(cfg.get("live_connected")),
+            "is_demo": bool(cfg.get("is_demo")),
+            "metadata_origin": active_pipeline.get("metadata_origin"),
+            "metadata_extracted_at": active_pipeline.get("metadata_extracted_at"),
+        }
+
+    started = time.perf_counter()
     layer_result = layer1_Harness(meta)
-    formatted_text = format_harness_report(layer_result)
+    duration_ms = int((time.perf_counter() - started) * 1000)
 
-    total_errors = layer_result.get("summary", {}).get("total_errors", 0)
-    total_warnings = layer_result.get("summary", {}).get("total_warnings", 0)
-    decision = layer_result.get("decision", "PASS")
-
-    unsupported_types_count = 0
-    destructive_sql_count = 0
-    for sec in layer_result.get("sections", []):
-        for issue in sec.get("issues", []):
-            rule_name = issue.get("rule", "")
-            if "UNSUPPORTED" in rule_name or "DATATYPE" in rule_name:
-                unsupported_types_count += 1
-            if "DESTRUCTIVE" in rule_name:
-                destructive_sql_count += 1
-
-    pk_preservation = 100 if total_errors == 0 else 94.5
-    fk_integrity = 98.6 if total_errors == 0 else 91.0
-    compliance_score = round(max(85.0, 100.0 - (total_errors * 5.0 + total_warnings * 1.5)), 1)
-
-    rules = [
-        {
-            "id": "RULE-C01",
-            "desc": "Primary Key Uniqueness & Non-Null Constraint Preservation",
-            "status": "pass" if total_errors == 0 else "warn",
-        },
-        {
-            "id": "RULE-C02",
-            "desc": "Foreign Key Referential Dependency Preservation across Target Warehouses",
-            "status": "pass",
-        },
-        {
-            "id": "RULE-C03",
-            "desc": f"Fabric Unsupported Data Types Audit ({total_warnings} mapped to compatible Parquet types)",
-            "status": "warn" if total_warnings > 0 else "pass",
-        },
-        {
-            "id": "RULE-C04",
-            "desc": "Destructive SQL DDL/DML Safety Audit (No TRUNCATE/DROP in migration payload)",
-            "status": "pass" if destructive_sql_count == 0 else "fail",
-        },
-    ]
-
-    metrics = [
-        {"label": "PK Preservation", "value": f"{pk_preservation}%"},
-        {"label": "FK Integrity", "value": f"{fk_integrity}%"},
-        {"label": "Flagged Types", "value": f"{total_warnings} Mapped"},
-        {"label": "Governance Gate", "value": decision},
-    ]
-
-    remediations = [
-        "-- Microsoft Fabric Warehouse Constraint Preservation:",
-        "ALTER TABLE sales.fact_orders ADD CONSTRAINT PK_FactOrders PRIMARY KEY NONCLUSTERED (order_id) NOT ENFORCED;",
-        "ALTER TABLE sales.fact_orders ADD CONSTRAINT FK_Orders_Customer FOREIGN KEY (customer_id) REFERENCES sales.dim_customer(customer_id) NOT ENFORCED;",
-        "",
-        "-- Fabric Type Conversions Applied:",
-        "-- GEOMETRY / GEOGRAPHY => VARCHAR(MAX) WKT representation",
-        "-- HIERARCHYID         => VARCHAR(256) Materialized Path",
-        "-- DATETIMEOFFSET      => DATETIME2(6) UTC Normalized",
-    ]
-
-    report_payload = {
-        "status": "success",
-        "decision": decision,
-        "compliance_score": compliance_score,
-        "rules": rules,
-        "metrics": metrics,
-        "remediations": "\n".join(remediations),
-        "report_text": formatted_text,
-        "harness_result": layer_result,
-    }
+    report_payload = build_constraint_report(meta, layer_result, source, duration_ms)
+    report_payload["report_text"] = format_harness_report(layer_result)
+    report_payload["harness_result"] = layer_result
+    report_payload["reconnected"] = bool(connection_logs)
+    if connection_logs:
+        now = datetime.now().strftime("%H:%M:%S")
+        report_payload["logs"] = [
+            {"time": now, "level": _log_level(l), "step": "connect", "text": l} for l in connection_logs
+        ] + report_payload["logs"]
 
     with _pipeline_lock:
         active_pipeline["constraints_report"] = report_payload

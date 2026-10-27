@@ -1,1 +1,41 @@
 @import '../agent-common.css';
+
+/* Artifacts Generator additions on top of the shared agent chat styles */
+
+.req {
+  color: #e11d48;
+}
+
+.dest-value {
+  word-break: break-all;
+}
+
+.telemetry-stat-box .dest-stat {
+  font-size: 14px;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.telemetry-stat-box .dest-mono {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+}
+
+.link-toggle {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: #db2777;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-toolbar-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

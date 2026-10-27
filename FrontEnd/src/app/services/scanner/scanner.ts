@@ -33,9 +33,91 @@ export interface FabricConnectionDetails {
   clientId?: string;
   clientSecret?: string;
   warehouseName?: string;
+  warehouseId?: string;
   warehouseHost?: string;
   authMode?: 'servicePrincipal' | 'default';
 }
+
+export type ConstraintRuleStatus = 'pass' | 'warn' | 'fail' | 'info';
+export type ConstraintLogLevel = 'INFO' | 'STEP' | 'PASS' | 'WARN' | 'ERROR' | 'FAIL' | 'RESULT';
+
+export interface ConstraintRule {
+  id: string;
+  category: 'keys' | 'datatypes' | 'destructive' | 'governance' | 'structure';
+  desc: string;
+  status: ConstraintRuleStatus;
+  count: number;
+  objects: string[];
+  skipped?: boolean;
+}
+
+export interface ConstraintLogLine {
+  time: string;
+  level: ConstraintLogLevel;
+  step: string;
+  text: string;
+}
+
+export interface ConstraintTableDetail {
+  schema: string;
+  name: string;
+  columns: number;
+  row_count?: number | null;
+  primary_key: string[];
+  keys_declared: boolean;
+  foreign_keys: Array<{ name: string; columns: string[]; references: string; references_columns: string[] }>;
+}
+
+/** Response of POST /api/validate-constraints/ (HarnessLayers/layer1/constraint_report.py). */
+export interface ConstraintReport {
+  status: 'success' | 'error';
+  code?: 'SOURCE_NOT_CONNECTED' | 'CONNECTION_FAILED';
+  message?: string;
+  decision: 'PASS' | 'FAIL';
+  next_step?: string;
+  compliance_score: number;
+  score_basis?: string;
+  generated_at?: string;
+  duration_ms?: number;
+  reconnected?: boolean;
+  source: {
+    platform: string;
+    platform_slug: string;
+    server: string;
+    database: string;
+    live_connected: boolean;
+    is_demo: boolean;
+    metadata_origin: 'live' | 'demo' | 'catalog_fallback' | null;
+    metadata_extracted_at?: string | null;
+  };
+  summary: { tables: number; views: number; procedures: number; columns: number; errors: number; warnings: number };
+  keys: {
+    declared: boolean;
+    tables_with_pk: number;
+    tables_checked: number;
+    tables_without_pk: string[];
+    pk_coverage: number | null;
+    fk_total: number;
+    fk_valid: number;
+    fk_out_of_scope: number;
+    fk_broken: number;
+    fk_integrity: number | null;
+  };
+  type_findings: Array<{ table: string; column: string; source_type: string; fabric_type: string; status: 'unsupported' | 'unknown' }>;
+  sensitive_columns: Array<{ table: string; column: string }>;
+  destructive_statements: Array<{ table: string; statement: string }>;
+  metrics: Array<{ label: string; value: string; color?: string }>;
+  rules: ConstraintRule[];
+  sections: Array<{ section: string; title: string; passed: boolean; errors: number; warnings: number }>;
+  tables: Record<string, ConstraintTableDetail>;
+  remediations: string;
+  logs: ConstraintLogLine[];
+  report_text: string;
+  harness_result: unknown;
+}
+
+/** localStorage key shared by every screen that reads/writes the Fabric destination. */
+export const FABRIC_DESTINATION_STORAGE_KEY = 'dbscanner.fabricConnection';
 
 export interface ConnectResponse {
   status: string;
@@ -67,6 +149,7 @@ export interface SavedConnectionProfile {
     lakehouse_name?: string;
     lakehouse_id?: string;
     warehouse_name?: string;
+    warehouse_id?: string;
     warehouse_connection_string?: string;
     auth_mode?: string;
   };
@@ -174,6 +257,51 @@ export class Scanner {
 
   readonly lastCompletedScan = signal<CompletedScanInfo | null>(null);
   readonly openConnectionRequest = signal<{ source: string; timestamp: number } | null>(null);
+
+  /**
+   * Destination Fabric workspace that Generate Artifacts deploys into. Set
+   * from the Artifacts Generator's "Start conversation" dialog (or the DB
+   * Scanner's own Fabric dialog) and read back when artifacts are generated.
+   */
+  readonly fabricDestination = signal<FabricConnectionDetails | null>(this.readStoredFabricDestination());
+
+  setFabricDestination(fabric: FabricConnectionDetails | null, persist = true) {
+    this.fabricDestination.set(fabric ? { ...fabric } : null);
+    try {
+      if (fabric && persist) {
+        localStorage.setItem(FABRIC_DESTINATION_STORAGE_KEY, JSON.stringify(fabric));
+      } else {
+        localStorage.removeItem(FABRIC_DESTINATION_STORAGE_KEY);
+      }
+    } catch {}
+  }
+
+  getFabricDestination(): FabricConnectionDetails | null {
+    const current = this.fabricDestination();
+    return current ? { ...current } : null;
+  }
+
+  private readStoredFabricDestination(): FabricConnectionDetails | null {
+    try {
+      const raw = localStorage.getItem(FABRIC_DESTINATION_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (parsed?.workspaceId) {
+        return {
+          workspaceId: parsed.workspaceId,
+          lakehouseName: parsed.lakehouseName || '',
+          lakehouseId: parsed.lakehouseId || '',
+          tenantId: parsed.tenantId || '',
+          clientId: parsed.clientId || '',
+          clientSecret: parsed.clientSecret || '',
+          warehouseName: parsed.warehouseName || '',
+          warehouseId: parsed.warehouseId || '',
+          warehouseHost: parsed.warehouseHost || '',
+          authMode: parsed.authMode || 'servicePrincipal',
+        };
+      }
+    } catch {}
+    return null;
+  }
 
   requestOpenConnection(source: string) {
     this.openConnectionRequest.set({ source, timestamp: Date.now() });
@@ -323,6 +451,7 @@ export class Scanner {
       lakehouse_name: fabric.lakehouseName,
       lakehouse_id: fabric.lakehouseId,
       warehouse_name: fabric.warehouseName,
+      warehouse_id: fabric.warehouseId,
       warehouse_host: fabric.warehouseHost,
       auth_mode: fabric.authMode || 'servicePrincipal',
       remember_me: rememberMe,
@@ -346,6 +475,7 @@ export class Scanner {
         lakehouse_name: fabricConfig.lakehouseName,
         lakehouse_id: fabricConfig.lakehouseId,
         warehouse_name: fabricConfig.warehouseName,
+        warehouse_id: fabricConfig.warehouseId,
         warehouse_connection_string: fabricConfig.warehouseHost,
       };
     }
@@ -414,19 +544,13 @@ export class Scanner {
   }
 
   /**
-   * Phase 2 (Constraint & Governance): Evaluates Layer 1 Harness rules, constraints, and Fabric compatibility.
+   * Phase 2 (Constraint & Governance): runs Harness Layer 1 on the connected
+   * source's metadata. `connection` lets the backend reconnect and
+   * re-extract when it holds no metadata (e.g. after a restart); `refresh`
+   * forces a fresh extraction from the source before checking.
    */
-  validateConstraints() {
-    return this.http.post<{
-      status: string;
-      decision: string;
-      compliance_score: number;
-      rules: Array<{ id: string; desc: string; status: 'pass' | 'warn' | 'fail' | 'info' }>;
-      metrics: Array<{ label: string; value: string }>;
-      remediations: string;
-      report_text: string;
-      harness_result: any;
-    }>(`${this.api.baseUrl}/validate-constraints/`, {});
+  validateConstraints(options: { connection?: Record<string, unknown>; refresh?: boolean } = {}) {
+    return this.http.post<ConstraintReport>(`${this.api.baseUrl}/validate-constraints/`, options);
   }
 
   /**

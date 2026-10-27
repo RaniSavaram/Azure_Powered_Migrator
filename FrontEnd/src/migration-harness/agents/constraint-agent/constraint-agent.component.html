@@ -23,43 +23,63 @@
       </div>
     </div>
     <div class="header-right-actions">
-      @if (isSourceConnected) {
+      @if (!isSourceConnected) {
+        <span class="badge bg-warning text-dark px-3 py-2 fw-semibold" style="font-size: 12px; border-radius: 8px;">
+          <i class="bi bi-lock-fill me-1"></i> Awaiting Source Connection
+        </span>
+      } @else if (canProceed()) {
         <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Assessment Agent">
           <span>Proceed to Assessment Agent</span>
           <i class="bi bi-arrow-right"></i>
         </a>
+      } @else if (isBusy()) {
+        <span class="badge bg-light text-dark px-3 py-2 fw-semibold gate-badge">
+          <i class="bi bi-hourglass-split me-1"></i> Running Layer 1 checks
+        </span>
       } @else {
-        <span class="badge bg-warning text-dark px-3 py-2 fw-semibold" style="font-size: 12px; border-radius: 8px;">
-          <i class="bi bi-lock-fill me-1"></i> Awaiting Source Connection
+        <span class="badge bg-danger px-3 py-2 fw-semibold gate-badge" title="Fix the failing rules to unlock the Assessment Agent">
+          <i class="bi bi-lock-fill me-1"></i> {{ gateDecision() === 'FAIL' ? 'Gate failed: Assessment locked' : 'Checks not run' }}
         </span>
       }
     </div>
   </div>
 
-  @if (isSourceConnected) {
-    <!-- Prompt Next Step Banner (Assessment Agent) -->
-    <div class="next-step-prompt-banner" style="border-color: rgba(14, 165, 233, 0.35); background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(14, 165, 233, 0.08) 100%);">
+  @if (isSourceConnected && report(); as r) {
+    <!-- Gate banner: reflects the latest real Layer 1 decision -->
+    <div class="next-step-prompt-banner" [class.gate-fail]="r.decision === 'FAIL'">
       <div class="prompt-banner-left">
-        <div class="prompt-badge-icon" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);">
-          <i class="bi bi-file-earmark-text"></i>
+        <div class="prompt-badge-icon" [class.gate-fail-icon]="r.decision === 'FAIL'">
+          <i class="bi" [ngClass]="r.decision === 'PASS' ? 'bi-shield-check' : 'bi-shield-exclamation'"></i>
         </div>
         <div class="prompt-banner-text">
-          <div class="prompt-banner-tag" style="color: #0284c7;">
-            <span class="badge-dot" style="background: #0ea5e9;"></span> Layer 1 Gate: {{ gateDecision || 'PASS' }} · Downstream Ready
+          <div class="prompt-banner-tag">
+            <span class="badge-dot"></span>
+            Layer 1 Gate: {{ r.decision }} · {{ r.summary.errors }} error(s) · {{ r.summary.warnings }} warning(s) · score {{ r.compliance_score }}%
           </div>
           <div class="prompt-banner-title">
-            Constraint Level Checks Verified in Logs
+            {{ r.decision === 'PASS' ? 'Constraint checks passed' : 'Constraint checks failed' }}
           </div>
           <div class="prompt-banner-sub">
-            All primary/foreign keys and Fabric guardrails evaluated. Once reviewed, proceed to <strong>Assessment Agent (Phase 3)</strong>.
+            @if (r.decision === 'PASS') {
+              {{ r.source.platform }} · {{ r.source.database }} is ready for the <strong>Assessment Agent (Phase 3)</strong>.
+            } @else {
+              Fix the failing rules, then re-run the checks to unlock the <strong>Assessment Agent</strong>.
+            }
           </div>
         </div>
       </div>
       <div class="prompt-banner-actions">
-        <button type="button" class="btn-proceed-agent" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 3px 10px rgba(14, 165, 233, 0.35);" (click)="handleActionClick('next')">
-          <span>Proceed to Assessment Agent</span>
-          <i class="bi bi-arrow-right-circle-fill"></i>
-        </button>
+        @if (r.decision === 'PASS') {
+          <button type="button" class="btn-proceed-agent" (click)="handleActionClick('next')" [disabled]="isBusy()">
+            <span>Proceed to Assessment Agent</span>
+            <i class="bi bi-arrow-right-circle-fill"></i>
+          </button>
+        } @else {
+          <button type="button" class="btn-proceed-agent gate-fail-btn" (click)="handleActionClick('issues')" [disabled]="isBusy()">
+            <span>Show failing rules</span>
+            <i class="bi bi-bug-fill"></i>
+          </button>
+        }
       </div>
     </div>
   }
@@ -86,219 +106,253 @@
     </div>
   } @else {
     <!-- Main Conversational Workspace -->
-    <div class="agent-chat-layout" style="--agent-accent-color: #f97316; --agent-focus-shadow: rgba(249, 115, 22, 0.15);">
+    <div class="agent-chat-layout chat-only" style="--agent-accent-color: #f97316; --agent-focus-shadow: rgba(249, 115, 22, 0.15);">
       <!-- Chat Card -->
       <div class="chat-main-card">
-      <!-- Toolbar -->
-      <div class="chat-header-toolbar">
-        <div class="chat-status-indicator">
-          <span class="status-dot-pulse"></span>
-          <span class="status-title">Constraint Intelligence Engine</span>
-          <span class="status-tag">Deterministic Layer 1 &amp; Governance · {{ gateDecision || 'PASS' }}</span>
-        </div>
-        <div class="chat-toolbar-actions">
-          <button type="button" class="btn-toolbar-ghost" (click)="loadConstraintLevelChecks()" title="Re-run Constraint Level Checks">
-            <i class="bi bi-arrow-clockwise"></i>
-            <span>Re-run Checks</span>
-          </button>
-          <button type="button" class="btn-toolbar-ghost" (click)="clearChat()" title="Reset Conversation">
-            <i class="bi bi-arrow-counterclockwise"></i>
-            <span>Reset</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Scrollable Message History -->
-      <div class="chat-scroll-area" #chatScroll>
-        @for (msg of messages; track msg.id) {
-          <div class="chat-msg-row" [ngClass]="msg.sender === 'user' ? 'user-msg' : 'bot-msg'">
-            <div class="msg-avatar" [ngClass]="msg.sender === 'user' ? 'user-avatar' : 'agent-icon-box orange-box'">
-              @if (msg.sender === 'user') {
-                <i class="bi bi-person-fill"></i>
+        <!-- Toolbar -->
+        <div class="chat-header-toolbar">
+          <div class="chat-status-indicator">
+            <span class="status-dot-pulse"></span>
+            <span class="status-title">Constraint Intelligence Engine</span>
+            <span class="status-tag">
+              @if (isBusy()) {
+                Harness Layer 1 · running…
+              } @else if (gateDecision()) {
+                Harness Layer 1 · {{ gateDecision() }}
               } @else {
-                <i class="bi bi-shield-check"></i>
+                Harness Layer 1 · not run
               }
-            </div>
+            </span>
+          </div>
+          <div class="chat-toolbar-actions">
+            <button type="button" class="btn-toolbar-ghost" (click)="handleActionClick('audit')" [disabled]="isBusy()" title="Re-run the Layer 1 checks on the extracted metadata">
+              <i class="bi bi-arrow-clockwise"></i>
+              <span>Re-run Checks</span>
+            </button>
+            <button type="button" class="btn-toolbar-ghost" (click)="handleActionClick('refresh')" [disabled]="isBusy()" title="Reconnect to the source, re-extract metadata, then check">
+              <i class="bi bi-plug"></i>
+              <span>Re-extract</span>
+            </button>
+            <button type="button" class="btn-toolbar-ghost" (click)="clearChat()" [disabled]="isBusy()" title="Reset Conversation">
+              <i class="bi bi-arrow-counterclockwise"></i>
+              <span>Reset</span>
+            </button>
+          </div>
+        </div>
 
-            <div class="msg-bubble">
-              <div class="msg-header">
-                <span class="msg-sender-name">{{ msg.sender === 'user' ? 'You' : 'Constraint Agent' }}</span>
-                <span class="msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
+        <!-- Scrollable Message History -->
+        <div class="chat-scroll-area" #chatScroll>
+          @for (msg of messages(); track msg.id) {
+            <div class="chat-msg-row" [ngClass]="msg.sender === 'user' ? 'user-msg' : 'bot-msg'">
+              <div class="msg-avatar" [ngClass]="msg.sender === 'user' ? 'user-avatar' : 'agent-icon-box orange-box'">
+                @if (msg.sender === 'user') {
+                  <i class="bi bi-person-fill"></i>
+                } @else {
+                  <i class="bi bi-shield-check"></i>
+                }
               </div>
 
-              <!-- Message Text -->
-              <div class="msg-content" [innerHTML]="formatMessageText(msg.text)"></div>
-
-              <!-- Metric Pills -->
-              @if (msg.metrics && msg.metrics.length > 0) {
-                <div class="msg-metrics-grid">
-                  @for (m of msg.metrics; track m.label) {
-                    <div class="msg-metric-pill">
-                      <div class="metric-pill-val" [style.color]="m.color || '#f97316'">{{ m.value }}</div>
-                      <div class="metric-pill-lbl">{{ m.label }}</div>
-                    </div>
-                  }
+              <div class="msg-bubble" [class.msg-error]="msg.tone === 'error'">
+                <div class="msg-header">
+                  <span class="msg-sender-name">{{ msg.sender === 'user' ? 'You' : 'Constraint Agent' }}</span>
+                  <span class="msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
                 </div>
-              }
 
-              <!-- Rule Items -->
-              @if (msg.rules && msg.rules.length > 0) {
-                <div class="msg-rules-list">
-                  @for (r of msg.rules; track r.id) {
-                    <div class="msg-rule-item">
-                      <div class="rule-info">
-                        <span class="rule-id">{{ r.id }}</span>
-                        <span class="rule-desc">{{ r.desc }}</span>
+                <!-- Message Text -->
+                <div class="msg-content" [innerHTML]="formatMessageText(msg.text)"></div>
+
+                <!-- Layer 1 console (streams while the run is live) -->
+                @if (msg.live || msg.logs) {
+                  @let lines = msg.live ? consoleLines() : msg.logs;
+                  <div class="terminal-console-card">
+                    <div class="terminal-console-header">
+                      <div class="terminal-dots">
+                        <span class="dot-red"></span>
+                        <span class="dot-yellow"></span>
+                        <span class="dot-green"></span>
                       </div>
-                      <span class="rule-badge" [ngClass]="r.status">{{ r.status }}</span>
+                      <span class="terminal-title">
+                        <i class="bi bi-terminal-fill text-warning"></i>
+                        <span>Harness Layer 1 Console</span>
+                        <span class="log-counts">
+                          {{ lines?.length || 0 }} lines · {{ logCount(lines, 'errors') }} errors · {{ logCount(lines, 'warnings') }} warnings
+                        </span>
+                      </span>
+                      <div class="terminal-actions">
+                        <div class="log-filters" role="group" aria-label="Filter log lines">
+                          <button type="button" class="log-filter-btn" [class.active]="logFilter() === 'all'" (click)="logFilter.set('all')">All</button>
+                          <button type="button" class="log-filter-btn" [class.active]="logFilter() === 'issues'" (click)="logFilter.set('issues')">Issues</button>
+                          <button type="button" class="log-filter-btn" [class.active]="logFilter() === 'errors'" (click)="logFilter.set('errors')">Errors</button>
+                        </div>
+                        <button type="button" class="btn-terminal-copy" (click)="copyLogs(lines)" title="Copy logs">
+                          <i class="bi" [ngClass]="copied() ? 'bi-check2' : 'bi-clipboard'"></i>
+                          <span>{{ copied() ? 'Copied' : 'Copy' }}</span>
+                        </button>
+                      </div>
                     </div>
-                  }
-                </div>
-              }
-
-              <!-- Code Block / Logs Console -->
-              @if (msg.codeBlock) {
-                <div class="terminal-console-card">
-                  <div class="terminal-console-header">
-                    <div class="terminal-dots">
-                      <span class="dot-red"></span>
-                      <span class="dot-yellow"></span>
-                      <span class="dot-green"></span>
-                    </div>
-                    <span class="terminal-title">
-                      <i class="bi bi-terminal-fill text-warning"></i>
-                      <span>Constraint Level Checks Stream (Harness Layer 1 Console)</span>
-                    </span>
-                    <div class="terminal-actions">
-                      <button type="button" class="btn-terminal-copy" (click)="copyLogs(msg.codeBlock)" title="Copy Logs">
-                        <i class="bi bi-clipboard"></i>
-                        <span>Copy Logs</span>
-                      </button>
+                    <div class="terminal-body log-console" [attr.id]="msg.live ? 'live-console' : null" #liveConsole>
+                      @for (line of visibleLogs(lines); track $index) {
+                        <div class="log-line" [ngClass]="'lvl-' + line.level.toLowerCase()">
+                          <span class="log-time">{{ line.time }}</span>
+                          <span class="log-level">{{ line.level }}</span>
+                          @if (line.step) {
+                            <span class="log-step">{{ line.step }}</span>
+                          }
+                          <span class="log-text">{{ line.text }}</span>
+                        </div>
+                      } @empty {
+                        @if (msg.live && runPhase() === 'running') {
+                          <div class="log-line lvl-info">
+                            <span class="log-level">WAIT</span>
+                            <span class="log-text">Waiting for Harness Layer 1…</span>
+                          </div>
+                        } @else {
+                          <div class="log-line lvl-info"><span class="log-text">No lines match this filter.</span></div>
+                        }
+                      }
+                      @if (msg.live && runPhase() === 'streaming') {
+                        <span class="log-cursor" aria-hidden="true"></span>
+                      }
                     </div>
                   </div>
-                  <div class="terminal-body">{{ msg.codeBlock }}</div>
-                </div>
-              }
+                }
 
-              <!-- Action buttons -->
-              @if (msg.actions && msg.actions.length > 0) {
-                <div class="msg-actions-row">
-                  @for (act of msg.actions; track act.label) {
-                    <button type="button" 
-                            class="btn-msg-action" 
-                            [class.primary-action]="act.primary"
-                            (click)="handleActionClick(act.action)">
-                      <i class="bi" [ngClass]="act.icon"></i>
-                      <span>{{ act.label }}</span>
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-          </div>
-        }
+                <!-- Metric Pills -->
+                @if (msg.metrics && msg.metrics.length > 0) {
+                  <div class="msg-metrics-grid">
+                    @for (m of msg.metrics; track m.label) {
+                      <div class="msg-metric-pill">
+                        <div class="metric-pill-val" [style.color]="m.color || '#f97316'">{{ m.value }}</div>
+                        <div class="metric-pill-lbl">{{ m.label }}</div>
+                      </div>
+                    }
+                  </div>
+                }
 
-        <!-- Typing Indicator -->
-        @if (isTyping) {
-          <div class="chat-msg-row bot-msg">
-            <div class="msg-avatar agent-icon-box orange-box">
-              <i class="bi bi-shield-check"></i>
-            </div>
-            <div class="typing-row">
-              <div class="typing-indicator">
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
+                <!-- Rule Items (clickable when they are Layer 1 rules) -->
+                @if (msg.rules && msg.rules.length > 0) {
+                  <div class="msg-rules-list">
+                    @for (r of msg.rules; track $index) {
+                      @if (r.ruleRef) {
+                        <button type="button" class="msg-rule-item rule-clickable" (click)="handleRuleClick(r)" [title]="'Show details for ' + r.id">
+                          <div class="rule-info">
+                            <span class="rule-id">{{ r.id }}</span>
+                            <span class="rule-desc">{{ r.desc }}</span>
+                          </div>
+                          <span class="rule-right">
+                            @if (r.ruleRef.count > 0) {
+                              <span class="rule-count">{{ r.ruleRef.count }}</span>
+                            }
+                            <span class="rule-badge" [ngClass]="r.status">{{ r.status }}</span>
+                            <i class="bi bi-chevron-right rule-chevron"></i>
+                          </span>
+                        </button>
+                      } @else {
+                        <div class="msg-rule-item">
+                          <div class="rule-info">
+                            <span class="rule-id">{{ r.id }}</span>
+                            <span class="rule-desc">{{ r.desc }}</span>
+                          </div>
+                          <span class="rule-badge" [ngClass]="r.status">{{ r.status }}</span>
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+
+                <!-- Code Block -->
+                @if (msg.codeBlock) {
+                  <div class="terminal-console-card">
+                    <div class="terminal-console-header">
+                      <div class="terminal-dots">
+                        <span class="dot-red"></span>
+                        <span class="dot-yellow"></span>
+                        <span class="dot-green"></span>
+                      </div>
+                      <span class="terminal-title">
+                        <i class="bi bi-code-slash text-warning"></i>
+                        <span>{{ msg.codeTitle || 'Output' }}</span>
+                      </span>
+                      <div class="terminal-actions">
+                        <button type="button" class="btn-terminal-copy" (click)="copyLogs(undefined, msg.codeBlock)" title="Copy">
+                          <i class="bi" [ngClass]="copied() ? 'bi-check2' : 'bi-clipboard'"></i>
+                          <span>{{ copied() ? 'Copied' : 'Copy' }}</span>
+                        </button>
+                        <button type="button" class="btn-terminal-copy" (click)="downloadText('fabric_constraint_remediation.sql', msg.codeBlock)" title="Download .sql">
+                          <i class="bi bi-download"></i>
+                          <span>.sql</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="terminal-body">{{ msg.codeBlock }}</div>
+                  </div>
+                }
+
+                <!-- Action buttons -->
+                @if (msg.actions && msg.actions.length > 0) {
+                  <div class="msg-actions-row">
+                    @for (act of msg.actions; track act.label) {
+                      <button type="button"
+                              class="btn-msg-action"
+                              [class.primary-action]="act.primary"
+                              [disabled]="isBusy()"
+                              (click)="handleActionClick(act.action)">
+                        <i class="bi" [ngClass]="act.icon"></i>
+                        <span>{{ act.label }}</span>
+                      </button>
+                    }
+                  </div>
+                }
               </div>
-              <span>Evaluating schema constraints...</span>
             </div>
-          </div>
-        }
-      </div>
+          }
 
-      <!-- Quick Prompts Tray -->
-      <div class="chat-quick-prompts-tray">
-        @for (prompt of quickPrompts; track prompt.label) {
-          <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)">
-            <i class="bi" [ngClass]="prompt.icon"></i>
-            <span>{{ prompt.label }}</span>
+          <!-- Typing Indicator -->
+          @if (runPhase() === 'running') {
+            <div class="chat-msg-row bot-msg">
+              <div class="msg-avatar agent-icon-box orange-box">
+                <i class="bi bi-shield-check"></i>
+              </div>
+              <div class="typing-row">
+                <div class="typing-indicator">
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                </div>
+                <span>Evaluating schema constraints...</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Quick Prompts Tray -->
+        <div class="chat-quick-prompts-tray">
+          @for (prompt of quickPrompts; track prompt.label) {
+            <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)" [disabled]="isBusy()">
+              <i class="bi" [ngClass]="prompt.icon"></i>
+              <span>{{ prompt.label }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Input Bar -->
+        <div class="chat-input-bar">
+          <input type="text"
+                 class="chat-input-field"
+                 placeholder="Ask about primary/foreign keys, data types, governance, a table name, or say re-run…"
+                 [(ngModel)]="userInput"
+                 (keydown.enter)="sendMessage()"
+                 [disabled]="isBusy()">
+          <button type="button"
+                  class="btn-chat-send"
+                  (click)="sendMessage()"
+                  [disabled]="!userInput.trim() || isBusy()"
+                  title="Send Message">
+            <i class="bi bi-send-fill"></i>
           </button>
-        }
+        </div>
       </div>
 
-      <!-- Input Bar -->
-      <div class="chat-input-bar">
-        <input type="text" 
-               class="chat-input-field" 
-               placeholder="Ask Constraint Agent about PK/FKs, unsupported datatypes, governance..." 
-               [(ngModel)]="userInput" 
-               (keydown.enter)="sendMessage()" 
-               [disabled]="isTyping">
-        <button type="button" 
-                class="btn-chat-send" 
-                (click)="sendMessage()" 
-                [disabled]="!userInput.trim() || isTyping"
-                title="Send Message">
-          <i class="bi bi-send-fill"></i>
-        </button>
-      </div>
     </div>
-
-    <!-- Right Telemetry Panel -->
-    <div class="telemetry-sidebar-card">
-      <h4 class="telemetry-card-title">
-        <i class="bi bi-shield-check text-warning"></i>
-        <span>Constraint Telemetry</span>
-      </h4>
-
-      <div class="telemetry-stat-box">
-        <div class="stat-box-num text-success">{{ liveMetrics.length > 0 ? liveMetrics[0].value : '100%' }}</div>
-        <div class="stat-box-lbl">PK Preservation Score</div>
-      </div>
-
-      <div class="telemetry-stat-box">
-        <div class="stat-box-num text-primary">{{ liveMetrics.length > 1 ? liveMetrics[1].value : '98.6%' }}</div>
-        <div class="stat-box-lbl">FK Graph Integrity</div>
-      </div>
-
-      <div class="telemetry-stat-box">
-        <div class="stat-box-num text-warning">{{ liveMetrics.length > 2 ? liveMetrics[2].value : '3 Types' }}</div>
-        <div class="stat-box-lbl">Unsupported Types Remapped</div>
-      </div>
-
-      <div class="telemetry-stat-box">
-        <div class="stat-box-num text-success">{{ gateDecision || 'PASS' }}</div>
-        <div class="stat-box-lbl">Layer 1 Gate Decision</div>
-      </div>
-
-      <h5 class="telemetry-card-title" style="font-size: 12px; margin-top: 6px;">
-        <i class="bi bi-check2-all"></i>
-        <span>Guardrail Checklist</span>
-      </h5>
-
-      <div class="telemetry-checklist">
-        <div class="telemetry-check-item">
-          <span>Primary Key Uniqueness</span>
-          <i class="bi bi-check-circle-fill text-success"></i>
-        </div>
-        <div class="telemetry-check-item">
-          <span>Foreign Key Graph</span>
-          <i class="bi bi-check-circle-fill text-success"></i>
-        </div>
-        <div class="telemetry-check-item">
-          <span>Nullability Compliance</span>
-          <i class="bi bi-check-circle-fill text-success"></i>
-        </div>
-        <div class="telemetry-check-item">
-          <span>Spatial & XML Handling</span>
-          <i class="bi bi-exclamation-triangle-fill text-warning"></i>
-        </div>
-        <div class="telemetry-check-item">
-          <span>Naming Standard Audit</span>
-          <i class="bi bi-check-circle-fill text-success"></i>
-        </div>
-      </div>
-    </div>
-  </div>
   }
 </div>

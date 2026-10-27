@@ -332,44 +332,83 @@ class MetadataValidator:
                 severity=Severity.WARNING
             ))
 
-        # Primary Keys valid
+        # Primary Keys valid. Column names are compared case-insensitively:
+        # some catalogs (Snowflake, Databricks information_schema) report key
+        # columns in a different case from the column listing.
         for table in tables:
             table_name = table.get("name", "<unnamed>")
+            schema_name = table.get("schema", "")
             pk = table.get("primary_key")
-            column_names = {c.get("name") for c in table.get("columns", [])}
+            column_names = {(c.get("name") or "").lower() for c in table.get("columns", [])}
             if pk:
                 pk_cols = pk if isinstance(pk, list) else [pk]
-                invalid_pk_cols = [c for c in pk_cols if c not in column_names]
+                invalid_pk_cols = [c for c in pk_cols if (c or "").lower() not in column_names]
                 if invalid_pk_cols:
                     issues.append(ValidationIssue(
                         "PRIMARY_KEYS_VALID",
                         f"Table '{table_name}' has primary key referencing "
                         f"unknown columns: {invalid_pk_cols}",
-                        context={"table": table_name}
+                        context={"table": table_name, "schema": schema_name, "columns": invalid_pk_cols}
                     ))
 
-        # Foreign Keys valid
+        # Foreign Keys valid. Lookups are schema-qualified when the FK names
+        # its target schema (two schemas may hold tables with the same name).
+        # A target outside the extracted scope (e.g. a scan capped to N
+        # tables) can't be verified, so it is a WARNING rather than a gate
+        # failure; a target that IS in scope but lacks the referenced
+        # columns is a real ERROR.
         table_lookup = {t.get("name"): t for t in tables}
+        qualified_lookup = {
+            ((t.get("schema") or "").lower(), (t.get("name") or "").lower()): t for t in tables
+        }
+        unqualified_lookup = {(t.get("name") or "").lower(): t for t in tables}
         for table in tables:
             table_name = table.get("name", "<unnamed>")
+            schema_name = table.get("schema", "")
+            own_columns = {(c.get("name") or "").lower() for c in table.get("columns", [])}
             for fk in table.get("foreign_keys", []):
                 ref_table = fk.get("references_table")
-                ref_column = fk.get("references_column")
-                if ref_table not in table_lookup:
+                ref_schema = fk.get("references_schema")
+                fk_columns = fk.get("columns") or []
+                ref_cols = fk.get("references_columns") or (
+                    [fk.get("references_column")] if fk.get("references_column") else []
+                )
+                fk_context = {
+                    "table": table_name, "schema": schema_name, "fk": fk.get("name"),
+                    "references": f"{ref_schema}.{ref_table}" if ref_schema else ref_table,
+                }
+
+                missing_own = [c for c in fk_columns if (c or "").lower() not in own_columns]
+                if missing_own:
                     issues.append(ValidationIssue(
                         "FOREIGN_KEYS_VALID",
-                        f"Table '{table_name}' has FK referencing unknown "
-                        f"table '{ref_table}'.",
-                        context={"table": table_name}
+                        f"Table '{table_name}' FK '{fk.get('name')}' uses unknown "
+                        f"column(s) {missing_own}.",
+                        context=fk_context
+                    ))
+
+                target = (
+                    qualified_lookup.get(((ref_schema or "").lower(), (ref_table or "").lower()))
+                    if ref_schema else unqualified_lookup.get((ref_table or "").lower())
+                )
+                if target is None:
+                    issues.append(ValidationIssue(
+                        "FK_TARGET_OUT_OF_SCOPE",
+                        f"Table '{table_name}' has FK '{fk.get('name')}' referencing "
+                        f"'{fk_context['references']}', which is not in the extracted scope.",
+                        severity=Severity.WARNING,
+                        context=fk_context
                     ))
                     continue
-                ref_columns = {c.get("name") for c in table_lookup[ref_table].get("columns", [])}
-                if ref_column not in ref_columns:
+
+                target_columns = {(c.get("name") or "").lower() for c in target.get("columns", [])}
+                missing_ref = [c for c in ref_cols if (c or "").lower() not in target_columns]
+                if missing_ref:
                     issues.append(ValidationIssue(
                         "FOREIGN_KEYS_VALID",
-                        f"Table '{table_name}' FK references unknown column "
-                        f"'{ref_table}.{ref_column}'.",
-                        context={"table": table_name}
+                        f"Table '{table_name}' FK references unknown column(s) "
+                        f"'{fk_context['references']}.{', '.join(missing_ref)}'.",
+                        context=fk_context
                     ))
 
         # Relationships valid
@@ -769,6 +808,26 @@ def _normalize_extracted_metadata(raw_metadata: dict[str, Any]) -> dict[str, Any
     for schema in raw_metadata.get("schemas", []) or []:
         schema_name = schema.get("name", "")
         for table in schema.get("tables", []) or []:
+            # Declared keys come from Metadata_Scanner/extractors/declared_keys.py:
+            #   "primary_key":  ["ORDER_ID"]
+            #   "foreign_keys": [{"name", "columns", "ref_schema", "ref_table", "ref_columns"}]
+            # Both are absent when the catalog couldn't be read ("unknown",
+            # not "no keys") - keys_declared records which case this is.
+            keys_declared = table.get("primary_key") is not None or table.get("foreign_keys") is not None
+            primary_key = table.get("primary_key") or []
+            if isinstance(primary_key, str):
+                primary_key = [primary_key]
+            foreign_keys = []
+            for fk in table.get("foreign_keys") or []:
+                ref_columns = list(fk.get("ref_columns") or [])
+                foreign_keys.append({
+                    "name": fk.get("name"),
+                    "columns": list(fk.get("columns") or []),
+                    "references_schema": fk.get("ref_schema"),
+                    "references_table": fk.get("ref_table"),
+                    "references_columns": ref_columns,
+                    "references_column": ref_columns[0] if ref_columns else None,
+                })
             entry = {
                 "name": table.get("name", ""),
                 "schema": schema_name,
@@ -778,8 +837,9 @@ def _normalize_extracted_metadata(raw_metadata: dict[str, Any]) -> dict[str, Any
                     {"name": col.get("name"), "data_type": col.get("datatype")}
                     for col in table.get("columns", []) or []
                 ],
-                "primary_key": [],
-                "foreign_keys": [],
+                "primary_key": list(primary_key),
+                "foreign_keys": foreign_keys,
+                "keys_declared": keys_declared,
                 "constraints": [],
                 "indexes": [],
                 "recent_statements": table.get("recent_statements", []) or [],
@@ -795,11 +855,22 @@ def _normalize_extracted_metadata(raw_metadata: dict[str, Any]) -> dict[str, Any
                 "schema": schema_name,
             })
 
+    # Relationships between tables that are both in scope. FKs pointing
+    # outside the extracted scope are reported by the FK check instead, so
+    # they aren't double-counted as broken relationships here.
+    in_scope = {t["name"] for t in tables}
+    relationships = [
+        {"source": t["name"], "target": fk["references_table"], "name": fk["name"]}
+        for t in tables
+        for fk in t["foreign_keys"]
+        if fk["references_table"] in in_scope
+    ]
+
     return {
         "tables": tables,
         "views": views,
         "procedures": procedures,
-        "relationships": [],
+        "relationships": relationships,
     }
 
 

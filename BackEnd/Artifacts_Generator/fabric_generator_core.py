@@ -196,17 +196,64 @@ SOURCE_WAREHOUSE_MAP = {
 }
 
 
+def _warehouse_endpoint(workspace_id, warehouse_id, fabric_token):
+    """(connection_string, display_name) of one Warehouse item, read live from Fabric."""
+    item = fabric_api.get_item(workspace_id, "warehouses", warehouse_id, fabric_token)
+    connection_string = (item.get("properties") or {}).get("connectionString")
+    database_name = item.get("displayName")
+    if not connection_string or not database_name:
+        raise RuntimeError(f"Warehouse {warehouse_id} in workspace {workspace_id} is missing a connectionString/displayName: {item}")
+    return connection_string, database_name
+
+
 def resolve_artifact_warehouse(source_system, fabric_token, dry_run,
-                               warehouse_connection_string=None, warehouse_database_name=None):
+                               warehouse_connection_string=None, warehouse_database_name=None,
+                               warehouse_id=None, workspace_id=None):
     """
     Returns (connection_string, database_name) for the Fabric Warehouse
     this source's Views/Stored Procedures go into.
-    Prioritizes explicit client-configured warehouse connection string and name.
+
+    Resolution order:
+      1. Explicit client-configured connection string (+ name).
+      2. Explicit client-configured warehouse_id in workspace_id - endpoint
+         and displayName read live from the Fabric REST API.
+      3. Explicit warehouse name, looked up by displayName in workspace_id.
+      4. A client workspace (not the built-in demo WORKSPACE_ID) with no
+         warehouse configured is an error - falling through to the demo
+         workspace's warehouse would write the client's objects somewhere
+         they never asked for.
+      5. SOURCE_WAREHOUSE_MAP / FIXED_WAREHOUSE_* (built-in demo workspace).
     """
     if warehouse_connection_string:
         wh_db = warehouse_database_name or FIXED_WAREHOUSE_DATABASE_NAME
         print(f"[INFO] Using client-configured Fabric Warehouse '{wh_db}' ({warehouse_connection_string}).")
         return warehouse_connection_string, wh_db
+
+    is_client_workspace = bool(workspace_id) and workspace_id != WORKSPACE_ID
+
+    if warehouse_id or (warehouse_database_name and is_client_workspace):
+        if dry_run or not fabric_token:
+            print(f"[DRY-RUN] Client-configured Warehouse ({warehouse_id or warehouse_database_name}) - endpoint not looked up.")
+            return FIXED_WAREHOUSE_CONNECTION_STRING, warehouse_database_name or warehouse_id
+        if not warehouse_id:
+            target = warehouse_database_name.strip().lower()
+            match = next(
+                (w for w in fabric_api.list_items(workspace_id, "warehouses", fabric_token)
+                 if (w.get("displayName") or "").strip().lower() == target),
+                None,
+            )
+            if not match:
+                raise RuntimeError(f"Warehouse '{warehouse_database_name}' was not found in workspace {workspace_id}.")
+            warehouse_id = match["id"]
+        connection_string, database_name = _warehouse_endpoint(workspace_id, warehouse_id, fabric_token)
+        print(f"[INFO] Using client-configured Fabric Warehouse '{database_name}' (id={warehouse_id}).")
+        return connection_string, database_name
+
+    if is_client_workspace:
+        raise RuntimeError(
+            f"No Warehouse configured for destination workspace {workspace_id} - provide a Warehouse ID, "
+            f"name or SQL endpoint to deploy Views/Stored Procedures."
+        )
 
     src_key = (source_system or "").strip().lower()
     if src_key not in SOURCE_WAREHOUSE_MAP:
@@ -217,11 +264,7 @@ def resolve_artifact_warehouse(source_system, fabric_token, dry_run,
         print(f"[DRY-RUN] '{source_system}' has a pre-provisioned Warehouse (id={wh}) - name/endpoint not looked up.")
         return FIXED_WAREHOUSE_CONNECTION_STRING, resolve_item_display_name(ws, "warehouses", wh, None)
 
-    item = fabric_api.get_item(ws, "warehouses", wh, fabric_token)
-    connection_string = (item.get("properties") or {}).get("connectionString")
-    database_name = item.get("displayName")
-    if not connection_string or not database_name:
-        raise RuntimeError(f"Warehouse {wh} in workspace {ws} is missing a connectionString/displayName: {item}")
+    connection_string, database_name = _warehouse_endpoint(ws, wh, fabric_token)
     print(f"[INFO] '{source_system}' has a pre-provisioned Warehouse - using '{database_name}' (id={wh}).")
     return connection_string, database_name
 
@@ -546,6 +589,7 @@ def Generator(
     lakehouse_id=None,
     warehouse_name=None,
     warehouse_connection_string=None,
+    warehouse_id=None,
     **kwargs,
 ):
     """
@@ -922,6 +966,8 @@ def Generator(
                 source_system, fabric_token, dry_run,
                 warehouse_connection_string=warehouse_connection_string,
                 warehouse_database_name=warehouse_name,
+                warehouse_id=warehouse_id,
+                workspace_id=target_workspace_id,
             )
             log(f"[INFO] Target warehouse: {wh_db} ({wh_conn})")
             wh_created, wh_errors = sync_views_and_procedures(

@@ -520,7 +520,10 @@ def validate_constraints(request):
     destructive statement checks, and enterprise governance compliance.
     """
     try:
-        result = validate_constraints_service()
+        data = request.data if request.method == "POST" else {}
+        result = validate_constraints_service(data)
+        if result.get("status") == "error":
+            return Response(result, status=409 if result.get("code") == "SOURCE_NOT_CONNECTED" else 502)
         return Response(result, status=200)
     except Exception as exc:
         traceback.print_exc()
@@ -616,6 +619,7 @@ def connect_fabric(request):
     lakehouse_name = request.data.get("lakehouse_name") or request.data.get("lakehouseName") or ""
     lakehouse_id = request.data.get("lakehouse_id") or request.data.get("lakehouseId") or ""
     warehouse_name = request.data.get("warehouse_name") or request.data.get("warehouseName") or ""
+    warehouse_id = request.data.get("warehouse_id") or request.data.get("warehouseId") or ""
     warehouse_host = request.data.get("warehouse_host") or request.data.get("warehouseHost") or ""
     auth_mode = request.data.get("auth_mode") or request.data.get("authMode") or "servicePrincipal"
     remember_me = str(request.data.get("remember_me", "false")).strip().lower() == "true"
@@ -649,6 +653,32 @@ def connect_fabric(request):
                 "details": details
             }, status=400)
 
+        # Confirm the optional Lakehouse/Warehouse ids really exist in this
+        # workspace now, rather than failing halfway through artifact generation.
+        if lakehouse_id.strip() or warehouse_id.strip():
+            token = fabric_api.get_fabric_api_token(
+                tenant_id=tenant_id.strip() or None,
+                client_id=client_id.strip() or None,
+                client_secret=client_secret.strip() or None,
+            )
+            for item_type, item_id, label in (
+                ("lakehouses", lakehouse_id.strip(), "Lakehouse"),
+                ("warehouses", warehouse_id.strip(), "Warehouse"),
+            ):
+                if not item_id:
+                    continue
+                try:
+                    item = fabric_api.get_item(workspace_id.strip(), item_type, item_id, token)
+                    details[f"{label.lower()}_name"] = item.get("displayName")
+                except Exception as item_exc:
+                    return Response({
+                        "status": "error",
+                        "message": f"{label} '{item_id}' was not found in workspace '{workspace_id.strip()}' or is not accessible: {item_exc}",
+                        "details": details
+                    }, status=400)
+            lakehouse_name = lakehouse_name or details.get("lakehouse_name") or ""
+            warehouse_name = warehouse_name or details.get("warehouse_name") or ""
+
         if remember_me:
             save_connection("Fabric", {
                 "server": workspace_id.strip(),
@@ -663,6 +693,7 @@ def connect_fabric(request):
                     "lakehouse_name": lakehouse_name.strip(),
                     "lakehouse_id": lakehouse_id.strip(),
                     "warehouse_name": warehouse_name.strip(),
+                    "warehouse_id": warehouse_id.strip(),
                     "warehouse_connection_string": warehouse_host.strip(),
                     "auth_mode": auth_mode,
                 }
@@ -678,7 +709,9 @@ def connect_fabric(request):
                 "lakehouse_name": lakehouse_name.strip(),
                 "lakehouse_id": lakehouse_id.strip(),
                 "warehouse_name": warehouse_name.strip(),
+                "warehouse_id": warehouse_id.strip(),
                 "warehouse_host": warehouse_host.strip(),
+                "tenant_id": tenant_id.strip(),
                 "auth_mode": auth_mode,
             }
         })
@@ -1037,14 +1070,26 @@ def generate_fabric_artifacts(request):
         lakehouse_name = fabric_data.get("lakehouse_name") or fabric_data.get("lakehouseName")
         lakehouse_id = fabric_data.get("lakehouse_id") or fabric_data.get("lakehouseId")
         warehouse_name = fabric_data.get("warehouse_name") or fabric_data.get("warehouseName")
+        warehouse_id = fabric_data.get("warehouse_id") or fabric_data.get("warehouseId")
         warehouse_connection_string = (
             fabric_data.get("warehouse_connection_string")
             or fabric_data.get("warehouse_host")
             or fabric_data.get("warehouseHost")
         )
 
-        # Fallback to saved Fabric connection profile if available
-        saved_fabric = get_saved_connection("Fabric") or {}
+        # Fallback to the saved Fabric connection profile for any missing
+        # field - but only the profile for the requested destination
+        # workspace, so a different workspace's Lakehouse/Warehouse/secret
+        # is never mixed into this one's deployment.
+        saved_profiles = get_saved_connections("Fabric")
+        if workspace_id:
+            saved_fabric = next(
+                (p for p in reversed(saved_profiles)
+                 if ((p.get("extra") or {}).get("workspace_id") or p.get("server")) == workspace_id),
+                {},
+            )
+        else:
+            saved_fabric = saved_profiles[-1] if saved_profiles else {}
         if saved_fabric:
             extra = saved_fabric.get("extra") or {}
             workspace_id = workspace_id or extra.get("workspace_id") or saved_fabric.get("server")
@@ -1054,6 +1099,7 @@ def generate_fabric_artifacts(request):
             lakehouse_name = lakehouse_name or extra.get("lakehouse_name") or saved_fabric.get("database")
             lakehouse_id = lakehouse_id or extra.get("lakehouse_id")
             warehouse_name = warehouse_name or extra.get("warehouse_name")
+            warehouse_id = warehouse_id or extra.get("warehouse_id")
             warehouse_connection_string = warehouse_connection_string or extra.get("warehouse_connection_string")
 
         fabric_kwargs = {
@@ -1065,6 +1111,7 @@ def generate_fabric_artifacts(request):
             "lakehouse_name": lakehouse_name,
             "lakehouse_id": lakehouse_id,
             "warehouse_name": warehouse_name,
+            "warehouse_id": warehouse_id,
             "warehouse_connection_string": warehouse_connection_string,
         }
 

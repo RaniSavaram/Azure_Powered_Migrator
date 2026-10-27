@@ -56,17 +56,392 @@
       </div>
     </div>
   } @else {
-    <!-- Main Integration Canvas -->
-    <div class="workspace-canvas">
-      <div class="integration-placeholder-card">
-        <div class="placeholder-icon">
-          <i class="bi bi-chat-dots-fill"></i>
+    <!-- Main Conversational Workspace -->
+    <div class="agent-chat-layout" style="--agent-accent-color: #ec4899; --agent-focus-shadow: rgba(236, 72, 153, 0.15);">
+      <!-- Chat Card -->
+      <div class="chat-main-card">
+        <!-- Toolbar -->
+        <div class="chat-header-toolbar">
+          <div class="chat-status-indicator">
+            <span class="status-dot-pulse"></span>
+            <span class="status-title">Artifacts Deployment Engine</span>
+            <span class="status-tag">
+              Destination · {{ destination() ? 'Microsoft Fabric' : 'Not selected' }}
+            </span>
+          </div>
+          <div class="chat-toolbar-actions">
+            <button type="button" class="btn-toolbar-ghost" (click)="handleActionClick('change-destination')" [disabled]="isTyping()" title="Change destination">
+              <i class="bi bi-arrow-left-right"></i>
+              <span>Change Destination</span>
+            </button>
+            <button type="button" class="btn-toolbar-ghost" (click)="startConversation()" [disabled]="isTyping()" title="Reset Conversation">
+              <i class="bi bi-arrow-counterclockwise"></i>
+              <span>Reset</span>
+            </button>
+          </div>
         </div>
-        <h3>Artifacts Generator Chatbot & Workflow</h3>
-        <p>
-          This workspace is ready for team members to plug in the artifacts compilation chatbot, file export actions, and release packaging.
-        </p>
-        <div class="placeholder-badge">Integration Ready</div>
+
+        <!-- Scrollable Message History -->
+        <div class="chat-scroll-area" #chatScroll>
+          @for (msg of messages(); track msg.id) {
+            <div class="chat-msg-row" [ngClass]="msg.sender === 'user' ? 'user-msg' : 'bot-msg'">
+              <div class="msg-avatar" [ngClass]="msg.sender === 'user' ? 'user-avatar' : 'agent-icon-box pink-box'">
+                @if (msg.sender === 'user') {
+                  <i class="bi bi-person-fill"></i>
+                } @else {
+                  <i class="bi bi-box-seam"></i>
+                }
+              </div>
+
+              <div class="msg-bubble">
+                <div class="msg-header">
+                  <span class="msg-sender-name">{{ msg.sender === 'user' ? 'You' : 'Artifacts Generator' }}</span>
+                  <span class="msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
+                </div>
+
+                <div class="msg-content"><p>{{ msg.text }}</p></div>
+
+                <!-- Destination summary -->
+                @if (msg.details && msg.details.length > 0) {
+                  <div class="msg-rules-list">
+                    @for (row of msg.details; track row.label) {
+                      <div class="msg-rule-item">
+                        <div class="rule-info">
+                          <span class="rule-id">{{ row.label }}</span>
+                          <span class="rule-desc dest-value">{{ row.value }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Action buttons -->
+                @if (msg.actions && msg.actions.length > 0) {
+                  <div class="msg-actions-row">
+                    @for (act of msg.actions; track act.label) {
+                      <button type="button"
+                              class="btn-msg-action"
+                              [class.primary-action]="act.primary"
+                              (click)="handleActionClick(act.action)">
+                        <i class="bi" [ngClass]="act.icon"></i>
+                        <span>{{ act.label }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Inline Destination Card appearing directly inside the chat -->
+          @if (showDestinationCard()) {
+            <div class="chat-msg-row bot-msg">
+              <div class="msg-avatar agent-icon-box pink-box">
+                <i class="bi bi-cloud-upload-fill"></i>
+              </div>
+              <div class="msg-bubble conn-chat-bubble" id="artifacts-destination-card">
+                <div class="conn-card-header">
+                  <div class="conn-card-title">
+                    <i class="bi bi-cloud-upload-fill" style="color: #ec4899;"></i>
+                    <span>{{ selectedDestination ? (selectedDestination + ' Connection') : 'Artifacts Destination' }}</span>
+                  </div>
+                  @if (destination()) {
+                    <button type="button" class="btn-close-inline" (click)="closeDestinationCard()" title="Close details">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  } @else {
+                    <span class="conn-card-badge">Required</span>
+                  }
+                </div>
+
+                <!-- Destination selection -->
+                <div class="conn-field-group conn-field-full" style="margin-bottom: 6px;">
+                  <label class="conn-field-label" for="agDestination">
+                    <i class="bi bi-geo-alt-fill" style="color: #ec4899;"></i>
+                    <span>Please select your destination</span>
+                  </label>
+                  <select id="agDestination"
+                          class="conn-field-select"
+                          [ngModel]="selectedDestination"
+                          (ngModelChange)="selectDestination($event)">
+                    <option value="" disabled>Select destination</option>
+                    @for (dest of availableDestinations; track dest) {
+                      <option [value]="dest">{{ dest }}</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="platform-selector-pills">
+                  @for (dest of availableDestinations; track dest) {
+                    <button type="button"
+                            class="platform-pill-btn"
+                            [class.active]="selectedDestination === dest"
+                            (click)="selectDestination(dest)">
+                      <i class="bi bi-microsoft"></i>
+                      <span>{{ dest }}</span>
+                    </button>
+                  }
+                </div>
+
+                <!-- Microsoft Fabric connection details -->
+                @if (selectedDestination === 'Microsoft Fabric') {
+                  <div class="conn-inputs-grid">
+                    <div class="conn-field-group conn-field-full">
+                      <label class="conn-field-label" for="agWorkspace">Workspace ID <span class="req">*</span></label>
+                      <input id="agWorkspace" type="text" class="conn-field-input"
+                             [class.input-error]="fieldErrors()['workspaceId']"
+                             [(ngModel)]="form.workspaceId"
+                             placeholder="00000000-0000-0000-0000-000000000000" autocomplete="off" spellcheck="false">
+                      @if (fieldErrors()['workspaceId']) {
+                        <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> A valid workspace GUID is required</div>
+                      }
+                    </div>
+
+                    <div class="conn-field-group conn-field-full">
+                      <label class="conn-field-label" for="agAuth">Authentication</label>
+                      <select id="agAuth" class="conn-field-select" [(ngModel)]="form.authMode">
+                        <option value="servicePrincipal">Service Principal (client secret)</option>
+                        <option value="default">Default Azure Credential (az login / managed identity)</option>
+                      </select>
+                    </div>
+
+                    <div class="conn-field-group" [class.conn-field-full]="!isServicePrincipal">
+                      <label class="conn-field-label" for="agTenant">
+                        Tenant ID
+                        @if (isServicePrincipal) {
+                          <span class="req">*</span>
+                        }
+                      </label>
+                      <input id="agTenant" type="text" class="conn-field-input"
+                             [class.input-error]="fieldErrors()['tenantId']"
+                             [(ngModel)]="form.tenantId"
+                             [placeholder]="isServicePrincipal ? 'Directory (tenant) ID' : 'Optional'" autocomplete="off" spellcheck="false">
+                      @if (fieldErrors()['tenantId']) {
+                        <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> A valid tenant GUID is required</div>
+                      }
+                    </div>
+
+                    @if (isServicePrincipal) {
+                      <div class="conn-field-group">
+                        <label class="conn-field-label" for="agClient">Client ID <span class="req">*</span></label>
+                        <input id="agClient" type="text" class="conn-field-input"
+                               [class.input-error]="fieldErrors()['clientId']"
+                               [(ngModel)]="form.clientId"
+                               placeholder="App registration ID" autocomplete="off" spellcheck="false">
+                        @if (fieldErrors()['clientId']) {
+                          <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Client ID is required</div>
+                        }
+                      </div>
+                      <div class="conn-field-group conn-field-full">
+                        <label class="conn-field-label" for="agSecret">Client Secret <span class="req">*</span></label>
+                        <input id="agSecret" type="password" class="conn-field-input"
+                               [class.input-error]="fieldErrors()['clientSecret']"
+                               [(ngModel)]="form.clientSecret"
+                               placeholder="••••••••••••" autocomplete="new-password">
+                        @if (fieldErrors()['clientSecret']) {
+                          <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Client secret is required</div>
+                        }
+                      </div>
+                    }
+
+                    <div class="conn-field-group">
+                      <label class="conn-field-label" for="agLakehouse">Lakehouse ID</label>
+                      <input id="agLakehouse" type="text" class="conn-field-input"
+                             [class.input-error]="fieldErrors()['lakehouseId']"
+                             [(ngModel)]="form.lakehouseId"
+                             placeholder="Optional, auto-created if empty" autocomplete="off" spellcheck="false">
+                      @if (fieldErrors()['lakehouseId']) {
+                        <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Must be a GUID</div>
+                      }
+                    </div>
+                    <div class="conn-field-group">
+                      <label class="conn-field-label" for="agWarehouse">Warehouse ID</label>
+                      <input id="agWarehouse" type="text" class="conn-field-input"
+                             [class.input-error]="fieldErrors()['warehouseId']"
+                             [(ngModel)]="form.warehouseId"
+                             placeholder="For views & procedures" autocomplete="off" spellcheck="false">
+                      @if (fieldErrors()['warehouseId']) {
+                        <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Must be a GUID</div>
+                      }
+                    </div>
+
+                    <div class="conn-field-group conn-field-full">
+                      <button type="button" class="link-toggle" (click)="showAdvanced = !showAdvanced">
+                        <i class="bi" [class.bi-chevron-down]="!showAdvanced" [class.bi-chevron-up]="showAdvanced"></i>
+                        Names and SQL endpoint (optional)
+                      </button>
+                    </div>
+
+                    @if (showAdvanced) {
+                      <div class="conn-field-group">
+                        <label class="conn-field-label" for="agLhName">Lakehouse Name</label>
+                        <input id="agLhName" type="text" class="conn-field-input" [(ngModel)]="form.lakehouseName" placeholder="Get or create by name">
+                      </div>
+                      <div class="conn-field-group">
+                        <label class="conn-field-label" for="agWhName">Warehouse Name</label>
+                        <input id="agWhName" type="text" class="conn-field-input" [(ngModel)]="form.warehouseName" placeholder="Looked up by name">
+                      </div>
+                      <div class="conn-field-group conn-field-full">
+                        <label class="conn-field-label" for="agWhHost">Warehouse SQL Endpoint</label>
+                        <input id="agWhHost" type="text" class="conn-field-input" [(ngModel)]="form.warehouseHost"
+                               placeholder="xxxx.datawarehouse.fabric.microsoft.com" spellcheck="false">
+                      </div>
+                    }
+
+                    <label class="remember-me-checkbox-row">
+                      <input type="checkbox" [(ngModel)]="rememberMe">
+                      <span>Remember destination on this device</span>
+                    </label>
+
+                    <div class="conn-demo-limit-note">
+                      <i class="bi bi-info-circle text-info"></i>
+                      <span>The connection is checked against the Fabric REST API. Generate Artifacts creates every item in this workspace.</span>
+                    </div>
+                  </div>
+                }
+
+                @if (connectionError()) {
+                  <div class="conn-failed-alert inline-error">
+                    <div class="conn-failed-icon">
+                      <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div class="conn-failed-body">
+                      <div class="conn-failed-title">Destination Error</div>
+                      <div class="conn-failed-msg">{{ connectionError() }}</div>
+                    </div>
+                  </div>
+                }
+
+                <!-- Actions Bar -->
+                <div class="conn-actions-bar">
+                  <div class="conn-actions-left"></div>
+                  <div class="conn-actions-right">
+                    @if (destination()) {
+                      <button type="button" class="btn-conn-cancel" (click)="closeDestinationCard()" [disabled]="isTyping()">
+                        <i class="bi bi-x"></i>
+                        <span>Cancel</span>
+                      </button>
+                    }
+                    <button type="button"
+                            class="btn-conn-submit"
+                            (click)="submitDestination()"
+                            [disabled]="isTyping() || !selectedDestination">
+                      <i class="bi" [ngClass]="isTyping() ? 'bi-hourglass-split' : 'bi-plug-fill'"></i>
+                      <span>{{ isTyping() ? 'Validating…' : 'Connect & Save' }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Typing Indicator -->
+          @if (isTyping()) {
+            <div class="chat-msg-row bot-msg">
+              <div class="msg-avatar agent-icon-box pink-box">
+                <i class="bi bi-box-seam"></i>
+              </div>
+              <div class="typing-row">
+                <div class="typing-indicator">
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                </div>
+                <span>Validating the Microsoft Fabric workspace...</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Quick Prompts Tray -->
+        <div class="chat-quick-prompts-tray">
+          @for (prompt of quickPrompts; track prompt.label) {
+            <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)">
+              <i class="bi" [ngClass]="prompt.icon"></i>
+              <span>{{ prompt.label }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Input Bar -->
+        <div class="chat-input-bar">
+          <input type="text"
+                 class="chat-input-field"
+                 placeholder="Ask Artifacts Generator about destinations, deployment, Lakehouse or Warehouse..."
+                 [(ngModel)]="userInput"
+                 (keydown.enter)="sendMessage()"
+                 [disabled]="isTyping()">
+          <button type="button"
+                  class="btn-chat-send"
+                  (click)="sendMessage()"
+                  [disabled]="!userInput.trim() || isTyping()"
+                  title="Send Message">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Telemetry Panel -->
+      <div class="telemetry-sidebar-card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h4 class="telemetry-card-title" style="margin: 0;">
+            <i class="bi bi-cloud-upload" style="color: #ec4899;"></i>
+            <span>Deployment Target</span>
+          </h4>
+          @if (destination()) {
+            <span class="badge bg-success" style="font-size: 10px;">CONFIGURED</span>
+          } @else {
+            <span class="badge bg-warning text-dark" style="font-size: 10px;">PENDING</span>
+          }
+        </div>
+
+        @if (destination(); as d) {
+          <div class="telemetry-stat-box">
+            <div class="stat-box-num dest-stat" style="color: #ec4899;">Microsoft Fabric</div>
+            <div class="stat-box-lbl">Destination</div>
+          </div>
+          <div class="telemetry-stat-box">
+            <div class="stat-box-num dest-stat dest-mono">{{ d.workspaceId }}</div>
+            <div class="stat-box-lbl">Workspace ID</div>
+          </div>
+          <div class="telemetry-stat-box">
+            <div class="stat-box-num dest-stat">{{ d.lakehouseName || d.lakehouseId || 'Auto-created' }}</div>
+            <div class="stat-box-lbl">Lakehouse</div>
+          </div>
+          <div class="telemetry-stat-box">
+            <div class="stat-box-num dest-stat">{{ d.warehouseName || d.warehouseId || d.warehouseHost || 'Not configured' }}</div>
+            <div class="stat-box-lbl">Warehouse</div>
+          </div>
+        } @else {
+          <div class="telemetry-stat-box">
+            <div class="stat-box-num dest-stat text-warning">Not selected</div>
+            <div class="stat-box-lbl">Destination</div>
+          </div>
+        }
+
+        <h5 class="telemetry-card-title" style="font-size: 12px; margin-top: 6px;">
+          <i class="bi bi-check2-all"></i>
+          <span>Deployment Checklist</span>
+        </h5>
+
+        <div class="telemetry-checklist">
+          <div class="telemetry-check-item">
+            <span>Source connected (Phase 1)</span>
+            <i class="bi bi-check-circle-fill text-success"></i>
+          </div>
+          <div class="telemetry-check-item">
+            <span>Destination selected</span>
+            <i class="bi" [ngClass]="destination() ? 'bi-check-circle-fill text-success' : 'bi-circle text-secondary'"></i>
+          </div>
+          <div class="telemetry-check-item">
+            <span>Workspace access verified</span>
+            <i class="bi" [ngClass]="destination() ? 'bi-check-circle-fill text-success' : 'bi-circle text-secondary'"></i>
+          </div>
+          <div class="telemetry-check-item">
+            <span>Warehouse for views &amp; procedures</span>
+            <i class="bi" [ngClass]="destination()?.warehouseId || destination()?.warehouseName || destination()?.warehouseHost ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-warning'"></i>
+          </div>
+        </div>
       </div>
     </div>
   }

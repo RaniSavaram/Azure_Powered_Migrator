@@ -110,11 +110,10 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
     clientId: '',
     clientSecret: '',
     warehouseName: '',
+    warehouseId: '',
     warehouseHost: '',
     authMode: 'servicePrincipal'
   };
-
-  private readonly FABRIC_STORAGE_KEY = 'dbscanner.fabricConnection';
 
   //=========================================================
   // PAGE STATUS
@@ -562,29 +561,14 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   loadFabricConnection() {
-    try {
-      const saved = localStorage.getItem(this.FABRIC_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.workspaceId) {
-          this.fabricConnection = {
-            workspaceId: parsed.workspaceId,
-            lakehouseName: parsed.lakehouseName || '',
-            lakehouseId: parsed.lakehouseId || '',
-            tenantId: parsed.tenantId || '',
-            clientId: parsed.clientId || '',
-            clientSecret: parsed.clientSecret || '',
-            warehouseName: parsed.warehouseName || '',
-            warehouseHost: parsed.warehouseHost || '',
-            authMode: parsed.authMode || 'servicePrincipal'
-          };
-          this.fabricAuthMode = this.fabricConnection.authMode || 'servicePrincipal';
-          this.fabricConnected = true;
-          return;
-        }
-      }
-    } catch {
-      // Ignore localStorage parse errors
+    // Destination chosen via the Artifacts Generator's "Start conversation"
+    // dialog (or this page's own Fabric dialog) takes priority.
+    const destination = this.scanner.getFabricDestination();
+    if (destination) {
+      this.fabricConnection = destination;
+      this.fabricAuthMode = destination.authMode || 'servicePrincipal';
+      this.fabricConnected = true;
+      return;
     }
 
     this.scanner.getSavedConnection('Fabric').subscribe({
@@ -599,6 +583,7 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
             clientId: extra.client_id || res.connection.username || '',
             clientSecret: extra.client_secret || res.connection.password || '',
             warehouseName: extra.warehouse_name || '',
+            warehouseId: extra.warehouse_id || '',
             warehouseHost: extra.warehouse_connection_string || '',
             authMode: (extra.auth_mode as any) || 'servicePrincipal'
           };
@@ -612,15 +597,7 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   saveFabricConnection() {
-    if (this.fabricRememberMe) {
-      try {
-        localStorage.setItem(this.FABRIC_STORAGE_KEY, JSON.stringify(this.fabricConnection));
-      } catch {}
-    } else {
-      try {
-        localStorage.removeItem(this.FABRIC_STORAGE_KEY);
-      } catch {}
-    }
+    this.scanner.setFabricDestination(this.fabricConnection, this.fabricRememberMe);
   }
 
   connectFabric() {
@@ -1721,6 +1698,15 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
       return;
     }
 
+    // Deploy to whichever destination was configured last (possibly from
+    // the Artifacts Generator agent after this page was opened).
+    const destination = this.scanner.getFabricDestination();
+    if (destination) {
+      this.fabricConnection = destination;
+      this.fabricAuthMode = destination.authMode || 'servicePrincipal';
+      this.fabricConnected = true;
+    }
+
     if (this.fabricLogInterval) {
       clearInterval(this.fabricLogInterval);
       this.fabricLogInterval = null;
@@ -1737,7 +1723,10 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.fabricLiveLogs = [
       `Routing Generate Artifacts to: ${script} for source: ${sourceName}`,
       `[INFO] Target Workspace: ${targetWorkspace}`,
-      `[INFO] Target Lakehouse: ${targetLakehouse}`,
+      `[INFO] Target Lakehouse: ${targetLakehouse}${this.fabricConnection.lakehouseId ? ` (id=${this.fabricConnection.lakehouseId})` : ''}`,
+      ...(this.fabricConnection.warehouseId || this.fabricConnection.warehouseName
+        ? [`[INFO] Target Warehouse: ${this.fabricConnection.warehouseName || this.fabricConnection.warehouseId}`]
+        : []),
       `[INFO] Using assessment report: ${reportDoc}`,
       ...(this.fabricConnection.clientId ? [`[INFO] Auth Identity (Client ID): ${this.fabricConnection.clientId}`] : [])
     ];
