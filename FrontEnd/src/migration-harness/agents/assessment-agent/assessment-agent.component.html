@@ -23,18 +23,65 @@
       </div>
     </div>
     <div class="header-right-actions">
-      @if (isSourceConnected) {
+      @if (!isSourceConnected) {
+        <span class="badge bg-warning text-dark px-3 py-2 fw-semibold gate-badge">
+          <i class="bi bi-lock-fill me-1"></i> Awaiting Source Connection
+        </span>
+      } @else if (canProceed()) {
         <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Migration Generator Agent">
           <span>Next Phase</span>
           <i class="bi bi-arrow-right"></i>
         </a>
+      } @else if (isBusy()) {
+        <span class="badge bg-light text-dark px-3 py-2 fw-semibold gate-badge">
+          <i class="bi bi-hourglass-split me-1"></i> Assessing tables
+        </span>
       } @else {
-        <span class="badge bg-warning text-dark px-3 py-2 fw-semibold" style="font-size: 12px; border-radius: 8px;">
-          <i class="bi bi-lock-fill me-1"></i> Awaiting Source Connection
+        <span class="badge bg-danger px-3 py-2 fw-semibold gate-badge">
+          <i class="bi bi-lock-fill me-1"></i> {{ verdict() === 'blocked' ? 'Blocked: next phase locked' : 'Assessment not run' }}
         </span>
       }
     </div>
   </div>
+
+  @if (isSourceConnected && report(); as r) {
+    <div class="next-step-prompt-banner" [ngClass]="'verdict-' + r.verdict">
+      <div class="prompt-banner-left">
+        <div class="prompt-badge-icon">
+          <i class="bi" [ngClass]="r.verdict === 'blocked' ? 'bi-shield-exclamation' : (r.verdict === 'ready' ? 'bi-patch-check-fill' : 'bi-clipboard-check')"></i>
+        </div>
+        <div class="prompt-banner-text">
+          <div class="prompt-banner-tag">
+            <span class="badge-dot"></span>
+            {{ r.summary.readiness_breakdown.ready }}/{{ r.summary.total_tables }} ready · {{ r.summary.wave_count }} wave(s) · constraint gate {{ r.summary.constraints_gate }}
+          </div>
+          <div class="prompt-banner-title">
+            {{ r.verdict === 'ready' ? 'Ready to migrate' : (r.verdict === 'ready_with_review' ? 'Ready, with tables to review' : 'Assessment blocked') }}
+          </div>
+          <div class="prompt-banner-sub">
+            @if (r.verdict === 'blocked') {
+              Fix the Layer 1 errors in the <strong>Constraint Agent</strong>, then re-run the assessment.
+            } @else {
+              {{ r.summary.complexity_breakdown.simple }} simple · {{ r.summary.complexity_breakdown.medium }} medium · {{ r.summary.complexity_breakdown.complex }} complex. Continue to the <strong>Migration Generator Agent</strong>.
+            }
+          </div>
+        </div>
+      </div>
+      <div class="prompt-banner-actions">
+        @if (r.verdict === 'blocked') {
+          <button type="button" class="btn-proceed-agent" (click)="handleActionClick('constraints')" [disabled]="isBusy()">
+            <span>Open Constraint Agent</span>
+            <i class="bi bi-shield-exclamation"></i>
+          </button>
+        } @else {
+          <button type="button" class="btn-proceed-agent" (click)="handleActionClick('next')" [disabled]="isBusy()">
+            <span>Proceed to Migration Generator</span>
+            <i class="bi bi-arrow-right-circle-fill"></i>
+          </button>
+        }
+      </div>
+    </div>
+  }
 
   @if (!isSourceConnected) {
     <!-- Blank / Waiting State -->
@@ -56,25 +103,36 @@
       </div>
     </div>
   } @else {
-    <!-- Main Conversational Workspace -->
-    <div class="agent-chat-layout" style="--agent-accent-color: #10b981; --agent-focus-shadow: rgba(16, 185, 129, 0.15);">
-      <!-- Chat Main Card -->
+    <!-- Main Conversational Workspace (chat only) -->
+    <div class="agent-chat-layout chat-only" style="--agent-accent-color: #10b981; --agent-focus-shadow: rgba(16, 185, 129, 0.15);">
       <div class="chat-main-card">
         <!-- Toolbar -->
         <div class="chat-header-toolbar">
           <div class="chat-status-indicator">
             <span class="status-dot-pulse" style="background-color: #10b981;"></span>
             <span class="status-title">Assessment & Sizing Intelligence Engine</span>
-            <span class="status-tag" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">Active Telemetry</span>
+            <span class="status-tag" style="background-color: rgba(16, 185, 129, 0.1); color: #059669;">
+              @if (isBusy()) {
+                assessing…
+              } @else if (report(); as r) {
+                {{ r.summary.total_tables }} tables · {{ readinessLabel.ready }} {{ r.summary.readiness_pct }}%
+              } @else {
+                not run
+              }
+            </span>
           </div>
           <div class="chat-toolbar-actions">
-            @if (latestReportFile) {
-              <a [href]="'/output/' + latestReportFile + '?view=1'" target="_blank" class="btn-toolbar-ghost" title="View Document in Word Online">
+            @if (report()?.report_file) {
+              <button type="button" class="btn-toolbar-ghost" (click)="handleActionClick('view_doc')" title="View the Assessment Report">
                 <i class="bi bi-file-earmark-word text-success"></i>
                 <span>View Report</span>
-              </a>
+              </button>
             }
-            <button type="button" class="btn-toolbar-ghost" (click)="clearChat()" title="Restart Conversation">
+            <button type="button" class="btn-toolbar-ghost" (click)="handleActionClick('rerun')" [disabled]="isBusy()" title="Re-run the assessment">
+              <i class="bi bi-arrow-clockwise"></i>
+              <span>Re-run</span>
+            </button>
+            <button type="button" class="btn-toolbar-ghost" (click)="clearChat()" [disabled]="isBusy()" title="Restart Conversation">
               <i class="bi bi-arrow-counterclockwise"></i>
               <span>Reset</span>
             </button>
@@ -83,7 +141,7 @@
 
         <!-- Scrollable Message History -->
         <div class="chat-scroll-area" #chatScroll>
-          @for (msg of messages; track msg.id) {
+          @for (msg of messages(); track msg.id) {
             <div class="chat-msg-row" [ngClass]="msg.sender === 'user' ? 'user-msg' : 'bot-msg'">
               <div class="msg-avatar" [ngClass]="msg.sender === 'user' ? 'user-avatar' : 'agent-icon-box green-box'">
                 @if (msg.sender === 'user') {
@@ -93,42 +151,261 @@
                 }
               </div>
 
-              <div class="msg-bubble">
+              <div class="msg-bubble" [class.msg-error]="msg.tone === 'error'" [class.msg-wide]="msg.explorer || msg.waves || msg.tableKey">
                 <div class="msg-header">
                   <span class="msg-sender-name">{{ msg.sender === 'user' ? 'You' : 'Assessment Agent' }}</span>
                   <span class="msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
                 </div>
 
-                <!-- Message Text -->
-                <div class="msg-content">
-                  <p [innerHTML]="msg.text"></p>
-                </div>
+                <div class="msg-content" [innerHTML]="formatMessageText(msg.text)"></div>
+
+                <!-- Assessment console (streams while live) -->
+                @if (msg.live || msg.logs) {
+                  @let lines = msg.live ? consoleLines() : msg.logs;
+                  <div class="terminal-console-card">
+                    <div class="terminal-console-header">
+                      <div class="terminal-dots">
+                        <span class="dot-red"></span>
+                        <span class="dot-yellow"></span>
+                        <span class="dot-green"></span>
+                      </div>
+                      <span class="terminal-title">
+                        <i class="bi bi-terminal-fill text-success"></i>
+                        <span>Assessment Console</span>
+                        <span class="log-counts">{{ lines?.length || 0 }} lines</span>
+                      </span>
+                      <div class="terminal-actions">
+                        <div class="log-filters" role="group" aria-label="Filter log lines">
+                          <button type="button" class="log-filter-btn" [class.active]="logFilter() === 'all'" (click)="logFilter.set('all')">All</button>
+                          <button type="button" class="log-filter-btn" [class.active]="logFilter() === 'issues'" (click)="logFilter.set('issues')">Issues</button>
+                          <button type="button" class="log-filter-btn" [class.active]="logFilter() === 'errors'" (click)="logFilter.set('errors')">Errors</button>
+                        </div>
+                        <button type="button" class="btn-terminal-copy" (click)="copyLogs(lines)" title="Copy logs">
+                          <i class="bi" [ngClass]="copied() ? 'bi-check2' : 'bi-clipboard'"></i>
+                          <span>{{ copied() ? 'Copied' : 'Copy' }}</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="terminal-body log-console" #liveConsole>
+                      @for (line of visibleLogs(lines); track $index) {
+                        <div class="log-line" [ngClass]="'lvl-' + line.level.toLowerCase()">
+                          <span class="log-time">{{ line.time }}</span>
+                          <span class="log-level">{{ line.level }}</span>
+                          @if (line.step) {
+                            <span class="log-step">{{ line.step }}</span>
+                          }
+                          <span class="log-text">{{ line.text }}</span>
+                        </div>
+                      } @empty {
+                        @if (msg.live && runPhase() === 'running') {
+                          <div class="log-line lvl-info"><span class="log-level">WAIT</span><span class="log-text">Collecting sizing, constraints and dependencies…</span></div>
+                        } @else {
+                          <div class="log-line lvl-info"><span class="log-text">No lines match this filter.</span></div>
+                        }
+                      }
+                      @if (msg.live && runPhase() === 'streaming') {
+                        <span class="log-cursor" aria-hidden="true"></span>
+                      }
+                    </div>
+                  </div>
+                }
 
                 <!-- Metric Pills -->
                 @if (msg.metrics && msg.metrics.length > 0) {
                   <div class="msg-metrics-grid">
                     @for (m of msg.metrics; track m.label) {
                       <div class="msg-metric-pill">
-                        <div class="metric-pill-val" style="color: #10b981;">{{ m.value }}</div>
+                        <div class="metric-pill-val" [style.color]="m.color || '#10b981'">{{ m.value }}</div>
                         <div class="metric-pill-lbl">{{ m.label }}</div>
                       </div>
                     }
                   </div>
                 }
 
-                <!-- Code Block -->
-                @if (msg.codeBlock) {
-                  <pre class="msg-code-block"><code>{{ msg.codeBlock }}</code></pre>
+                <!-- Rows (clickable when they point to a table) -->
+                @if (msg.rows && msg.rows.length > 0) {
+                  <div class="msg-rules-list">
+                    @for (row of msg.rows; track $index) {
+                      @if (row.tableKey) {
+                        <button type="button" class="msg-rule-item row-clickable" (click)="openTable(row.tableKey)" [title]="'Open ' + row.id">
+                          <div class="rule-info">
+                            <span class="rule-id">{{ row.id }}</span>
+                            <span class="rule-desc">{{ row.desc }}</span>
+                          </div>
+                          <i class="bi bi-chevron-right rule-chevron"></i>
+                        </button>
+                      } @else {
+                        <div class="msg-rule-item">
+                          <div class="rule-info">
+                            <span class="rule-id">{{ row.id }}</span>
+                            <span class="rule-desc">{{ row.desc }}</span>
+                          </div>
+                          <span class="rule-badge" [ngClass]="row.status">{{ row.status }}</span>
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+
+                <!-- Interactive table explorer -->
+                @if (msg.explorer && report()) {
+                  <div class="explorer">
+                    <div class="explorer-controls">
+                      <div class="chip-group" role="group" aria-label="Filter by complexity">
+                        <button type="button" class="filter-chip" [class.active]="tierFilter() === 'all'" (click)="setTier('all')">All tiers</button>
+                        <button type="button" class="filter-chip" [class.active]="tierFilter() === 'Simple'" (click)="setTier('Simple')">Simple {{ countTier('Simple') }}</button>
+                        <button type="button" class="filter-chip" [class.active]="tierFilter() === 'Medium'" (click)="setTier('Medium')">Medium {{ countTier('Medium') }}</button>
+                        <button type="button" class="filter-chip" [class.active]="tierFilter() === 'Complex'" (click)="setTier('Complex')">Complex {{ countTier('Complex') }}</button>
+                      </div>
+                      <div class="chip-group" role="group" aria-label="Filter by readiness">
+                        <button type="button" class="filter-chip" [class.active]="readinessFilter() === 'all'" (click)="setReadiness('all')">Any status</button>
+                        <button type="button" class="filter-chip" [class.active]="readinessFilter() === 'ready'" (click)="setReadiness('ready')">Ready {{ countReadiness('ready') }}</button>
+                        <button type="button" class="filter-chip" [class.active]="readinessFilter() === 'needs_review'" (click)="setReadiness('needs_review')">Review {{ countReadiness('needs_review') }}</button>
+                        <button type="button" class="filter-chip" [class.active]="readinessFilter() === 'blocked'" (click)="setReadiness('blocked')">Blocked {{ countReadiness('blocked') }}</button>
+                      </div>
+                      <div class="explorer-tools">
+                        <label class="sr-only" [attr.for]="'search-' + msg.id">Search tables</label>
+                        <input [id]="'search-' + msg.id" type="search" class="explorer-search" placeholder="Search tables…"
+                               [ngModel]="search()" (ngModelChange)="search.set($event); explorerLimit.set(12)">
+                        <label class="sr-only" [attr.for]="'sort-' + msg.id">Sort by</label>
+                        <select [id]="'sort-' + msg.id" class="explorer-sort" [ngModel]="sortKey()" (ngModelChange)="sortKey.set($event)">
+                          <option value="score">Sort: complexity</option>
+                          <option value="rows">Sort: rows</option>
+                          <option value="size">Sort: size</option>
+                          <option value="name">Sort: name</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="explorer-table-wrap">
+                      <table class="explorer-table">
+                        <thead>
+                          <tr>
+                            <th>Table</th>
+                            <th class="num">Rows</th>
+                            <th class="num">MB</th>
+                            <th>Complexity</th>
+                            <th>Status</th>
+                            <th>Wave</th>
+                            <th>Load</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (t of filteredTables().slice(0, explorerLimit()); track t.key) {
+                            <tr (click)="openTable(t.key)" tabindex="0" (keydown.enter)="openTable(t.key)" [title]="'Open ' + t.key">
+                              <td class="t-name">{{ t.key }}</td>
+                              <td class="num">{{ t.row_count | number }}</td>
+                              <td class="num">{{ t.size_mb | number:'1.0-1' }}</td>
+                              <td>
+                                <span class="tier-pill" [ngClass]="tierClass(t.complexity)">{{ t.complexity }}</span>
+                                <span class="score-bar" aria-hidden="true"><span [style.width.%]="t.complexity_score"></span></span>
+                                <span class="score-num">{{ t.complexity_score }}</span>
+                              </td>
+                              <td><span class="rule-badge" [ngClass]="readinessClass(t.readiness)">{{ readinessLabel[t.readiness] }}</span></td>
+                              <td>{{ t.wave ?? '–' }}</td>
+                              <td class="t-load">{{ t.load_strategy }}</td>
+                            </tr>
+                          } @empty {
+                            <tr><td colspan="7" class="empty-row">No tables match these filters.</td></tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="explorer-foot">
+                      <span>Showing {{ (filteredTables().length < explorerLimit() ? filteredTables().length : explorerLimit()) }} of {{ filteredTables().length }}</span>
+                      @if (filteredTables().length > explorerLimit()) {
+                        <button type="button" class="btn-msg-action" (click)="showMore()">Show more</button>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Migration waves -->
+                @if (msg.waves && report(); as r) {
+                  <div class="waves">
+                    @for (w of r.waves; track w.wave) {
+                      <div class="wave-card">
+                        <div class="wave-head">
+                          <span class="wave-num">Wave {{ w.wave }}</span>
+                          <span class="wave-count">{{ w.tables.length }} table(s)</span>
+                        </div>
+                        <div class="wave-tables">
+                          @for (key of w.tables; track key) {
+                            @let wt = tableOf(key);
+                            <button type="button" class="wave-chip" [ngClass]="wt ? tierClass(wt.complexity) : ''" (click)="openTable(key)" [title]="wt ? wt.complexity + ' · ' + readinessLabel[wt.readiness] : key">
+                              {{ key }}
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Single table card -->
+                @if (msg.tableKey) {
+                  @let t = tableOf(msg.tableKey);
+                  @if (t) {
+                    <div class="table-card">
+                      <div class="tc-badges">
+                        <span class="tier-pill" [ngClass]="tierClass(t.complexity)">{{ t.complexity }} · {{ t.complexity_score }}/100</span>
+                        <span class="rule-badge" [ngClass]="readinessClass(t.readiness)">{{ readinessLabel[t.readiness] }}</span>
+                        @if (t.wave) {
+                          <span class="tc-wave">Wave {{ t.wave }}</span>
+                        }
+                      </div>
+                      <dl class="tc-grid">
+                        <dt>Rows</dt><dd>{{ t.row_count | number }}</dd>
+                        <dt>Size</dt><dd>{{ t.size_mb | number:'1.0-2' }} MB</dd>
+                        <dt>Columns</dt><dd>{{ t.columns }}</dd>
+                        <dt>Primary key</dt>
+                        <dd>{{ t.keys_declared ? (t.primary_key.length ? t.primary_key.join(', ') : 'none declared') : 'unknown' }}</dd>
+                        <dt>References</dt><dd>{{ t.references.length ? t.references.join(', ') : 'none' }}</dd>
+                        <dt>Referenced by</dt><dd>{{ t.referenced_by }} table(s)</dd>
+                        <dt>Load strategy</dt><dd>{{ t.load_strategy }}</dd>
+                        <dt>Direct Lake (F64)</dt><dd>{{ t.direct_lake_ready ? 'Within guardrail' : 'Exceeds 1.5B-row guardrail' }}</dd>
+                      </dl>
+                      @if (t.score_factors.length) {
+                        <div class="tc-section-title">Why this score</div>
+                        <div class="tc-factors">
+                          @for (f of t.score_factors; track f.factor) {
+                            <div class="tc-factor"><span>{{ f.factor }}</span><span class="tc-points">+{{ f.points }}</span></div>
+                          }
+                        </div>
+                      }
+                      @if (t.type_changes.length) {
+                        <div class="tc-section-title">Fabric type changes</div>
+                        <ul class="tc-list">
+                          @for (c of t.type_changes; track c.column) {
+                            <li><code>{{ c.column }}</code> {{ c.source_type }} → {{ c.fabric_type }}</li>
+                          }
+                        </ul>
+                      }
+                      @if (t.sensitive_columns.length) {
+                        <div class="tc-section-title">Sensitive columns</div>
+                        <div class="tc-tags">
+                          @for (c of t.sensitive_columns; track c) {
+                            <span class="tc-tag">{{ c }}</span>
+                          }
+                        </div>
+                      }
+                      @if (t.blocking_issues.length) {
+                        <div class="tc-section-title tc-blocked">Blocking Layer 1 errors</div>
+                        <ul class="tc-list">
+                          @for (b of t.blocking_issues; track $index) {
+                            <li>{{ b }}</li>
+                          }
+                        </ul>
+                      }
+                    </div>
+                  }
                 }
 
                 <!-- Action buttons -->
                 @if (msg.actions && msg.actions.length > 0) {
                   <div class="msg-actions-row">
                     @for (act of msg.actions; track act.label) {
-                      <button type="button" 
-                              class="btn-msg-action" 
-                              [class.primary-action]="act.primary"
-                              (click)="handleActionClick(act.action)">
+                      <button type="button" class="btn-msg-action" [class.primary-action]="act.primary" [disabled]="isBusy()" (click)="handleActionClick(act.action)">
                         <i class="bi" [ngClass]="act.icon"></i>
                         <span>{{ act.label }}</span>
                       </button>
@@ -140,18 +417,18 @@
           }
 
           <!-- Typing Indicator -->
-          @if (isTyping) {
+          @if (runPhase() === 'running') {
             <div class="chat-msg-row bot-msg">
               <div class="msg-avatar agent-icon-box green-box">
                 <i class="bi bi-clipboard-data"></i>
               </div>
               <div class="typing-row">
                 <div class="typing-indicator">
-                  <span class="typing-dot" style="background-color: #10b981;"></span>
-                  <span class="typing-dot" style="background-color: #10b981;"></span>
-                  <span class="typing-dot" style="background-color: #10b981;"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
                 </div>
-                <span>Synthesizing table metadata, sizing profiles & compiling Assessment Report...</span>
+                <span>Scoring tables and building the report…</span>
               </div>
             </div>
           }
@@ -160,7 +437,7 @@
         <!-- Quick Prompts Tray -->
         <div class="chat-quick-prompts-tray">
           @for (prompt of quickPrompts; track prompt.label) {
-            <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)">
+            <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)" [disabled]="isBusy()">
               <i class="bi" [ngClass]="prompt.icon"></i>
               <span>{{ prompt.label }}</span>
             </button>
@@ -169,68 +446,18 @@
 
         <!-- Input Bar -->
         <div class="chat-input-bar">
-          <input type="text" 
-                 class="chat-input-field" 
-                 placeholder="Ask Assessment Agent about table sizing, Direct Lake readiness, complexity..." 
-                 [(ngModel)]="userInput" 
-                 (keydown.enter)="sendMessage()" 
-                 [disabled]="isTyping">
-          <button type="button" 
-                  class="btn-chat-send" 
-                  (click)="sendMessage()" 
-                  [disabled]="!userInput.trim() || isTyping"
-                  title="Send Message"
-                  style="background-color: #10b981;">
+          <input type="text"
+                 class="chat-input-field"
+                 placeholder="Ask about complex tables, waves, load strategy, a table name, or say re-run…"
+                 [(ngModel)]="userInput"
+                 (keydown.enter)="sendMessage()"
+                 [disabled]="isBusy()">
+          <button type="button"
+                  class="btn-chat-send"
+                  (click)="sendMessage()"
+                  [disabled]="!userInput.trim() || isBusy()"
+                  title="Send Message">
             <i class="bi bi-send-fill"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Right Telemetry Panel -->
-      <div class="telemetry-sidebar-card">
-        <h4 class="telemetry-card-title">
-          <i class="bi bi-cpu text-success"></i>
-          <span>Assessment Scope</span>
-        </h4>
-
-        <div class="telemetry-stat-list">
-          <div class="telemetry-stat-row">
-            <span class="telemetry-stat-label">Source Platform</span>
-            <span class="telemetry-stat-value text-dark fw-bold">{{ connectionConfig?.platform || 'SQL Server' }}</span>
-          </div>
-          <div class="telemetry-stat-row">
-            <span class="telemetry-stat-label">Analysis Model</span>
-            <span class="telemetry-stat-value">Table Summarizer Engine</span>
-          </div>
-          <div class="telemetry-stat-row">
-            <span class="telemetry-stat-label">Direct Lake Eligibility</span>
-            <span class="badge bg-success text-white px-2 py-1">100% Ready</span>
-          </div>
-          <div class="telemetry-stat-row">
-            <span class="telemetry-stat-label">Target Architecture</span>
-            <span class="telemetry-stat-value">Microsoft Fabric Lakehouse</span>
-          </div>
-        </div>
-
-        @if (lastAssessmentData) {
-          <div class="p-3 bg-light rounded mt-3 border">
-            <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-file-earmark-check text-success me-1"></i> Generated Artifact</h6>
-            <div class="small text-muted mb-2">{{ lastAssessmentData.report_file }}</div>
-            <div class="d-flex gap-2">
-              <a [href]="'/output/' + lastAssessmentData.report_file + '?view=1'" target="_blank" class="btn btn-sm btn-outline-success flex-fill">
-                <i class="bi bi-eye"></i> View
-              </a>
-              <a [href]="'/output/' + lastAssessmentData.report_file" target="_blank" class="btn btn-sm btn-success flex-fill text-white">
-                <i class="bi bi-download"></i> Download
-              </a>
-            </div>
-          </div>
-        }
-
-        <div class="telemetry-action-box mt-3">
-          <button type="button" class="btn-run-audit-action" (click)="sendMessage('Generate comprehensive Assessment Report Word document (.docx)')" style="background-color: #10b981;">
-            <i class="bi bi-lightning-charge-fill me-1"></i>
-            <span>Generate Assessment Report</span>
           </button>
         </div>
       </div>

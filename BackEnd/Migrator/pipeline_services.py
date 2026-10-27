@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import traceback
 from datetime import datetime
 from pathlib import Path
 from threading import Lock
@@ -902,6 +903,74 @@ def _log_level(line: str) -> str:
     return "INFO"
 
 
+def _ensure_pipeline_metadata(data: dict = None) -> tuple[dict | None, list[str]]:
+    """
+    Makes sure this process holds extracted metadata before a phase runs.
+
+    `data` (optional):
+      connection - the source connection the Discovery Agent made
+                   (platform, server, database, username, ... - no password
+                   needed when the profile was remembered). Used to
+                   reconnect and re-extract when no metadata is loaded, e.g.
+                   after a backend restart.
+      refresh    - re-extract from the source even if metadata is loaded.
+
+    Returns (error_payload_or_None, connection_log_lines). Never falls back
+    to the sample catalog when nothing is connected - that is reported as
+    SOURCE_NOT_CONNECTED instead.
+    """
+    data = data or {}
+    connection = data.get("connection") or {}
+    refresh = bool(data.get("refresh"))
+
+    with _pipeline_lock:
+        meta = active_pipeline.get("metadata")
+        backend_connected = active_pipeline.get("source_connected")
+
+    if meta and not refresh:
+        return None, []
+
+    has_connection_details = bool(connection.get("platform") and (connection.get("server") or connection.get("account")))
+    if has_connection_details and (refresh or not backend_connected):
+        extract_result = extract_metadata_service(connection)
+    elif backend_connected:
+        extract_result = extract_metadata_service()
+    else:
+        return {
+            "status": "error",
+            "code": "SOURCE_NOT_CONNECTED",
+            "message": "No source database is connected. Connect one in the Discovery Agent first.",
+            "logs": [],
+        }, []
+
+    connection_logs = list(extract_result.get("connection_logs") or extract_result.get("logs") or [])
+    if extract_result.get("status") != "success":
+        return _sanitize_for_json({
+            "status": "error",
+            "code": "CONNECTION_FAILED",
+            "message": extract_result.get("message") or extract_result.get("error") or "Could not reconnect to the source.",
+            "logs": [{"time": datetime.now().strftime("%H:%M:%S"), "level": _log_level(l), "step": "connect", "text": l}
+                     for l in connection_logs],
+        }), connection_logs
+    return None, connection_logs
+
+
+def _pipeline_source_info() -> dict:
+    with _pipeline_lock:
+        cfg = active_pipeline.get("connection_config") or {}
+        return {
+            "platform": active_pipeline.get("platform"),
+            "platform_slug": active_pipeline.get("platform_slug"),
+            "server": active_pipeline.get("server"),
+            "database": active_pipeline.get("database"),
+            "connected_at": active_pipeline.get("connected_at"),
+            "live_connected": bool(cfg.get("live_connected")),
+            "is_demo": bool(cfg.get("is_demo")),
+            "metadata_origin": active_pipeline.get("metadata_origin"),
+            "metadata_extracted_at": active_pipeline.get("metadata_extracted_at"),
+        }
+
+
 def validate_constraints_service(data: dict = None) -> dict:
     """
     Runs Harness Layer 1 on the connected source's metadata and returns the
@@ -918,56 +987,13 @@ def validate_constraints_service(data: dict = None) -> dict:
     """
     from HarnessLayers.layer1.constraint_report import build_constraint_report
 
-    data = data or {}
-    connection = data.get("connection") or {}
-    refresh = bool(data.get("refresh"))
+    error, connection_logs = _ensure_pipeline_metadata(data)
+    if error:
+        return error
 
     with _pipeline_lock:
         meta = active_pipeline.get("metadata")
-        backend_connected = active_pipeline.get("source_connected")
-
-    connection_logs: list[str] = []
-    has_connection_details = bool(connection.get("platform") and (connection.get("server") or connection.get("account")))
-
-    if refresh or not meta:
-        if has_connection_details and (refresh or not backend_connected):
-            extract_result = extract_metadata_service(connection)
-        elif backend_connected:
-            extract_result = extract_metadata_service()
-        else:
-            return {
-                "status": "error",
-                "code": "SOURCE_NOT_CONNECTED",
-                "message": "No source database is connected. Connect one in the Discovery Agent first.",
-                "logs": [],
-            }
-
-        connection_logs = list(extract_result.get("connection_logs") or extract_result.get("logs") or [])
-        if extract_result.get("status") != "success":
-            return _sanitize_for_json({
-                "status": "error",
-                "code": "CONNECTION_FAILED",
-                "message": extract_result.get("message") or extract_result.get("error") or "Could not reconnect to the source.",
-                "logs": [{"time": datetime.now().strftime("%H:%M:%S"), "level": _log_level(l), "step": "connect", "text": l}
-                         for l in connection_logs],
-            })
-
-        with _pipeline_lock:
-            meta = active_pipeline.get("metadata")
-
-    with _pipeline_lock:
-        cfg = active_pipeline.get("connection_config") or {}
-        source = {
-            "platform": active_pipeline.get("platform"),
-            "platform_slug": active_pipeline.get("platform_slug"),
-            "server": active_pipeline.get("server"),
-            "database": active_pipeline.get("database"),
-            "connected_at": active_pipeline.get("connected_at"),
-            "live_connected": bool(cfg.get("live_connected")),
-            "is_demo": bool(cfg.get("is_demo")),
-            "metadata_origin": active_pipeline.get("metadata_origin"),
-            "metadata_extracted_at": active_pipeline.get("metadata_extracted_at"),
-        }
+    source = _pipeline_source_info()
 
     started = time.perf_counter()
     layer_result = layer1_Harness(meta)
@@ -989,16 +1015,35 @@ def validate_constraints_service(data: dict = None) -> dict:
     return _sanitize_for_json(report_payload)
 
 
-def generate_assessment_report_service() -> dict:
+def generate_assessment_report_service(data: dict = None) -> dict:
+    """
+    Phase 3 (Assessment Agent): readiness, complexity, load strategy and
+    migration waves per table (Migrator/assessment_analysis.py), plus the
+    Assessment Report (.docx).
+
+    `data` (optional): connection / refresh as for validate_constraints_service;
+    generate_document (default True) - set False to refresh the analysis
+    without rebuilding the Word report.
+    """
+    from Migrator.assessment_analysis import build_assessment
+
+    data = data or {}
+    error, connection_logs = _ensure_pipeline_metadata(data)
+    if error:
+        return error
+
+    # The assessment builds on Phase 2. Run the constraint checks first if
+    # they haven't run for the current metadata (cheap, deterministic).
+    with _pipeline_lock:
+        constraints = active_pipeline.get("constraints_report")
+    if not constraints:
+        constraints = validate_constraints_service({})
+        if constraints.get("status") != "success":
+            constraints = None
+
     with _pipeline_lock:
         meta = active_pipeline.get("metadata")
         dfs = active_pipeline.get("dataframes")
-
-    if not meta or not dfs:
-        extract_metadata_service()
-        with _pipeline_lock:
-            meta = active_pipeline.get("metadata")
-            dfs = active_pipeline.get("dataframes")
 
     if len(dfs) == 8:
         tables_df, columns_df, stats_df, views_df, procedures_df, functions_df, volumes_df, dep_df = dfs
@@ -1008,14 +1053,17 @@ def generate_assessment_report_service() -> dict:
         functions_df = dfs[5] if len(dfs) > 6 else None
         volumes_df = dfs[6] if len(dfs) > 7 else None
 
-    slug = active_pipeline.get("platform_slug") or "sqlserver"
-    source_display = get_source_display_name(slug)
+    source = _pipeline_source_info()
+    slug = source.get("platform_slug") or "sqlserver"
 
-    total_tables = len(tables_df)
-    total_columns = len(columns_df)
-    raw_size = stats_df["size_mb"].sum() if not stats_df.empty and "size_mb" in stats_df.columns else 0.0
-    total_size = round(max(0.06 * max(total_tables, 1), float(raw_size)), 2)
-    total_rows = int(stats_df["row_count"].sum()) if not stats_df.empty and "row_count" in stats_df.columns else 0
+    started = time.perf_counter()
+    analysis = build_assessment(meta, dfs, constraints, source)
+    s = analysis["summary"]
+
+    total_tables = s["total_tables"]
+    total_columns = s["total_columns"]
+    total_size = s["total_size_mb"]
+    total_rows = s["total_rows"]
     distinct_schemas = ", ".join(tables_df["schema_name"].unique()) if not tables_df.empty and "schema_name" in tables_df.columns else "dbo"
     refresh_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -1043,94 +1091,84 @@ Distinct Schemas: {distinct_schemas}
 Metadata Refresh Date: {refresh_date}
 """
 
-    table_summaries = []
-    table_cards = []
-    simple_cnt = 0
-    medium_cnt = 0
-    complex_cnt = 0
-
-    for idx, (_, r) in enumerate(tables_df.iterrows()):
-        t_name = r["table_name"]
-        s_name = r["schema_name"]
-        summary_str = table_summary_tool(
-            t_name,
-            columns_df,
-            tables_df,
-            stats_df,
-            views_df,
-            procedures_df,
-            dep_df,
-            schema_name=s_name,
-        )
-        table_summaries.append(summary_str)
-
-        t_stats = stats_df[(stats_df["table_name"] == t_name) & (stats_df["schema_name"] == s_name)] if not stats_df.empty else None
-        r_cnt = int(t_stats.iloc[0]["row_count"]) if t_stats is not None and not t_stats.empty and "row_count" in t_stats.columns else 0
-        sz_mb = float(t_stats.iloc[0]["size_mb"]) if t_stats is not None and not t_stats.empty and "size_mb" in t_stats.columns else 0.06
-
-        if r_cnt < 100000 and sz_mb < 50:
-            complexity = "Simple"
-            simple_cnt += 1
-        elif r_cnt < 2000000 and sz_mb < 500:
-            complexity = "Medium"
-            medium_cnt += 1
-        else:
-            complexity = "Complex"
-            complex_cnt += 1
-
-        table_cards.append({
-            "name": t_name,
-            "schema": s_name,
-            "row_count": r_cnt,
-            "size_mb": sz_mb,
-            "size_category": get_size_category(sz_mb, r_cnt),
-            "complexity": complexity,
-            "direct_lake_ready": sz_mb < 2000,
-        })
-
     report_filename = f"{slug}_Assessment_Report.docx"
     report_path = OUTPUT_DIR / report_filename
 
-    create_table_summary_document(
-        overall_summary=overall_summary,
-        table_summaries=table_summaries,
-        output_path=str(report_path),
-        source_hint=slug,
-        tables_df=tables_df,
-        columns_df=columns_df,
-        stats_df=stats_df,
-        views_df=views_df,
-        procedures_df=procedures_df,
-        functions_df=functions_df,
-        volumes_df=volumes_df,
-    )
+    document_error = None
+    if data.get("generate_document", True):
+        try:
+            table_summaries = [
+                table_summary_tool(
+                    r["table_name"], columns_df, tables_df, stats_df, views_df, procedures_df, dep_df,
+                    schema_name=r["schema_name"],
+                )
+                for _, r in tables_df.iterrows()
+            ]
+            create_table_summary_document(
+                overall_summary=overall_summary,
+                table_summaries=table_summaries,
+                output_path=str(report_path),
+                source_hint=slug,
+                tables_df=tables_df,
+                columns_df=columns_df,
+                stats_df=stats_df,
+                views_df=views_df,
+                procedures_df=procedures_df,
+                functions_df=functions_df,
+                volumes_df=volumes_df,
+            )
+        except Exception as doc_exc:
+            # The analysis is still valid without the Word file; report why it's missing.
+            traceback.print_exc()
+            document_error = str(doc_exc)
+    has_document = report_path.exists() and document_error is None
 
+    duration_ms = int((time.perf_counter() - started) * 1000)
+    logs = analysis["logs"]
+    now = datetime.now().strftime("%H:%M:%S")
+    if connection_logs:
+        logs = [{"time": now, "level": _log_level(l), "step": "connect", "text": l} for l in connection_logs] + logs
+    if document_error:
+        logs.insert(-1, {"time": now, "level": "ERROR", "step": "report", "text": f"Assessment Report (.docx) failed: {document_error}"})
+    elif has_document:
+        logs.insert(-1, {"time": now, "level": "PASS", "step": "report", "text": f"Assessment Report written: {report_filename}"})
+
+    tables = analysis["tables"]
     result_payload = {
         "status": "success",
-        "report_file": report_filename,
-        "report_url": f"/output/{report_filename}?view=1",
-        "download_url": f"/output/{report_filename}",
-        "summary": {
-            "total_tables": total_tables,
-            "total_columns": total_columns,
-            "total_size_mb": total_size,
-            "total_rows": total_rows,
-            "top_tables_by_size": top5_size_list,
-            "top_tables_by_rows": top5_rows_list,
-            "complexity_breakdown": {
-                "simple": simple_cnt,
-                "medium": medium_cnt,
-                "complex": complex_cnt,
-            },
-        },
-        "table_assessments": table_cards,
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "duration_ms": duration_ms,
+        "source": source,
+        "verdict": analysis["verdict"],
+        "report_file": report_filename if has_document else None,
+        "report_url": f"/output/{report_filename}?view=1" if has_document else None,
+        "download_url": f"/output/{report_filename}" if has_document else None,
+        "document_error": document_error,
+        "summary": s,
+        "metrics": analysis["metrics"],
+        "tables": tables,
+        "waves": analysis["waves"],
+        "logs": logs,
+        "reconnected": bool(connection_logs),
+        # Kept for existing consumers (test_endpoints.py, older UI code).
+        "table_assessments": [
+            {
+                "name": t["name"],
+                "schema": t["schema"],
+                "row_count": t["row_count"],
+                "size_mb": t["size_mb"],
+                "size_category": get_size_category(t["size_mb"], t["row_count"]),
+                "complexity": t["complexity"],
+                "direct_lake_ready": t["direct_lake_ready"],
+            }
+            for t in tables.values()
+        ],
     }
 
     with _pipeline_lock:
         active_pipeline["assessment_report"] = result_payload
 
     return _sanitize_for_json(result_payload)
-
 
 def generate_migration_plan_service() -> dict:
     with _pipeline_lock:

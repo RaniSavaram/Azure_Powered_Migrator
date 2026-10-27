@@ -116,6 +116,74 @@ export interface ConstraintReport {
   harness_result: unknown;
 }
 
+export type AssessmentTier = 'Simple' | 'Medium' | 'Complex';
+export type AssessmentReadiness = 'ready' | 'needs_review' | 'blocked';
+
+export interface AssessmentTable {
+  key: string;
+  schema: string;
+  name: string;
+  row_count: number;
+  size_mb: number;
+  columns: number;
+  primary_key: string[];
+  keys_declared: boolean;
+  references: string[];
+  referenced_by: number;
+  type_changes: Array<{ column: string; source_type: string; fabric_type: string }>;
+  sensitive_columns: string[];
+  watermark_candidates: string[];
+  load_strategy: string;
+  direct_lake_ready: boolean;
+  complexity_score: number;
+  complexity: AssessmentTier;
+  score_factors: Array<{ factor: string; points: number }>;
+  readiness: AssessmentReadiness;
+  blocking_issues: string[];
+  wave?: number;
+}
+
+/** Response of POST /api/assessment-report/ (BackEnd/Migrator/assessment_analysis.py). */
+export interface AssessmentReport {
+  status: 'success' | 'error';
+  code?: 'SOURCE_NOT_CONNECTED' | 'CONNECTION_FAILED';
+  message?: string;
+  generated_at?: string;
+  duration_ms?: number;
+  reconnected?: boolean;
+  source: ConstraintReport['source'];
+  verdict: 'ready' | 'ready_with_review' | 'blocked';
+  report_file: string | null;
+  report_url: string | null;
+  download_url: string | null;
+  document_error: string | null;
+  summary: {
+    total_tables: number;
+    total_views: number;
+    total_procedures: number;
+    total_columns: number;
+    total_rows: number;
+    total_size_mb: number;
+    est_onelake_size_mb: number;
+    complexity_breakdown: { simple: number; medium: number; complex: number };
+    readiness_breakdown: Record<AssessmentReadiness, number>;
+    readiness_pct: number;
+    wave_count: number;
+    dependency_source: 'declared' | 'inferred' | 'none';
+    tables_in_cycles: string[];
+    incremental_candidates: number;
+    direct_lake_over_guardrail: string[];
+    constraints_gate: 'PASS' | 'FAIL' | 'NOT_RUN';
+    top_tables_by_size: string[];
+    top_tables_by_rows: string[];
+  };
+  metrics: Array<{ label: string; value: string; color?: string }>;
+  tables: Record<string, AssessmentTable>;
+  waves: Array<{ wave: number; tables: string[] }>;
+  logs: ConstraintLogLine[];
+  table_assessments: Array<{ name: string; schema: string; row_count: number; size_mb: number; size_category: string; complexity: string; direct_lake_ready: boolean }>;
+}
+
 /** localStorage key shared by every screen that reads/writes the Fabric destination. */
 export const FABRIC_DESTINATION_STORAGE_KEY = 'dbscanner.fabricConnection';
 
@@ -562,37 +630,13 @@ export class Scanner {
   }
 
   /**
-   * Phase 3 (Assessment Agent): Generates Table-Wise Summaries, sizing classification, and Word Assessment Report.
+   * Phase 3 (Assessment Agent): per-table readiness, complexity, load
+   * strategy and migration waves, plus the Assessment Report (.docx).
+   * `connection` / `refresh` work as for validateConstraints();
+   * `generate_document: false` refreshes the analysis without rebuilding the Word file.
    */
-  generateAssessmentReport() {
-    return this.http.post<{
-      status: string;
-      report_file: string;
-      report_url: string;
-      download_url: string;
-      summary: {
-        total_tables: number;
-        total_columns: number;
-        total_size_mb: number;
-        total_rows: number;
-        top_tables_by_size: string[];
-        top_tables_by_rows: string[];
-        complexity_breakdown: {
-          simple: number;
-          medium: number;
-          complex: number;
-        };
-      };
-      table_assessments: Array<{
-        name: string;
-        schema: string;
-        row_count: number;
-        size_mb: number;
-        size_category: string;
-        complexity: string;
-        direct_lake_ready: boolean;
-      }>;
-    }>(`${this.api.baseUrl}/assessment-report/`, {});
+  generateAssessmentReport(options: { connection?: Record<string, unknown>; refresh?: boolean; generate_document?: boolean } = {}) {
+    return this.http.post<AssessmentReport>(`${this.api.baseUrl}/assessment-report/`, options);
   }
 
   /**

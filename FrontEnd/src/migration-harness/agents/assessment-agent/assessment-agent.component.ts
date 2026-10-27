@@ -1,9 +1,17 @@
-import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, inject } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
-import { HarnessDataService } from '../../services/harness-data.service';
-import { Scanner } from '../../../app/services/scanner/scanner';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Router, RouterModule } from '@angular/router';
+import { HarnessDataService, SourceConnectionConfig } from '../../services/harness-data.service';
+import {
+  Scanner,
+  AssessmentReadiness,
+  AssessmentReport,
+  AssessmentTable,
+  AssessmentTier,
+  ConstraintLogLine
+} from '../../../app/services/scanner/scanner';
 
 export interface ChatMetricItem {
   label: string;
@@ -18,13 +26,30 @@ export interface ChatActionItem {
   primary?: boolean;
 }
 
+export interface ChatRow {
+  id: string;
+  desc: string;
+  status: 'pass' | 'warn' | 'fail' | 'info';
+  /** Table key; clicking the row opens that table's assessment. */
+  tableKey?: string;
+}
+
 export interface ChatMessage {
   id: string;
   sender: 'agent' | 'user';
   text: string;
   timestamp: Date;
+  tone?: 'error';
   metrics?: ChatMetricItem[];
-  codeBlock?: string;
+  rows?: ChatRow[];
+  logs?: ConstraintLogLine[];
+  live?: boolean;
+  /** Renders the interactive table explorer bound to the latest report. */
+  explorer?: boolean;
+  /** Renders the migration wave cards. */
+  waves?: boolean;
+  /** Renders one table's assessment card. */
+  tableKey?: string;
   actions?: ChatActionItem[];
 }
 
@@ -34,6 +59,18 @@ export interface QuickPrompt {
   icon: string;
 }
 
+type RunPhase = 'idle' | 'running' | 'streaming' | 'done' | 'error';
+type LogFilter = 'all' | 'issues' | 'errors';
+type SortKey = 'score' | 'rows' | 'size' | 'name';
+
+const DEMO_SERVER = 'demo-catalog.enterprise.net';
+const EXPLORER_PAGE = 12;
+const READINESS_LABEL: Record<AssessmentReadiness, string> = {
+  ready: 'Ready',
+  needs_review: 'Needs review',
+  blocked: 'Blocked'
+};
+
 @Component({
   selector: 'app-assessment-agent',
   standalone: true,
@@ -41,8 +78,10 @@ export interface QuickPrompt {
   templateUrl: './assessment-agent.component.html',
   styleUrl: './assessment-agent.component.css'
 })
-export class AssessmentAgentComponent implements OnInit, AfterViewChecked {
-  @ViewChild('chatScroll') private chatScrollRef!: ElementRef;
+export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDestroy {
+  @ViewChild('chatScroll') private chatScrollRef?: ElementRef<HTMLElement>;
+  @ViewChild('liveConsole') private liveConsoleRef?: ElementRef<HTMLElement>;
+
   private router = inject(Router);
   private harnessDataService = inject(HarnessDataService);
   private scanner = inject(Scanner);
@@ -52,192 +91,569 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked {
   nextPhaseRoute = '/agents/migration-generator';
   nextPhaseName = 'Migration Generator Agent';
 
+  readonly readinessLabel = READINESS_LABEL;
+
+  readonly quickPrompts: QuickPrompt[] = [
+    { label: 'Re-run assessment', query: 'Run the assessment again', icon: 'bi-arrow-clockwise' },
+    { label: 'Table explorer', query: 'Open the table explorer', icon: 'bi-table' },
+    { label: 'Migration waves', query: 'Show the migration waves', icon: 'bi-layers' },
+    { label: 'Complex tables', query: 'Which tables are the most complex?', icon: 'bi-graph-up-arrow' },
+    { label: 'Needs review', query: 'Which tables need review?', icon: 'bi-exclamation-triangle' },
+    { label: 'Load strategy', query: 'Which tables can load incrementally?', icon: 'bi-arrow-repeat' },
+    { label: 'Largest tables', query: 'Show the largest tables', icon: 'bi-hdd-stack' },
+    { label: 'Assessment report', query: 'Open the assessment report', icon: 'bi-file-earmark-word' }
+  ];
+
+  userInput = '';
+
+  messages = signal<ChatMessage[]>([]);
+  report = signal<AssessmentReport | null>(null);
+  runPhase = signal<RunPhase>('idle');
+  consoleLines = signal<ConstraintLogLine[]>([]);
+  logFilter = signal<LogFilter>('all');
+  copied = signal(false);
+
+  // Table explorer state (shared by every explorer card in the chat).
+  tierFilter = signal<AssessmentTier | 'all'>('all');
+  readinessFilter = signal<AssessmentReadiness | 'all'>('all');
+  sortKey = signal<SortKey>('score');
+  search = signal('');
+  explorerLimit = signal(EXPLORER_PAGE);
+
+  isBusy = computed(() => this.runPhase() === 'running' || this.runPhase() === 'streaming');
+  verdict = computed(() => this.report()?.verdict ?? null);
+  canProceed = computed(() => !!this.report() && this.report()!.verdict !== 'blocked' && !this.isBusy());
+
+  filteredTables = computed<AssessmentTable[]>(() => {
+    const r = this.report();
+    if (!r) return [];
+    const tier = this.tierFilter();
+    const ready = this.readinessFilter();
+    const q = this.search().trim().toLowerCase();
+    const list = Object.values(r.tables).filter(t =>
+      (tier === 'all' || t.complexity === tier) &&
+      (ready === 'all' || t.readiness === ready) &&
+      (!q || t.key.toLowerCase().includes(q))
+    );
+    const by: Record<SortKey, (a: AssessmentTable, b: AssessmentTable) => number> = {
+      score: (a, b) => b.complexity_score - a.complexity_score,
+      rows: (a, b) => b.row_count - a.row_count,
+      size: (a, b) => b.size_mb - a.size_mb,
+      name: (a, b) => a.key.localeCompare(b.key)
+    };
+    return list.sort(by[this.sortKey()]);
+  });
+
+  private streamTimer: ReturnType<typeof setInterval> | null = null;
+  private shouldScroll = false;
+  private msgSeq = 0;
+
   get isSourceConnected(): boolean {
     return this.harnessDataService.isSourceConnected();
   }
 
-  get connectionConfig() {
+  get connectionConfig(): SourceConnectionConfig | null {
     return this.harnessDataService.getConnectionConfig();
   }
 
-  userInput: string = '';
-  isTyping: boolean = false;
-  private shouldScroll: boolean = false;
-
-  latestReportFile: string | null = null;
-  lastAssessmentData: any = null;
-
-  quickPrompts: QuickPrompt[] = [
-    { label: 'Generate Assessment Report (.docx)', query: 'Generate comprehensive Assessment Report Word document (.docx)', icon: 'bi-file-earmark-word' },
-    { label: 'Analyze Table Sizing Profile', query: 'Analyze data volume sizing and largest tables', icon: 'bi-bar-chart' },
-    { label: 'Direct Lake Readiness Audit', query: 'Evaluate Microsoft Fabric Direct Lake mode query suitability', icon: 'bi-speedometer2' },
-    { label: 'Complexity Breakdown', query: 'Summarize table migration complexity distribution (Simple/Medium/Complex)', icon: 'bi-pie-chart' }
-  ];
-
-  messages: ChatMessage[] = [];
-
   ngOnInit(): void {
-    this.initWelcomeMessage();
+    if (!this.isSourceConnected) return;
+    const previous = this.harnessDataService.getAssessmentResult() as AssessmentReport | null;
+    if (previous?.status === 'success' && previous.tables) {
+      this.report.set(previous);
+      this.runPhase.set('done');
+      this.agentSays('Welcome back. This is the assessment from earlier in this session.', { logs: previous.logs });
+      this.pushResultMessage(previous);
+    } else {
+      this.runAssessment(false, true);
+    }
   }
 
   ngAfterViewChecked(): void {
     if (this.shouldScroll) {
-      this.scrollToBottom();
       this.shouldScroll = false;
+      const el = this.chatScrollRef?.nativeElement;
+      if (el) el.scrollTop = el.scrollHeight;
+    }
+    const consoleEl = this.liveConsoleRef?.nativeElement;
+    if (consoleEl && this.runPhase() === 'streaming') consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+
+  ngOnDestroy(): void {
+    this.stopStream();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Running the assessment
+  // ---------------------------------------------------------------------------
+
+  runAssessment(refresh: boolean, generateDocument = true): void {
+    if (this.isBusy()) return;
+    this.stopStream();
+    this.consoleLines.set([]);
+    this.logFilter.set('all');
+    this.runPhase.set('running');
+
+    const cfg = this.connectionConfig;
+    const target = cfg ? `${cfg.platform} · ${cfg.server}${cfg.database ? ' / ' + cfg.database : ''}` : 'the connected source';
+    this.agentSays(
+      refresh
+        ? `Re-extracting metadata from **${target}** and assessing every table…`
+        : `Assessing migration readiness for **${target}**: sizing, complexity, load strategy and migration waves…`,
+      { live: true }
+    );
+
+    this.scanner.generateAssessmentReport({ connection: this.buildConnectionPayload(), refresh, generate_document: generateDocument }).subscribe({
+      next: (res) => {
+        if (res?.status !== 'success') {
+          this.handleFailure(res?.message || 'The assessment returned no result.', res?.logs || [], res?.code);
+          return;
+        }
+        this.report.set(res);
+        this.harnessDataService.setAssessmentResult(res);
+        this.explorerLimit.set(EXPLORER_PAGE);
+        this.streamLogs(res.logs || [], () => {
+          this.runPhase.set('done');
+          this.pushResultMessage(res);
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        const body = (err.error || {}) as Partial<AssessmentReport>;
+        const message = body.message || (err.status === 0
+          ? 'The backend is not reachable. Check that the Django server is running.'
+          : `Assessment failed (${err.status} ${err.statusText}).`);
+        this.handleFailure(message, body.logs || [], body.code);
+      }
+    });
+  }
+
+  private handleFailure(message: string, logs: ConstraintLogLine[], code?: string): void {
+    const finish = () => {
+      this.runPhase.set('error');
+      const actions: ChatActionItem[] = [
+        { label: 'Retry', action: 'rerun', icon: 'bi-arrow-repeat', primary: true },
+        { label: 'Reconnect & re-extract', action: 'refresh', icon: 'bi-plug' }
+      ];
+      if (code === 'SOURCE_NOT_CONNECTED' || code === 'CONNECTION_FAILED') {
+        actions.push({ label: 'Open Discovery Agent', action: 'discovery', icon: 'bi-hdd-network' });
+      }
+      this.agentSays(`**The assessment could not run.** ${message}`, { tone: 'error', actions });
+    };
+    if (logs.length) {
+      this.streamLogs(logs, finish);
+    } else {
+      this.freezeLiveConsole();
+      finish();
     }
   }
 
-  private scrollToBottom(): void {
-    try {
-      if (this.chatScrollRef?.nativeElement) {
-        this.chatScrollRef.nativeElement.scrollTop = this.chatScrollRef.nativeElement.scrollHeight;
+  private streamLogs(lines: ConstraintLogLine[], done: () => void): void {
+    this.runPhase.set('streaming');
+    const reduceMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion || lines.length === 0) {
+      this.consoleLines.set(lines);
+      this.freezeLiveConsole();
+      done();
+      return;
+    }
+    let i = 0;
+    const perLine = Math.max(25, Math.min(90, Math.floor(3000 / lines.length)));
+    this.streamTimer = setInterval(() => {
+      this.consoleLines.update(list => [...list, lines[i++]]);
+      if (i >= lines.length) {
+        this.stopStream();
+        this.freezeLiveConsole();
+        done();
       }
-    } catch (e) {}
+    }, perLine);
   }
 
-  private initWelcomeMessage(): void {
-    this.messages = [
+  private stopStream(): void {
+    if (this.streamTimer) {
+      clearInterval(this.streamTimer);
+      this.streamTimer = null;
+    }
+  }
+
+  private freezeLiveConsole(): void {
+    const snapshot = this.consoleLines();
+    this.messages.update(list => list.map(m => (m.live ? { ...m, live: false, logs: snapshot } : m)));
+  }
+
+  private pushResultMessage(r: AssessmentReport): void {
+    const s = r.summary;
+    const verdictText = {
+      ready: '**Ready to migrate.** Every table passed the readiness checks.',
+      ready_with_review: `**Ready, with review.** ${s.readiness_breakdown.needs_review} table(s) need attention before or during migration.`,
+      blocked: `**Blocked.** ${s.readiness_breakdown.blocked ? s.readiness_breakdown.blocked + ' table(s) have Layer 1 errors' : 'The Phase 2 constraint gate failed'}. Fix them in the Constraint Agent and re-run.`
+    }[r.verdict];
+    const origin = r.source?.metadata_origin;
+    const originNote = origin === 'catalog_fallback'
+      ? '\n\n**Note:** live extraction failed, so this assessment used the built-in sample catalog, not your database.'
+      : origin === 'demo' ? '\n\n**Note:** Demo Simulation Mode data, not a live database.' : '';
+    const docNote = r.report_file
+      ? `\n- Assessment Report: \`${r.report_file}\``
+      : r.document_error ? `\n- Assessment Report (.docx) failed: ${r.document_error}` : '';
+
+    this.agentSays(
+      `### Assessment complete\n\n${verdictText}\n\n` +
+      `- Scope: **${s.total_tables}** tables, **${s.total_columns}** columns, **${s.total_rows.toLocaleString()}** rows, **${s.total_size_mb.toLocaleString()} MB** (~${s.est_onelake_size_mb.toLocaleString()} MB in OneLake, estimated)\n` +
+      `- Complexity: **${s.complexity_breakdown.simple}** simple, **${s.complexity_breakdown.medium}** medium, **${s.complexity_breakdown.complex}** complex\n` +
+      `- Readiness: **${s.readiness_breakdown.ready}** ready, **${s.readiness_breakdown.needs_review}** need review, **${s.readiness_breakdown.blocked}** blocked\n` +
+      `- Migration waves: **${s.wave_count}** (dependencies: ${s.dependency_source})\n` +
+      `- Constraint gate (Phase 2): **${s.constraints_gate}**${docNote}${originNote}`,
       {
-        id: 'msg-assess-init',
-        sender: 'agent',
-        text: `👋 Welcome to the **Assessment Agent** workspace (Phase 3 · Migration Readiness & Sizing).<br><br>I evaluate your scanned database schema, data volume distributions, column definitions, and primary/foreign key dependencies to formulate structured migration readiness assessments and generate the official **Microsoft Fabric Assessment Report (.docx)**.`,
-        timestamp: new Date(),
-        metrics: [
-          { label: 'Agent Status', value: 'READY' },
-          { label: 'Analysis Engine', value: 'Table Summarizer' },
-          { label: 'Target Platform', value: 'Microsoft Fabric' },
-          { label: 'Document Format', value: 'Word (.docx)' }
-        ],
+        metrics: r.metrics,
         actions: [
-          { label: 'Generate Assessment Report (.docx)', action: 'generate', icon: 'bi-play-fill', primary: true },
-          { label: 'Analyze Sizing Profile', action: 'sizing', icon: 'bi-bar-chart' },
-          { label: 'Check Direct Lake Readiness', action: 'directlake', icon: 'bi-speedometer2' }
+          ...(r.verdict !== 'blocked'
+            ? [{ label: `Proceed to ${this.nextPhaseName}`, action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true }]
+            : [{ label: 'Open Constraint Agent', action: 'constraints', icon: 'bi-shield-exclamation', primary: true }]),
+          { label: 'Table explorer', action: 'explorer', icon: 'bi-table' },
+          { label: 'Migration waves', action: 'waves', icon: 'bi-layers' },
+          ...(r.report_file ? [{ label: 'View report', action: 'view_doc', icon: 'bi-box-arrow-up-right' },
+                               { label: 'Download .docx', action: 'download_doc', icon: 'bi-download' }] : [])
         ]
       }
-    ];
+    );
   }
 
-  sendMessage(customText?: string): void {
-    const textToSend = (customText || this.userInput).trim();
-    if (!textToSend || this.isTyping) return;
-
-    this.messages.push({
-      id: 'usr-' + Date.now(),
-      sender: 'user',
-      text: textToSend,
-      timestamp: new Date()
-    });
-
-    if (!customText) {
-      this.userInput = '';
-    }
-    this.isTyping = true;
-    this.shouldScroll = true;
-
-    // Trigger assessment generation service
-    this.scanner.generateAssessmentReport().subscribe({
-      next: (res) => {
-        this.lastAssessmentData = res;
-        this.latestReportFile = res.report_file;
-        this.generateAgentResponse(textToSend, res);
-        this.isTyping = false;
-        this.shouldScroll = true;
-      },
-      error: (err) => {
-        console.warn('Backend assessment error:', err);
-        this.generateAgentResponse(textToSend, null);
-        this.isTyping = false;
-        this.shouldScroll = true;
-      }
-    });
-  }
+  // ---------------------------------------------------------------------------
+  // Interaction
+  // ---------------------------------------------------------------------------
 
   handlePromptClick(prompt: QuickPrompt): void {
     this.sendMessage(prompt.query);
   }
 
   handleActionClick(action: string): void {
-    if (action === 'next') {
-      this.router.navigate([this.nextPhaseRoute]);
-    } else if (action === 'generate') {
-      this.sendMessage('Generate comprehensive Assessment Report Word document (.docx)');
-    } else if (action === 'sizing') {
-      this.sendMessage('Analyze data volume sizing and largest tables');
-    } else if (action === 'directlake') {
-      this.sendMessage('Evaluate Microsoft Fabric Direct Lake mode query suitability');
-    } else if (action === 'complexity') {
-      this.sendMessage('Summarize table migration complexity distribution (Simple/Medium/Complex)');
-    } else if (action === 'view_doc') {
-      if (this.latestReportFile) {
-        window.open(`/output/${this.latestReportFile}?view=1`, '_blank');
-      }
-    } else if (action === 'download_doc') {
-      if (this.latestReportFile) {
-        window.open(`/output/${this.latestReportFile}`, '_blank');
-      }
+    const r = this.report();
+    switch (action) {
+      case 'next':
+        if (this.canProceed()) {
+          this.router.navigate([this.nextPhaseRoute]);
+        } else {
+          this.agentSays('The assessment is blocked, so the Migration Generator stays locked. Fix the Layer 1 errors in the Constraint Agent, then re-run.', {
+            actions: [{ label: 'Open Constraint Agent', action: 'constraints', icon: 'bi-shield-exclamation', primary: true }]
+          });
+        }
+        break;
+      case 'constraints':
+        this.router.navigate(['/agents/constraint']);
+        break;
+      case 'discovery':
+        this.router.navigate(['/agents/discovery']);
+        break;
+      case 'rerun':
+        this.userSays('Run the assessment again');
+        this.runAssessment(false);
+        break;
+      case 'refresh':
+        this.userSays('Reconnect and re-extract metadata');
+        this.runAssessment(true);
+        break;
+      case 'view_doc':
+        if (r?.report_url) window.open(r.report_url, '_blank', 'noopener');
+        break;
+      case 'download_doc':
+        if (r?.download_url) window.open(r.download_url, '_blank', 'noopener');
+        break;
+      default:
+        this.answer(action);
     }
   }
 
-  clearChat(): void {
-    this.initWelcomeMessage();
-    this.shouldScroll = true;
+  openTable(key: string): void {
+    const t = this.report()?.tables[key];
+    if (!t) return;
+    this.userSays(`Show the assessment for ${key}`);
+    this.agentSays(`### ${key}`, { tableKey: key });
   }
 
-  private generateAgentResponse(query: string, assessmentRes?: any): void {
-    const q = query.toLowerCase();
+  sendMessage(customText?: string): void {
+    const text = (customText ?? this.userInput).trim();
+    if (!text || this.isBusy()) return;
+    this.userSays(text);
+    this.userInput = '';
 
-    if (assessmentRes && assessmentRes.summary) {
-      const s = assessmentRes.summary;
-      const topSizeStr = (s.top_tables_by_size || []).slice(0, 3).join('<br>');
-      const topRowsStr = (s.top_tables_by_rows || []).slice(0, 3).join('<br>');
+    const q = text.toLowerCase();
+    if (/(re-?run|again|repeat|run (the )?assessment)/.test(q)) return this.runAssessment(false);
+    if (/(re-?extract|reconnect|refresh)/.test(q)) return this.runAssessment(true);
+    if (/(proceed|next phase|migration generator)/.test(q)) return this.handleActionClick('next');
+    this.answer(this.intentOf(q), q);
+  }
 
-      this.messages.push({
-        id: 'bot-' + Date.now(),
-        sender: 'agent',
-        text: `### 📊 Microsoft Fabric Migration Assessment Report Generated
+  private intentOf(q: string): string {
+    if (/(report|docx|word|document|download)/.test(q)) return 'report';
+    if (/(explor|all tables|list tables|browse)/.test(q)) return 'explorer';
+    if (/(wave|order|sequence|depend)/.test(q)) return 'waves';
+    if (/(review|blocked|ready|readiness)/.test(q)) return 'readiness';
+    if (/(incremental|load strategy|watermark|cdc|full load)/.test(q)) return 'load';
+    if (/(direct ?lake|guardrail|capacity|sku)/.test(q)) return 'directlake';
+    if (/(complex|difficult|hard|score)/.test(q)) return 'complex';
+    if (/(largest|biggest|size|rows|volume)/.test(q)) return 'largest';
+    if (/(constraint|gate|phase 2)/.test(q)) return 'gate';
+    if (/(summary|overview|result|status)/.test(q)) return 'summary';
+    return 'lookup';
+  }
 
-Successfully analyzed **${s.total_tables} tables** and **${s.total_columns} columns** across scanned schemas.
-
-- **Total Scanned Volume**: **${s.total_size_mb} MB** (${s.total_rows.toLocaleString()} total rows)
-- **Direct Lake Compatibility**: **100%** of entities within OneLake column-cache memory bounds
-- **Complexity Breakdown**: **${s.complexity_breakdown.simple} Simple**, **${s.complexity_breakdown.medium} Medium**, **${s.complexity_breakdown.complex} Complex**
-
-#### 🏆 Top Tables by Data Volume:
-${topSizeStr || 'Evaluated across schema catalogs.'}
-
-#### 📄 Generated Assessment Document:
-- Document File: \`${assessmentRes.report_file}\`
-- Formatted with stylized executive tables, object inventories, and Fabric Lakehouse migration sizing recommendations.`,
-        timestamp: new Date(),
-        metrics: [
-          { label: 'Assessed Tables', value: s.total_tables.toString() },
-          { label: 'Total Volume', value: `${s.total_size_mb} MB` },
-          { label: 'Direct Lake', value: 'READY' },
-          { label: 'Complexity', value: `${s.complexity_breakdown.simple}S / ${s.complexity_breakdown.medium}M` }
-        ],
-        actions: [
-          { label: 'Proceed to Migration Generator Agent', action: 'next', icon: 'bi-arrow-right-circle', primary: true },
-          { label: 'View Assessment Report (.docx)', action: 'view_doc', icon: 'bi-box-arrow-up-right' },
-          { label: 'Download Document', action: 'download_doc', icon: 'bi-download' }
-        ]
+  /** Answers from the latest assessment only. */
+  private answer(intent: string, query = ''): void {
+    const r = this.report();
+    if (!r) {
+      this.agentSays('There is no assessment yet. Run it first.', {
+        actions: [{ label: 'Run assessment', action: 'rerun', icon: 'bi-play-fill', primary: true }]
       });
       return;
     }
+    const tables = Object.values(r.tables);
+    const s = r.summary;
 
-    // Default response
-    this.messages.push({
-      id: 'bot-' + Date.now(),
-      sender: 'agent',
-      text: `### 📈 Sizing Profile & Complexity Evaluation\n\nSchema assessment completed across all discovered database entities:\n\n- **Workload Tier**: Enterprise Lakehouse Analytical\n- **Target Fabric Architecture**: Lakehouse with Delta Parquet V-Order indexing\n- **Recommended Migration Wave**: Low-cardinality reference dimensions followed by fact ingestion.`,
-      timestamp: new Date(),
-      metrics: [
-        { label: 'Assessment Status', value: 'COMPLETE' },
-        { label: 'Direct Lake', value: '100% Eligible' }
-      ],
-      actions: [
-        { label: 'Generate Assessment Report (.docx)', action: 'generate', icon: 'bi-file-earmark-word', primary: true },
-        { label: 'Proceed to Migration Generator Agent', action: 'next', icon: 'bi-arrow-right-circle' }
-      ]
-    });
+    switch (intent) {
+      case 'explorer':
+        this.agentSays('### Table explorer\n\nFilter by complexity or readiness, sort, search, and click a table for its full assessment.', { explorer: true });
+        return;
+      case 'waves':
+        this.agentSays(
+          `### Migration waves\n\nTables are ordered so each one loads after the tables it references (dependencies: **${s.dependency_source}**).` +
+          (s.tables_in_cycles.length ? ` **${s.tables_in_cycles.length}** table(s) reference each other in a cycle and load together in the last wave.` : '') +
+          ' Click a table for details.',
+          { waves: true }
+        );
+        return;
+      case 'complex': {
+        const top = [...tables].sort((a, b) => b.complexity_score - a.complexity_score).slice(0, 8);
+        this.agentSays(
+          `### Most complex tables\n\nScores run 0–100 (simple < 25, medium < 50, complex ≥ 50) and add up volume, width, Fabric type changes, missing keys, relationships and sensitive data.`,
+          { rows: top.map(t => this.tableRow(t, `${t.complexity} · ${t.complexity_score}/100 · ${t.score_factors.map(f => f.factor).join(', ') || 'no risk factors'}`)) }
+        );
+        return;
+      }
+      case 'readiness': {
+        const open = tables.filter(t => t.readiness !== 'ready').sort((a, b) => (a.readiness === 'blocked' ? -1 : 1) - (b.readiness === 'blocked' ? -1 : 1));
+        if (!open.length) {
+          this.agentSays('Every table is ready. No reviews needed.');
+          return;
+        }
+        this.readinessFilter.set(open.some(t => t.readiness === 'blocked') ? 'blocked' : 'needs_review');
+        this.agentSays(
+          `**${s.readiness_breakdown.blocked}** blocked and **${s.readiness_breakdown.needs_review}** need review. Showing the first ${Math.min(open.length, 15)}:`,
+          {
+            rows: open.slice(0, 15).map(t => this.tableRow(t, this.reviewReason(t))),
+            actions: [{ label: 'Open in table explorer', action: 'explorer', icon: 'bi-table' }]
+          }
+        );
+        return;
+      }
+      case 'load': {
+        const inc = tables.filter(t => t.load_strategy.startsWith('Incremental'));
+        const noWm = tables.filter(t => t.load_strategy.includes('no watermark'));
+        this.agentSays(
+          `### Load strategy\n\n- Full load: **${tables.length - inc.length - noWm.length}** table(s) under 1M rows\n- Incremental: **${inc.length}** table(s) with a change-tracking column\n- Large without a watermark column: **${noWm.length}** (consider CDC)`,
+          { rows: [...inc, ...noWm].slice(0, 15).map(t => this.tableRow(t, t.load_strategy)) }
+        );
+        return;
+      }
+      case 'directlake':
+        this.agentSays(
+          s.direct_lake_over_guardrail.length
+            ? `**${s.direct_lake_over_guardrail.length}** table(s) exceed the Direct Lake row guardrail for an F64 capacity (1.5 billion rows per table). They need aggregation or partitioning, or DirectQuery fallback.`
+            : 'Every table is within the Direct Lake row guardrail for an F64 capacity (1.5 billion rows per table). Smaller capacities have lower limits.',
+          { rows: s.direct_lake_over_guardrail.map(k => this.tableRow(r.tables[k], `${r.tables[k].row_count.toLocaleString()} rows`)) }
+        );
+        return;
+      case 'largest': {
+        const top = [...tables].sort((a, b) => b.size_mb - a.size_mb).slice(0, 8);
+        this.agentSays('### Largest tables', {
+          rows: top.map(t => this.tableRow(t, `${t.size_mb.toLocaleString()} MB · ${t.row_count.toLocaleString()} rows · ${t.load_strategy}`))
+        });
+        return;
+      }
+      case 'gate':
+        this.agentSays(
+          `The Phase 2 constraint gate is **${s.constraints_gate}**. ` +
+          (s.constraints_gate === 'PASS' ? 'Column type changes, missing keys and sensitive columns from it feed into each table\'s score.' : 'Fix the failing rules in the Constraint Agent, then re-run the assessment.'),
+          { actions: [{ label: 'Open Constraint Agent', action: 'constraints', icon: 'bi-shield-check' }] }
+        );
+        return;
+      case 'report':
+        if (r.report_file) {
+          this.agentSays(`The Assessment Report is \`${r.report_file}\`.`, {
+            actions: [
+              { label: 'View report', action: 'view_doc', icon: 'bi-box-arrow-up-right', primary: true },
+              { label: 'Download .docx', action: 'download_doc', icon: 'bi-download' }
+            ]
+          });
+        } else {
+          this.agentSays(`The Word report wasn't generated${r.document_error ? ': ' + r.document_error : ''}.`, {
+            actions: [{ label: 'Re-run assessment', action: 'rerun', icon: 'bi-arrow-repeat', primary: true }]
+          });
+        }
+        return;
+      case 'summary':
+        this.pushResultMessage(r);
+        return;
+      default: {
+        const key = this.findTable(query);
+        if (key) {
+          this.agentSays(`### ${key}`, { tableKey: key });
+          return;
+        }
+        this.agentSays(
+          'I can answer from the latest assessment: **complex tables**, **needs review**, **migration waves**, **load strategy**, **largest tables**, **Direct Lake**, the **report**, or any **table name**. Or open the **table explorer**.'
+        );
+      }
+    }
+  }
+
+  private reviewReason(t: AssessmentTable): string {
+    if (t.readiness === 'blocked') return `Blocked: ${t.blocking_issues[0] || 'Layer 1 error'}`;
+    const parts: string[] = [];
+    if (t.keys_declared && !t.primary_key.length) parts.push('no primary key');
+    if (t.type_changes.length) parts.push(`${t.type_changes.length} type change(s)`);
+    if (t.sensitive_columns.length) parts.push(`${t.sensitive_columns.length} sensitive column(s)`);
+    return parts.join(', ') || 'Review';
+  }
+
+  private tableRow(t: AssessmentTable, desc: string): ChatRow {
+    const status = t.readiness === 'blocked' ? 'fail' : t.readiness === 'needs_review' ? 'warn' : 'pass';
+    return { id: t.key, desc, status, tableKey: t.key };
+  }
+
+  private findTable(query: string): string | null {
+    const r = this.report();
+    if (!r || !query) return null;
+    const keys = Object.keys(r.tables);
+    return keys.find(k => query.includes(k.toLowerCase())) ||
+      keys.find(k => query.includes(r.tables[k].name.toLowerCase())) || null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Template helpers
+  // ---------------------------------------------------------------------------
+
+  tableOf(key: string): AssessmentTable | null {
+    return this.report()?.tables[key] ?? null;
+  }
+
+  tierClass(tier: AssessmentTier): string {
+    return tier === 'Simple' ? 'tier-simple' : tier === 'Medium' ? 'tier-medium' : 'tier-complex';
+  }
+
+  readinessClass(r: AssessmentReadiness): string {
+    return r === 'ready' ? 'pass' : r === 'needs_review' ? 'warn' : 'fail';
+  }
+
+  setTier(t: AssessmentTier | 'all'): void {
+    this.tierFilter.set(t);
+    this.explorerLimit.set(EXPLORER_PAGE);
+  }
+
+  setReadiness(r: AssessmentReadiness | 'all'): void {
+    this.readinessFilter.set(r);
+    this.explorerLimit.set(EXPLORER_PAGE);
+  }
+
+  showMore(): void {
+    this.explorerLimit.update(n => n + EXPLORER_PAGE * 2);
+  }
+
+  countTier(t: AssessmentTier): number {
+    const r = this.report();
+    return r ? r.summary.complexity_breakdown[t.toLowerCase() as 'simple' | 'medium' | 'complex'] : 0;
+  }
+
+  countReadiness(k: AssessmentReadiness): number {
+    return this.report()?.summary.readiness_breakdown[k] ?? 0;
+  }
+
+  visibleLogs(lines: ConstraintLogLine[] | undefined): ConstraintLogLine[] {
+    const all = lines ?? [];
+    switch (this.logFilter()) {
+      case 'errors':
+        return all.filter(l => l.level === 'ERROR' || l.level === 'FAIL');
+      case 'issues':
+        return all.filter(l => l.level !== 'INFO' && l.level !== 'PASS');
+      default:
+        return all;
+    }
+  }
+
+  copyLogs(lines?: ConstraintLogLine[]): void {
+    const content = (lines ?? []).map(l => `${l.time} ${l.level.padEnd(6)} ${l.step ? '[' + l.step + '] ' : ''}${l.text}`).join('\n');
+    if (!content) return;
+    navigator.clipboard?.writeText(content).then(
+      () => {
+        this.copied.set(true);
+        setTimeout(() => this.copied.set(false), 1500);
+      },
+      () => this.agentSays('Copying was blocked by the browser. Select the text and copy it manually.')
+    );
+  }
+
+  clearChat(): void {
+    this.stopStream();
+    this.messages.set([]);
+    this.runPhase.set('idle');
+    this.tierFilter.set('all');
+    this.readinessFilter.set('all');
+    this.search.set('');
+    this.runAssessment(false);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Utilities
+  // ---------------------------------------------------------------------------
+
+  private buildConnectionPayload(): Record<string, unknown> | undefined {
+    const c = this.connectionConfig;
+    if (!c) return undefined;
+    return {
+      source: c.platform,
+      platform: c.platform,
+      server: c.server,
+      port: c.port,
+      database: c.database,
+      catalog: c.catalog,
+      username: c.username,
+      demo_mode: c.server === DEMO_SERVER,
+      extra: {
+        http_path: c.httpPath,
+        personalAccessToken: c.personalAccessToken,
+        account: c.account,
+        warehouse: c.warehouse,
+        tenant_id: c.tenantId,
+        client_id: c.clientId
+      }
+    };
+  }
+
+  private agentSays(text: string, extra: Partial<ChatMessage> = {}): void {
+    this.push({ sender: 'agent', text, ...extra });
+  }
+
+  private userSays(text: string): void {
+    this.push({ sender: 'user', text });
+  }
+
+  private push(msg: Omit<ChatMessage, 'id' | 'timestamp'>): void {
+    this.messages.update(list => [
+      ...(msg.live ? list.map(m => (m.live ? { ...m, live: false } : m)) : list),
+      { ...msg, id: `msg-${++this.msgSeq}`, timestamp: new Date() }
+    ]);
+    this.shouldScroll = true;
+  }
+
+  formatMessageText(rawText: string): string {
+    if (!rawText) return '';
+    let formatted = rawText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    formatted = formatted.replace(/^### (.*$)/gim, '<h4 class="chat-msg-title">$1</h4>');
+    formatted = formatted.replace(/^## (.*$)/gim, '<h3 class="chat-msg-title">$1</h3>');
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/`([^`]+)`/g, '<code class="chat-inline-code">$1</code>');
+    formatted = formatted.replace(/^\s*[-•]\s+(.*)$/gim, '<li class="chat-bullet-item">$1</li>');
+    formatted = formatted.replace(/(<li class="chat-bullet-item">.*?<\/li>\s*)+/gs, (match) => `<ul class="chat-bullet-list">${match}</ul>`);
+    formatted = formatted.replace(/\n\n/g, '<div class="chat-spacer"></div>');
+    formatted = formatted.replace(/(?<!>)\n(?!<)/g, '<br>');
+    return formatted;
   }
 }

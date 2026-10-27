@@ -654,7 +654,10 @@ def generate_assessment(request):
     to produce structured migration readiness assessments and generates the Assessment Report (.docx).
     """
     try:
-        result = generate_assessment_report_service()
+        data = request.data if request.method == "POST" else {}
+        result = generate_assessment_report_service(data)
+        if result.get("status") == "error":
+            return Response(result, status=409 if result.get("code") == "SOURCE_NOT_CONNECTED" else 502)
         return Response(result, status=200)
     except Exception as exc:
         traceback.print_exc()
