@@ -88,11 +88,13 @@ class DatabricksExtractor(BaseExtractor):
     def __init__(self, Creds):
         self.server_hostname = (Creds.get_servername() or "").strip().strip('"').strip("'")
         self.server_hostname = re.sub(r"^https?://", "", self.server_hostname).split("/")[0].strip().rstrip("/")
-        self.catalog = (Creds.get_database_name() or "").strip().strip('"').strip("'")
+        self.catalog = (Creds.get_database_name() or Creds.get_extra("catalog") or "main").strip().strip('"').strip("'")
         self.access_token = (
             Creds.get_password()
             or Creds.get_extra("personalAccessToken")
             or Creds.get_extra("token")
+            or Creds.get_extra("personalAccessToken")
+            or Creds.get_extra("personal_access_token")
             or Creds.get_extra("access_token")
             or ""
         ).strip().strip('\r\n\t').strip('"').strip("'")
@@ -204,7 +206,7 @@ class DatabricksExtractor(BaseExtractor):
         if not self.server_hostname:
             raise ValueError("Server hostname is empty.")
         if not self.catalog:
-            raise ValueError("Catalog (database) name is empty.")
+            self.catalog = "main"
         if not self.access_token:
             raise ValueError("Personal Access Token (PAT) is empty.")
         if not self.http_path:

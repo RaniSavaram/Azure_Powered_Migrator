@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "scan_id": "cdfd5438-b6bb-454e-bc7d-f6f15f55a3a6",
-    "generated_at": "2026-10-05T11:19:29.232740Z",
+    "scan_id": null,
+    "generated_at": "2026-10-27T06:36:25.555201Z",
     "source_platform": "Databricks",
     "target_platform": "Microsoft Fabric (OneLake)",
     "total_tables": 25,
@@ -43,8 +43,8 @@
       "type": "table",
       "size_mb": 0.2,
       "row_count": 4000,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Gold",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "card_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -211,9 +211,7 @@
           "ordinal_position": 23
         }
       ],
-      "dependencies": [
-        "dim_customer"
-      ]
+      "dependencies": []
     },
     {
       "name": "fact_card_transaction",
@@ -221,8 +219,8 @@
       "type": "table",
       "size_mb": 3.89,
       "row_count": 125000,
-      "medallion_layer": "Gold",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Silver",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "card_txn_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -382,10 +380,7 @@
           "ordinal_position": 22
         }
       ],
-      "dependencies": [
-        "dim_card",
-        "dim_customer"
-      ]
+      "dependencies": []
     },
     {
       "name": "fact_dispute",
@@ -393,8 +388,8 @@
       "type": "table",
       "size_mb": 0.01,
       "row_count": 250,
-      "medallion_layer": "Gold",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Silver",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "dispute_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -505,9 +500,7 @@
           "ordinal_position": 15
         }
       ],
-      "dependencies": [
-        "dim_card"
-      ]
+      "dependencies": []
     },
     {
       "name": "dim_account",
@@ -515,8 +508,8 @@
       "type": "table",
       "size_mb": 0.37,
       "row_count": 8000,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Gold",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "account_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -662,10 +655,7 @@
           "ordinal_position": 20
         }
       ],
-      "dependencies": [
-        "dim_customer",
-        "dim_branch"
-      ]
+      "dependencies": []
     },
     {
       "name": "dim_branch",
@@ -673,8 +663,8 @@
       "type": "table",
       "size_mb": 0.07,
       "row_count": 25,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Gold",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "branch_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -765,8 +755,8 @@
       "type": "table",
       "size_mb": 0.28,
       "row_count": 5000,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Gold",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "customer_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -962,8 +952,8 @@
       "type": "table",
       "size_mb": 8.06,
       "row_count": 200000,
-      "medallion_layer": "Gold",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Silver",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "transaction_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -1109,12 +1099,7 @@
           "ordinal_position": 20
         }
       ],
-      "dependencies": [
-        "fact_card_transaction",
-        "dim_account",
-        "dim_customer",
-        "dim_branch"
-      ]
+      "dependencies": []
     },
     {
       "name": "dim_policy",
@@ -1122,8 +1107,8 @@
       "type": "table",
       "size_mb": 0.09,
       "row_count": 2000,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Gold",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "policy_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -1318,9 +1303,7 @@
           "ordinal_position": 27
         }
       ],
-      "dependencies": [
-        "dim_customer"
-      ]
+      "dependencies": []
     },
     {
       "name": "fact_claim",
@@ -1329,7 +1312,7 @@
       "size_mb": 0.02,
       "row_count": 400,
       "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "claim_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -1482,10 +1465,7 @@
           "ordinal_position": 21
         }
       ],
-      "dependencies": [
-        "dim_policy",
-        "dim_customer"
-      ]
+      "dependencies": []
     },
     {
       "name": "fact_premium",
@@ -1494,7 +1474,7 @@
       "size_mb": 0.24,
       "row_count": 8000,
       "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "premium_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -1598,9 +1578,7 @@
           "ordinal_position": 14
         }
       ],
-      "dependencies": [
-        "dim_policy"
-      ]
+      "dependencies": []
     },
     {
       "name": "dim_loan",
@@ -1609,7 +1587,7 @@
       "size_mb": 0.08,
       "row_count": 1500,
       "medallion_layer": "Gold",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "loan_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -1797,11 +1775,7 @@
           "ordinal_position": 26
         }
       ],
-      "dependencies": [
-        "fact_loan_application",
-        "dim_customer",
-        "dim_branch"
-      ]
+      "dependencies": []
     },
     {
       "name": "fact_collection_activity",
@@ -1810,7 +1784,7 @@
       "size_mb": 0.01,
       "row_count": 600,
       "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "activity_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -1914,9 +1888,7 @@
           "ordinal_position": 14
         }
       ],
-      "dependencies": [
-        "dim_loan"
-      ]
+      "dependencies": []
     },
     {
       "name": "fact_loan_application",
@@ -1925,7 +1897,7 @@
       "size_mb": 0.09,
       "row_count": 2500,
       "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "application_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -2085,10 +2057,7 @@
           "ordinal_position": 22
         }
       ],
-      "dependencies": [
-        "dim_customer",
-        "dim_branch"
-      ]
+      "dependencies": []
     },
     {
       "name": "fact_loan_repayment",
@@ -2097,7 +2066,7 @@
       "size_mb": 0.45,
       "row_count": 18000,
       "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "repayment_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -2201,9 +2170,7 @@
           "ordinal_position": 14
         }
       ],
-      "dependencies": [
-        "dim_loan"
-      ]
+      "dependencies": []
     },
     {
       "name": "fact_neft_rtgs",
@@ -2212,7 +2179,7 @@
       "size_mb": 0.99,
       "row_count": 20000,
       "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "payment_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -2379,10 +2346,7 @@
           "ordinal_position": 23
         }
       ],
-      "dependencies": [
-        "fact_loan_repayment",
-        "fact_upi_payment"
-      ]
+      "dependencies": []
     },
     {
       "name": "fact_upi_payment",
@@ -2391,7 +2355,7 @@
       "size_mb": 8.69,
       "row_count": 150000,
       "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "upi_txn_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -2580,8 +2544,8 @@
       "type": "table",
       "size_mb": 0.14,
       "row_count": 5000,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Gold",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "kyc_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -2741,9 +2705,7 @@
           "ordinal_position": 22
         }
       ],
-      "dependencies": [
-        "dim_customer"
-      ]
+      "dependencies": []
     },
     {
       "name": "dim_sanctions_watchlist",
@@ -2751,8 +2713,8 @@
       "type": "table",
       "size_mb": 0.01,
       "row_count": 50,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Gold",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "watchlist_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -2865,7 +2827,7 @@
       "size_mb": 0.01,
       "row_count": 100,
       "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "alert_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -3025,10 +2987,7 @@
           "ordinal_position": 22
         }
       ],
-      "dependencies": [
-        "dim_customer",
-        "dim_account"
-      ]
+      "dependencies": []
     },
     {
       "name": "archived_orders",
@@ -3036,8 +2995,8 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 2,
-      "medallion_layer": "Silver",
-      "layer_reason": "only if demo",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "order_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -3078,9 +3037,7 @@
           "ordinal_position": 5
         }
       ],
-      "dependencies": [
-        "dim_customer"
-      ]
+      "dependencies": []
     },
     {
       "name": "customer_summary",
@@ -3088,8 +3045,8 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Gold",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "customer_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -3130,9 +3087,7 @@
           "ordinal_position": 5
         }
       ],
-      "dependencies": [
-        "dim_customer"
-      ]
+      "dependencies": []
     },
     {
       "name": "etl_audit_log",
@@ -3140,8 +3095,8 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 0,
-      "medallion_layer": "Gold",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "run_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -3197,8 +3152,8 @@
       "type": "table",
       "size_mb": 0.06,
       "row_count": 6,
-      "medallion_layer": "Silver",
-      "layer_reason": "only if purely demo",
+      "medallion_layer": "Bronze",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "order_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -3239,9 +3194,7 @@
           "ordinal_position": 5
         }
       ],
-      "dependencies": [
-        "dim_customer"
-      ]
+      "dependencies": []
     },
     {
       "name": "dim_portfolio",
@@ -3249,8 +3202,8 @@
       "type": "table",
       "size_mb": 0.04,
       "row_count": 750,
-      "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "medallion_layer": "Gold",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "portfolio_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -3403,9 +3356,7 @@
           "ordinal_position": 21
         }
       ],
-      "dependencies": [
-        "dim_customer"
-      ]
+      "dependencies": []
     },
     {
       "name": "fact_trade",
@@ -3414,7 +3365,7 @@
       "size_mb": 0.57,
       "row_count": 10000,
       "medallion_layer": "Silver",
-      "layer_reason": "Categorized based on dependencies and naming",
+      "layer_reason": "Core Lakehouse entity",
       "primary_key": "trade_id",
       "declared_primary_key": null,
       "declared_foreign_keys": null,
@@ -3595,10 +3546,7 @@
           "ordinal_position": 25
         }
       ],
-      "dependencies": [
-        "dim_portfolio",
-        "dim_customer"
-      ]
+      "dependencies": []
     },
     {
       "name": "archived_orders_view",
@@ -3614,338 +3562,43 @@
       "dependencies": []
     }
   ],
-  "relationships": [
-    {
-      "fk_name": "FK_dim_card_customer_id_dim_customer",
-      "parent_schema": "cards",
-      "parent_table": "dim_card",
-      "parent_column": "FK_dim_card_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_dim_card_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_fact_card_transaction_card_id_dim_card",
-      "parent_schema": "cards",
-      "parent_table": "fact_card_transaction",
-      "parent_column": "FK_fact_card_transaction_card_id_dim_card",
-      "referenced_schema": "cards",
-      "referenced_table": "dim_card",
-      "referenced_column": "FK_fact_card_transaction_card_id_dim_card"
-    },
-    {
-      "fk_name": "FK_fact_card_transaction_customer_id_dim_customer",
-      "parent_schema": "cards",
-      "parent_table": "fact_card_transaction",
-      "parent_column": "FK_fact_card_transaction_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_fact_card_transaction_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_fact_dispute_card_id_dim_card",
-      "parent_schema": "cards",
-      "parent_table": "fact_dispute",
-      "parent_column": "FK_fact_dispute_card_id_dim_card",
-      "referenced_schema": "cards",
-      "referenced_table": "dim_card",
-      "referenced_column": "FK_fact_dispute_card_id_dim_card"
-    },
-    {
-      "fk_name": "FK_dim_account_customer_id_dim_customer",
-      "parent_schema": "core_banking",
-      "parent_table": "dim_account",
-      "parent_column": "FK_dim_account_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_dim_account_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_dim_account_branch_id_dim_branch",
-      "parent_schema": "core_banking",
-      "parent_table": "dim_account",
-      "parent_column": "FK_dim_account_branch_id_dim_branch",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_branch",
-      "referenced_column": "FK_dim_account_branch_id_dim_branch"
-    },
-    {
-      "fk_name": "FK_fact_transaction_transaction_id_fact_card_transaction",
-      "parent_schema": "core_banking",
-      "parent_table": "fact_transaction",
-      "parent_column": "FK_fact_transaction_transaction_id_fact_card_transaction",
-      "referenced_schema": "cards",
-      "referenced_table": "fact_card_transaction",
-      "referenced_column": "FK_fact_transaction_transaction_id_fact_card_transaction"
-    },
-    {
-      "fk_name": "FK_fact_transaction_account_id_dim_account",
-      "parent_schema": "core_banking",
-      "parent_table": "fact_transaction",
-      "parent_column": "FK_fact_transaction_account_id_dim_account",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_account",
-      "referenced_column": "FK_fact_transaction_account_id_dim_account"
-    },
-    {
-      "fk_name": "FK_fact_transaction_customer_id_dim_customer",
-      "parent_schema": "core_banking",
-      "parent_table": "fact_transaction",
-      "parent_column": "FK_fact_transaction_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_fact_transaction_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_fact_transaction_branch_id_dim_branch",
-      "parent_schema": "core_banking",
-      "parent_table": "fact_transaction",
-      "parent_column": "FK_fact_transaction_branch_id_dim_branch",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_branch",
-      "referenced_column": "FK_fact_transaction_branch_id_dim_branch"
-    },
-    {
-      "fk_name": "FK_dim_policy_customer_id_dim_customer",
-      "parent_schema": "insurance",
-      "parent_table": "dim_policy",
-      "parent_column": "FK_dim_policy_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_dim_policy_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_fact_claim_policy_id_dim_policy",
-      "parent_schema": "insurance",
-      "parent_table": "fact_claim",
-      "parent_column": "FK_fact_claim_policy_id_dim_policy",
-      "referenced_schema": "insurance",
-      "referenced_table": "dim_policy",
-      "referenced_column": "FK_fact_claim_policy_id_dim_policy"
-    },
-    {
-      "fk_name": "FK_fact_claim_customer_id_dim_customer",
-      "parent_schema": "insurance",
-      "parent_table": "fact_claim",
-      "parent_column": "FK_fact_claim_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_fact_claim_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_fact_premium_policy_id_dim_policy",
-      "parent_schema": "insurance",
-      "parent_table": "fact_premium",
-      "parent_column": "FK_fact_premium_policy_id_dim_policy",
-      "referenced_schema": "insurance",
-      "referenced_table": "dim_policy",
-      "referenced_column": "FK_fact_premium_policy_id_dim_policy"
-    },
-    {
-      "fk_name": "FK_dim_loan_application_id_fact_loan_application",
-      "parent_schema": "lending",
-      "parent_table": "dim_loan",
-      "parent_column": "FK_dim_loan_application_id_fact_loan_application",
-      "referenced_schema": "lending",
-      "referenced_table": "fact_loan_application",
-      "referenced_column": "FK_dim_loan_application_id_fact_loan_application"
-    },
-    {
-      "fk_name": "FK_dim_loan_customer_id_dim_customer",
-      "parent_schema": "lending",
-      "parent_table": "dim_loan",
-      "parent_column": "FK_dim_loan_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_dim_loan_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_dim_loan_branch_id_dim_branch",
-      "parent_schema": "lending",
-      "parent_table": "dim_loan",
-      "parent_column": "FK_dim_loan_branch_id_dim_branch",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_branch",
-      "referenced_column": "FK_dim_loan_branch_id_dim_branch"
-    },
-    {
-      "fk_name": "FK_fact_collection_activity_loan_id_dim_loan",
-      "parent_schema": "lending",
-      "parent_table": "fact_collection_activity",
-      "parent_column": "FK_fact_collection_activity_loan_id_dim_loan",
-      "referenced_schema": "lending",
-      "referenced_table": "dim_loan",
-      "referenced_column": "FK_fact_collection_activity_loan_id_dim_loan"
-    },
-    {
-      "fk_name": "FK_fact_loan_application_customer_id_dim_customer",
-      "parent_schema": "lending",
-      "parent_table": "fact_loan_application",
-      "parent_column": "FK_fact_loan_application_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_fact_loan_application_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_fact_loan_application_branch_id_dim_branch",
-      "parent_schema": "lending",
-      "parent_table": "fact_loan_application",
-      "parent_column": "FK_fact_loan_application_branch_id_dim_branch",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_branch",
-      "referenced_column": "FK_fact_loan_application_branch_id_dim_branch"
-    },
-    {
-      "fk_name": "FK_fact_loan_repayment_loan_id_dim_loan",
-      "parent_schema": "lending",
-      "parent_table": "fact_loan_repayment",
-      "parent_column": "FK_fact_loan_repayment_loan_id_dim_loan",
-      "referenced_schema": "lending",
-      "referenced_table": "dim_loan",
-      "referenced_column": "FK_fact_loan_repayment_loan_id_dim_loan"
-    },
-    {
-      "fk_name": "FK_fact_neft_rtgs_payment_id_fact_loan_repayment",
-      "parent_schema": "payments",
-      "parent_table": "fact_neft_rtgs",
-      "parent_column": "FK_fact_neft_rtgs_payment_id_fact_loan_repayment",
-      "referenced_schema": "lending",
-      "referenced_table": "fact_loan_repayment",
-      "referenced_column": "FK_fact_neft_rtgs_payment_id_fact_loan_repayment"
-    },
-    {
-      "fk_name": "FK_fact_neft_rtgs_payment_id_fact_upi_payment",
-      "parent_schema": "payments",
-      "parent_table": "fact_neft_rtgs",
-      "parent_column": "FK_fact_neft_rtgs_payment_id_fact_upi_payment",
-      "referenced_schema": "payments",
-      "referenced_table": "fact_upi_payment",
-      "referenced_column": "FK_fact_neft_rtgs_payment_id_fact_upi_payment"
-    },
-    {
-      "fk_name": "FK_dim_kyc_customer_id_dim_customer",
-      "parent_schema": "risk_compliance",
-      "parent_table": "dim_kyc",
-      "parent_column": "FK_dim_kyc_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_dim_kyc_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_fact_aml_alert_customer_id_dim_customer",
-      "parent_schema": "risk_compliance",
-      "parent_table": "fact_aml_alert",
-      "parent_column": "FK_fact_aml_alert_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_fact_aml_alert_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_fact_aml_alert_account_id_dim_account",
-      "parent_schema": "risk_compliance",
-      "parent_table": "fact_aml_alert",
-      "parent_column": "FK_fact_aml_alert_account_id_dim_account",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_account",
-      "referenced_column": "FK_fact_aml_alert_account_id_dim_account"
-    },
-    {
-      "fk_name": "FK_archived_orders_customer_id_dim_customer",
-      "parent_schema": "sp_demo",
-      "parent_table": "archived_orders",
-      "parent_column": "FK_archived_orders_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_archived_orders_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_customer_summary_customer_id_dim_customer",
-      "parent_schema": "sp_demo",
-      "parent_table": "customer_summary",
-      "parent_column": "FK_customer_summary_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_customer_summary_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_orders_customer_id_dim_customer",
-      "parent_schema": "sp_demo",
-      "parent_table": "orders",
-      "parent_column": "FK_orders_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_orders_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_dim_portfolio_customer_id_dim_customer",
-      "parent_schema": "wealth",
-      "parent_table": "dim_portfolio",
-      "parent_column": "FK_dim_portfolio_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_dim_portfolio_customer_id_dim_customer"
-    },
-    {
-      "fk_name": "FK_fact_trade_portfolio_id_dim_portfolio",
-      "parent_schema": "wealth",
-      "parent_table": "fact_trade",
-      "parent_column": "FK_fact_trade_portfolio_id_dim_portfolio",
-      "referenced_schema": "wealth",
-      "referenced_table": "dim_portfolio",
-      "referenced_column": "FK_fact_trade_portfolio_id_dim_portfolio"
-    },
-    {
-      "fk_name": "FK_fact_trade_customer_id_dim_customer",
-      "parent_schema": "wealth",
-      "parent_table": "fact_trade",
-      "parent_column": "FK_fact_trade_customer_id_dim_customer",
-      "referenced_schema": "core_banking",
-      "referenced_table": "dim_customer",
-      "referenced_column": "FK_fact_trade_customer_id_dim_customer"
-    }
-  ],
+  "relationships": [],
   "execution_plan": {
     "migration_sequence": [
-      "dim_branch",
-      "dim_customer",
-      "fact_upi_payment",
-      "dim_sanctions_watchlist",
-      "etl_audit_log",
       "dim_card",
-      "dim_account",
-      "dim_policy",
-      "fact_loan_application",
-      "dim_kyc",
-      "archived_orders",
-      "customer_summary",
-      "orders",
-      "dim_portfolio",
       "fact_card_transaction",
       "fact_dispute",
+      "dim_account",
+      "dim_branch",
+      "dim_customer",
+      "fact_transaction",
+      "dim_policy",
       "fact_claim",
       "fact_premium",
       "dim_loan",
-      "fact_aml_alert",
-      "fact_trade",
-      "fact_transaction",
       "fact_collection_activity",
+      "fact_loan_application",
       "fact_loan_repayment",
-      "fact_neft_rtgs"
+      "fact_neft_rtgs",
+      "fact_upi_payment",
+      "dim_kyc",
+      "dim_sanctions_watchlist",
+      "fact_aml_alert",
+      "archived_orders",
+      "customer_summary",
+      "etl_audit_log",
+      "orders",
+      "dim_portfolio",
+      "fact_trade"
     ],
     "batches": {
       "Batch 1 (Independent Tables)": [
-        "dim_branch",
-        "dim_customer",
-        "fact_upi_payment",
-        "dim_sanctions_watchlist",
-        "etl_audit_log"
-      ],
-      "Batch 2 (Medium Dependency Tables)": [],
-      "Batch 3 (Highly Dependent Tables)": [
         "dim_card",
         "fact_card_transaction",
         "fact_dispute",
         "dim_account",
+        "dim_branch",
+        "dim_customer",
         "fact_transaction",
         "dim_policy",
         "fact_claim",
@@ -3955,14 +3608,19 @@
         "fact_loan_application",
         "fact_loan_repayment",
         "fact_neft_rtgs",
+        "fact_upi_payment",
         "dim_kyc",
+        "dim_sanctions_watchlist",
         "fact_aml_alert",
         "archived_orders",
         "customer_summary",
+        "etl_audit_log",
         "orders",
         "dim_portfolio",
         "fact_trade"
       ],
+      "Batch 2 (Medium Dependency Tables)": [],
+      "Batch 3 (Highly Dependent Tables)": [],
       "Batch 4 (Views)": [
         "archived_orders_view"
       ],

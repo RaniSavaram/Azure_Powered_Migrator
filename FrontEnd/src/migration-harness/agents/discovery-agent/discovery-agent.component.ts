@@ -51,6 +51,7 @@ export interface SavedProfileOption {
   password?: string;
   httpPath?: string;
   token?: string;
+  personalAccessToken?: string;
   account?: string;
   warehouse?: string;
   tenantId?: string;
@@ -193,10 +194,11 @@ export class DiscoveryAgentComponent implements OnInit {
               username: p.username,
               password: p.password,
               catalog: p.database,
-              httpPath: p.extra?.http_path,
+              httpPath: p.extra?.http_path || p.extra?.httpPath,
               account: p.extra?.account,
               warehouse: p.extra?.warehouse,
-              token: p.extra?.token,
+              token: p.extra?.token || p.extra?.personalAccessToken || p.password,
+              personalAccessToken: p.extra?.personalAccessToken || p.extra?.token || p.password,
               tenantId: p.extra?.tenant_id,
               clientId: p.extra?.client_id
             }));
@@ -267,6 +269,10 @@ export class DiscoveryAgentComponent implements OnInit {
       this.connectionForm.rememberMe = true;
       if (selected.httpPath) this.connectionForm.httpPath = selected.httpPath;
       if (selected.token) this.connectionForm.personalAccessToken = selected.token;
+      if (selected.personalAccessToken) this.connectionForm.personalAccessToken = selected.personalAccessToken;
+      if (selected.password && this.connectionForm.platform === 'Databricks') {
+        this.connectionForm.personalAccessToken = selected.password;
+      }
       if (selected.account) this.connectionForm.account = selected.account;
       if (selected.warehouse) this.connectionForm.warehouse = selected.warehouse;
       if (selected.tenantId) this.connectionForm.tenantId = selected.tenantId;
@@ -367,7 +373,9 @@ export class DiscoveryAgentComponent implements OnInit {
       if (!this.connectionForm.password?.trim()) this.fieldErrors['password'] = true;
     } else if (plat === 'Databricks') {
       if (!this.connectionForm.server?.trim()) this.fieldErrors['server'] = true;
-      if (!this.connectionForm.personalAccessToken?.trim()) this.fieldErrors['personalAccessToken'] = true;
+      if (!this.connectionForm.personalAccessToken?.trim() && !this.connectionForm.password?.trim()) {
+        this.fieldErrors['personalAccessToken'] = true;
+      }
     } else if (plat === 'Dynamics 365') {
       if (!this.connectionForm.server?.trim()) this.fieldErrors['server'] = true;
       if (this.connectionForm.dynamicsAuthMode === 'secret') {
@@ -421,13 +429,28 @@ export class DiscoveryAgentComponent implements OnInit {
     this.connectionErrorMessage = '';
 
     // Auto-lookup remembered password if empty and server is given
-    if (!isDemoMode && !this.connectionForm.password) {
+    if (!isDemoMode && !this.connectionForm.password && !this.connectionForm.personalAccessToken) {
       const match = this.currentSavedOptions.find(p => 
         p.server === this.connectionForm.server && 
         (!this.connectionForm.username || p.username === this.connectionForm.username)
       );
       if (match?.password) {
         this.connectionForm.password = match.password;
+        if (this.connectionForm.platform === 'Databricks') {
+          this.connectionForm.personalAccessToken = match.password;
+        }
+      }
+      if (match?.personalAccessToken) {
+        this.connectionForm.personalAccessToken = match.personalAccessToken;
+      }
+      if (match?.token && this.connectionForm.platform === 'Databricks') {
+        this.connectionForm.personalAccessToken = match.token;
+      }
+      if (match?.httpPath && !this.connectionForm.httpPath) {
+        this.connectionForm.httpPath = match.httpPath;
+      }
+      if (match?.catalog && !this.connectionForm.catalog) {
+        this.connectionForm.catalog = match.catalog;
       }
     }
 
@@ -492,7 +515,9 @@ export class DiscoveryAgentComponent implements OnInit {
         database: this.connectionForm.database,
         catalog: this.connectionForm.catalog,
         username: this.connectionForm.username,
-        password: this.connectionForm.password,
+        password: this.connectionForm.password || this.connectionForm.personalAccessToken,
+        personalAccessToken: this.connectionForm.personalAccessToken,
+        token: this.connectionForm.personalAccessToken || this.connectionForm.token,
         httpPath: this.connectionForm.httpPath,
         account: this.connectionForm.account,
         warehouse: this.connectionForm.warehouse,
@@ -536,21 +561,27 @@ export class DiscoveryAgentComponent implements OnInit {
 - **Username**: \`${this.connectionForm.username}\``;
     }
 
+    const effectiveToken = this.connectionForm.personalAccessToken || this.connectionForm.token || '';
+    const effectiveCatalog = this.connectionForm.catalog || this.connectionForm.database || 'main';
+
     const connPayload = {
       source: this.connectionForm.platform,
       platform: this.connectionForm.platform,
       server: this.connectionForm.server,
       port: this.connectionForm.port,
-      database: this.connectionForm.database,
-      catalog: this.connectionForm.catalog,
+      database: this.connectionForm.platform === 'Databricks' ? effectiveCatalog : this.connectionForm.database,
+      catalog: effectiveCatalog,
       username: this.connectionForm.username,
-      password: this.connectionForm.password,
+      password: this.connectionForm.platform === 'Databricks' ? (effectiveToken || this.connectionForm.password) : this.connectionForm.password,
+      personalAccessToken: effectiveToken,
+      httpPath: this.connectionForm.httpPath,
       remember_me: this.connectionForm.rememberMe,
       demo_mode: isDemoMode,
       extra: {
         http_path: this.connectionForm.httpPath,
-        token: this.connectionForm.token,
-        personalAccessToken: this.connectionForm.personalAccessToken,
+        httpPath: this.connectionForm.httpPath,
+        token: effectiveToken,
+        personalAccessToken: effectiveToken,
         account: this.connectionForm.account,
         warehouse: this.connectionForm.warehouse,
         tenant_id: this.connectionForm.tenantId,

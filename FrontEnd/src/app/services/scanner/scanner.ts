@@ -138,6 +138,7 @@ export interface SavedConnectionProfile {
   password: string;
   extra?: {
     http_path?: string;
+    httpPath?: string;
     tenant_id?: string;
     client_id?: string;
     client_secret?: string;
@@ -145,6 +146,7 @@ export interface SavedConnectionProfile {
     warehouse?: string;
     role?: string;
     token?: string;
+    personalAccessToken?: string;
     workspace_id?: string;
     lakehouse_name?: string;
     lakehouse_id?: string;
@@ -359,16 +361,22 @@ export class Scanner {
     if (connection.warehouse) extra.warehouse = connection.warehouse;
     if (connection.role) extra.role = connection.role;
     if (connection.token) extra.token = connection.token;
-    if (connection.personalAccessToken) extra.personalAccessToken = connection.personalAccessToken;
+    if (connection.personalAccessToken) {
+      extra.personalAccessToken = connection.personalAccessToken;
+      if (!extra.token) extra.token = connection.personalAccessToken;
+    }
+
+    const effectivePassword = connection.password || connection.personalAccessToken || connection.token;
+    const effectiveDatabase = connection.database || connection.catalog;
 
     const payload = {
       source,
       platform: source,
       server: connection.server,
-      database: connection.database,
-      catalog: connection.catalog,
+      database: effectiveDatabase,
+      catalog: connection.catalog || effectiveDatabase,
       username: connection.username,
-      password: connection.password,
+      password: effectivePassword,
       port: connection.port,
       extra,
       remember_me: rememberMe || connection.remember_me || connection.rememberMe,

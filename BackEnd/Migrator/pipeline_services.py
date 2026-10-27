@@ -325,39 +325,66 @@ def connect_source_service(data: dict) -> dict:
     port = data.get("port")
     remember_me = bool(data.get("rememberMe") or data.get("remember_me"))
 
-    # Token-authenticated sources (Databricks PAT, Snowflake PAT) send their
-    # secret as a token, not a password - the Discovery Agent puts it in
-    # extra.personalAccessToken. Read it before the saved-profile lookup
-    # below, so a freshly typed token always wins over an older saved one.
-    if not password:
-        req_extra = data.get("extra") or {}
-        password = str(
-            req_extra.get("personalAccessToken")
-            or req_extra.get("token")
-            or req_extra.get("access_token")
-            or data.get("personalAccessToken")
-            or data.get("token")
-            or ""
-        ).strip()
-
-    # Auto-lookup remembered password if empty and server is given
-    if not password and server:
-        for profile in get_saved_connections(slug):
-            if profile.get("server") == server:
-                if not username or profile.get("username") == username:
-                    if profile.get("password"):
-                        password = profile.get("password")
-                    if not database and profile.get("database"):
-                        database = profile.get("database")
-                    if not username and profile.get("username"):
-                        username = profile.get("username")
-                    break
-
     extra = dict(data.get("extra") or {})
     for key in ("httpPath", "http_path", "personalAccessToken", "token", "account", "warehouse", "tenantId", "tenant_id", "clientId", "client_id", "clientSecret", "client_secret", "role"):
         val = data.get(key)
         if val is not None:
             extra[key] = val
+
+    # For Databricks / token-based platforms, map token into password if password is empty
+    if not password:
+        token_val = (
+            extra.get("token")
+            or extra.get("personalAccessToken")
+            or extra.get("personal_access_token")
+            or extra.get("access_token")
+            or data.get("token")
+            or data.get("personalAccessToken")
+            or data.get("personal_access_token")
+            or data.get("access_token")
+            or ""
+        )
+        if token_val:
+            password = str(token_val).strip()
+
+    # For Databricks: ensure http_path and catalog are properly mapped
+    if slug == "databricks":
+        http_val = (
+            extra.get("http_path")
+            or extra.get("httpPath")
+            or data.get("httpPath")
+            or data.get("http_path")
+            or ""
+        )
+        if http_val:
+            extra["http_path"] = http_val
+            extra["httpPath"] = http_val
+        if not database:
+            database = (data.get("catalog") or extra.get("catalog") or "main").strip()
+
+    # Auto-lookup remembered profile if empty and server is given
+    if (not password or not database or (slug == "databricks" and not extra.get("http_path"))) and server:
+        for profile in get_saved_connections(slug):
+            if profile.get("server") == server:
+                if not username or profile.get("username") == username:
+                    if not password and profile.get("password"):
+                        password = profile.get("password")
+                    if not database and (profile.get("database") or profile.get("catalog")):
+                        database = profile.get("database") or profile.get("catalog")
+                    if not username and profile.get("username"):
+                        username = profile.get("username")
+                    prof_extra = profile.get("extra") or {}
+                    if slug == "databricks" and not extra.get("http_path"):
+                        h = prof_extra.get("http_path") or prof_extra.get("httpPath")
+                        if h:
+                            extra["http_path"] = h
+                            extra["httpPath"] = h
+                    break
+
+    # Ensure token is populated in extra for Databricks
+    if password and slug == "databricks":
+        if not extra.get("token"): extra["token"] = password
+        if not extra.get("personalAccessToken"): extra["personalAccessToken"] = password
 
     creds = PrivateVariables()
     creds.set_servername(server)
@@ -614,15 +641,29 @@ def extract_metadata_service(data: dict = None) -> dict:
     creds.set_username(cfg.get("username", ""))
 
     pwd = cfg.get("password", "") or (data.get("password") if data else "")
+    cfg_extra = dict(cfg.get("extra", {}))
+    if data and data.get("extra"):
+        cfg_extra.update(data.get("extra"))
+    if not pwd and slug == "databricks":
+        pwd = (
+            cfg_extra.get("token")
+            or cfg_extra.get("personalAccessToken")
+            or cfg_extra.get("personal_access_token")
+            or cfg_extra.get("access_token")
+            or ""
+        )
     if not pwd and active_pipeline.get("server"):
         for profile in get_saved_connections(slug):
             if profile.get("server") == active_pipeline.get("server"):
                 if not creds.get_username() or profile.get("username") == creds.get_username():
                     pwd = profile.get("password") or ""
                     break
+    if pwd and slug == "databricks":
+        if not cfg_extra.get("token"): cfg_extra["token"] = pwd
+        if not cfg_extra.get("personalAccessToken"): cfg_extra["personalAccessToken"] = pwd
     creds.set_password(pwd)
     creds.set_port(cfg.get("port"))
-    creds.set_extra_dict(cfg.get("extra", {}))
+    creds.set_extra_dict(cfg_extra)
 
     metadata = None
     if cfg.get("live_connected"):
