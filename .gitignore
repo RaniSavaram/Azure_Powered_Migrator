@@ -18,6 +18,7 @@ db.sqlite3
 .env.*
 !.env.example
 BackEnd/config/saved_connections.json
+AI assisted DB migrator-OurSolution/
 
 # Python cache/tools
 .pytest_cache/

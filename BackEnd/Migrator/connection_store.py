@@ -16,16 +16,42 @@ SAVED_CONNECTIONS_PATH = os.environ.get(
     "DB_SCANNER_SAVED_CONNECTIONS_PATH",
     os.path.join(tempfile.gettempdir(), "db_scanner_saved_connections.json"),
 )
+def _get_base_dir() -> str:
+    try:
+        if settings.configured:
+            return str(settings.BASE_DIR)
+    except Exception:
+        pass
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+CONFIG_SAVED_CONNECTIONS_PATH = os.path.join(_get_base_dir(), "config", "saved_connections.json")
 
 
 def _load_all() -> dict:
-    if not os.path.exists(SAVED_CONNECTIONS_PATH):
-        return {}
-    try:
-        with open(SAVED_CONNECTIONS_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, OSError):
-        return {}
+    data = {}
+    # First load base saved connections from project config if present
+    if os.path.exists(CONFIG_SAVED_CONNECTIONS_PATH):
+        try:
+            with open(CONFIG_SAVED_CONNECTIONS_PATH, "r", encoding="utf-8") as f:
+                cfg_conns = json.load(f)
+                if isinstance(cfg_conns, dict):
+                    data.update(cfg_conns)
+        except Exception:
+            pass
+
+    # Next overlay with user saved connections from tempfile
+    if os.path.exists(SAVED_CONNECTIONS_PATH):
+        try:
+            with open(SAVED_CONNECTIONS_PATH, "r", encoding="utf-8") as f:
+                tmp_conns = json.load(f)
+                if isinstance(tmp_conns, dict):
+                    for k, v in tmp_conns.items():
+                        data[k] = v
+        except Exception:
+            pass
+
+    return data
 
 
 def _write_all(connections: dict) -> None:
@@ -89,7 +115,7 @@ DEFAULT_PROFILES = {
             "server": "dbc-a58bcebf-ff15.cloud.databricks.com",
             "database": "bfsi_dev",
             "username": "",
-            "password": "",
+            "password": os.environ.get("DATABRICKS_TOKEN", ""),
             "extra": {
                 "http_path": "/sql/1.0/warehouses/570872a58c83ef23"
             }

@@ -428,65 +428,181 @@ def connect_database(request):
     global source
     reset_Logs()
 
-    # Delegate to unified connection service which handles all platforms and pipeline state
-    conn_result = connect_source_service(request.data)
+    print("[INFO]: Connect request received")
+    Logs["Scan Info"].append("[INFO]: Connect request received")
 
-    source = conn_result.get("source") or request.data.get("source")
-    cfg = conn_result.get("config", {})
+    source = request.data.get("source") or request.data.get("platform")
     clean_source = (source or "").strip().lower().replace(" ", "").replace("_", "")
     remember_me = str(request.data.get("remember_me", request.data.get("rememberMe", "false"))).strip().lower() == "true"
 
-    Creds.set_servername(cfg.get("server") or request.data.get("server"))
-    Creds.set_database_name(cfg.get("database") or request.data.get("database"))
-    Creds.set_username(cfg.get("username") or request.data.get("username") or "")
+    server = (request.data.get("server") or request.data.get("account") or "").strip()
+    database = (request.data.get("database") or request.data.get("catalog") or "").strip()
+    username = (request.data.get("username") or "").strip()
 
-    extra_payload = cfg.get("extra") or request.data.get("extra") or {}
-    if not isinstance(extra_payload, dict):
-        extra_payload = {}
+    extra_payload = dict(request.data.get("extra") or {})
     if request.data.get("httpPath") and "http_path" not in extra_payload:
         extra_payload["http_path"] = request.data.get("httpPath")
     if request.data.get("http_path") and "http_path" not in extra_payload:
         extra_payload["http_path"] = request.data.get("http_path")
+    if request.data.get("token") and "token" not in extra_payload:
+        extra_payload["token"] = request.data.get("token")
+    if request.data.get("personalAccessToken") and "token" not in extra_payload:
+        extra_payload["token"] = request.data.get("personalAccessToken")
+    if request.data.get("warehouse") and "warehouse" not in extra_payload:
+        extra_payload["warehouse"] = request.data.get("warehouse")
+    if request.data.get("role") and "role" not in extra_payload:
+        extra_payload["role"] = request.data.get("role")
 
     pwd = (
         request.data.get("password")
         or request.data.get("token")
+        or request.data.get("personalAccessToken")
         or extra_payload.get("personalAccessToken")
         or extra_payload.get("token")
         or extra_payload.get("access_token")
-        or cfg.get("password")
         or ""
     )
+
+    # Auto-lookup remembered password if empty and server is given
+    if not pwd and server:
+        for profile in get_saved_connections(source):
+            if profile.get("server") == server:
+                if not username or profile.get("username") == username:
+                    if profile.get("password"):
+                        pwd = profile.get("password")
+                    if not database and profile.get("database"):
+                        database = profile.get("database")
+                    break
+
+    Creds.set_servername(server)
+    Creds.set_database_name(database)
+    Creds.set_username(username)
     Creds.set_password(pwd)
-    Creds.set_port(cfg.get("port") or request.data.get("port") or None)
+    Creds.set_port(request.data.get("port") or None)
     Creds.set_extra_dict(extra_payload)
 
-    for conn_line in conn_result.get("logs", []):
+    print("[INFO]: Connection Details received")
+    Logs["Scan Info"].append("[INFO]: Connection Details received")
+    for conn_line in _get_connection_log_lines(source, Creds):
         Logs["Scan Info"].append(conn_line)
 
-    is_connected = conn_result.get("connected", False)
-    if is_connected and remember_me:
-        save_connection(source, {
-            "server": Creds.get_servername(),
-            "database": Creds.get_database_name(),
-            "username": Creds.get_username(),
-            "password": Creds.get_password(),
-            "extra": Creds.get_extra_dict(),
-        })
+    try:
+        # Field requirements differ by DB type family:
+        if clean_source == "sqlite":
+            if not database:
+                Logs["Scan Info"].append("[Err]: Database file path is required.")
+                return Response(
+                    {"status": "error", "message": "Database file path is required."},
+                    status=400
+                )
+        elif clean_source in ("dynamics365", "dynamics 365", "d365", "dynamics"):
+            if not server:
+                Logs["Scan Info"].append("[Err]: Org URL is required.")
+                return Response(
+                    {"status": "error", "message": "Org URL (Server field) is required."},
+                    status=400
+                )
+        elif not server or not database:
+            Logs["Scan Info"].append("[Err]: Server and database name are required.")
+            return Response(
+                {"status": "error", "message": "Server and database name are required."},
+                status=400
+            )
 
-    resp_status = 200 if is_connected else 400
+        db_type = clean_source
+
+        if db_type in ("sqlserver", "mssql"):
+            test_extractor = SQLServerExtractor(Creds)
+        elif db_type in ("synapse", "azuresynapse"):
+            test_extractor = SynapseExtractor(Creds)
+        elif db_type == "snowflake":
+            test_extractor = SnowflakeExtractor(Creds)
+        elif db_type == "databricks":
+            test_extractor = DatabricksExtractor(Creds)
+        elif db_type in ("dynamics365", "dynamics 365", "d365", "dynamics"):
+            test_extractor = Dynamics365Extractor(Creds)
+        elif db_type == "sqlite":
+            test_extractor = None
+        else:
+            Logs["Scan Info"].append(f"[Err]: Unsupported database type: '{source}'")
+            return Response(
+                {
+                    "status": "error",
+                    "message": (
+                        f"Unsupported database type: '{source}'. Supported: sqlserver, "
+                        f"oracle, mysql, postgres, sqlite, synapse, snowflake, "
+                        f"databricks, dynamics365, sap"
+                    )
+                },
+                status=400
+            )
+
+        if test_extractor:
+            test_extractor.connect()
+            print("[INFO]: Successfully Connected To the Database")
+            Logs["Scan Info"].append("[INFO]: Successfully Connected To the Database")
+            test_extractor.close()
+        else:
+            print("[INFO]: Successfully Connected To the Database")
+            Logs["Scan Info"].append("[INFO]: Successfully Connected To the Database")
+
+        if remember_me:
+            save_connection(source, {
+                "server": server,
+                "database": database,
+                "username": Creds.get_username(),
+                "password": Creds.get_password(),
+                "extra": Creds.get_extra_dict(),
+            })
+
+        # Sync pipeline state for unified workflow
+        try:
+            from Migrator.pipeline_services import active_pipeline, _pipeline_lock, get_platform_display, normalize_platform_slug
+            slug = normalize_platform_slug(clean_source)
+            disp = get_platform_display(slug)
+            with _pipeline_lock:
+                active_pipeline["source_connected"] = True
+                active_pipeline["platform"] = disp
+                active_pipeline["platform_slug"] = slug
+                active_pipeline["server"] = server
+                active_pipeline["database"] = database
+                active_pipeline["connection_config"] = {
+                    "platform": disp,
+                    "slug": slug,
+                    "server": server,
+                    "database": database,
+                    "username": Creds.get_username(),
+                    "port": Creds.get_port(),
+                    "extra": Creds.get_extra_dict(),
+                    "live_connected": True,
+                    "is_demo": False,
+                    "remember_me": remember_me,
+                }
+        except Exception:
+            pass
+
+    except Exception as e:
+        print(e)
+        Logs["Scan Info"].append(str(e))
+        return Response({
+            "status": "error",
+            "connected": False,
+            "connection_status": "failed",
+            "message": str(e),
+            "error": str(e),
+            "Logs": Logs
+        }, status=400)
+
+    success_msg = f"Connected to {database} on {server} successfully."
+    Logs["Scan Info"].append(f"[INFO] {success_msg}")
     return Response({
-        "status": conn_result.get("status", "success" if is_connected else "error"),
-        "connected": is_connected,
-        "connection_status": conn_result.get("connection_status", "success" if is_connected else "failed"),
-        "message": conn_result.get("message"),
-        "error": conn_result.get("error"),
+        "status": "success",
+        "connected": True,
+        "connection_status": "success",
+        "message": success_msg,
         "source": source,
-        "config": cfg,
-        "logs": conn_result.get("logs", []),
-        "connection_logs": conn_result.get("connection_logs", []),
         "Logs": Logs
-    }, status=resp_status)
+    }, status=200)
 
 
 @api_view(["GET", "POST"])
