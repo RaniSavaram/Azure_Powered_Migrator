@@ -485,17 +485,19 @@ SCAN STATUS + ACTION BUTTONS
                             <button
                                 type="button"
                                 class="btn-toggle-token-mask"
-                                (click)="showDatabricksToken = !showDatabricksToken"
-                                [title]="showDatabricksToken ? 'Hide token' : 'Show token'"
-                                [attr.aria-label]="showDatabricksToken ? 'Hide token' : 'Show token'">
-                                <i class="bi" [ngClass]="showDatabricksToken ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
-                                <span>{{ showDatabricksToken ? 'Hide' : 'Show' }}</span>
+                                (mousedown)="$event.preventDefault()"
+                                (click)="$event.preventDefault(); $event.stopPropagation(); showDatabricksToken = !showDatabricksToken"
+                                [disabled]="!connection.password"
+                                [title]="showDatabricksToken && connection.password ? 'Hide token' : 'Show token'"
+                                [attr.aria-label]="showDatabricksToken && connection.password ? 'Hide token' : 'Show token'">
+                                <i class="bi" [ngClass]="showDatabricksToken && connection.password ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                <span>{{ showDatabricksToken && connection.password ? 'Hide' : 'Show' }}</span>
                             </button>
                         </div>
 
                         <div class="input-with-action">
                             <input
-                                [type]="showDatabricksToken ? 'text' : 'password'"
+                                [type]="showDatabricksToken && connection.password ? 'text' : 'password'"
                                 [(ngModel)]="connection.password"
                                 (input)="connectionErrorMessage = ''"
                                 placeholder="dapi..."
@@ -602,18 +604,26 @@ SCAN STATUS + ACTION BUTTONS
                                 <button
                                     type="button"
                                     class="btn-toggle-token-mask"
-                                    (click)="toggleShowPassword('d365_secret')"
-                                    [title]="isPasswordVisible('d365_secret') ? 'Hide secret' : 'Show secret'"
-                                    [attr.aria-label]="isPasswordVisible('d365_secret') ? 'Hide secret' : 'Show secret'">
-                                    <i class="bi" [ngClass]="isPasswordVisible('d365_secret') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
-                                    <span>{{ isPasswordVisible('d365_secret') ? 'Hide' : 'Show' }}</span>
+                                    (mousedown)="$event.preventDefault()"
+                                    (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('d365_secret', connection.clientSecret)"
+                                    [disabled]="!connection.clientSecret"
+                                    [title]="isPasswordVisible('d365_secret', connection.clientSecret) ? 'Hide secret' : 'Show secret'"
+                                    [attr.aria-label]="isPasswordVisible('d365_secret', connection.clientSecret) ? 'Hide secret' : 'Show secret'">
+                                    <i class="bi" [ngClass]="isPasswordVisible('d365_secret', connection.clientSecret) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                    <span>{{ isPasswordVisible('d365_secret', connection.clientSecret) ? 'Hide' : 'Show' }}</span>
                                 </button>
                             </div>
 
                             <div class="input-with-action">
                                 <input
-                                    [type]="isPasswordVisible('d365_secret') ? 'text' : 'password'"
+                                    [type]="isPasswordVisible('d365_secret', connection.clientSecret) ? 'text' : 'password'"
                                     [(ngModel)]="connection.clientSecret"
+                                    autocomplete="new-password"
+                                    autocorrect="off"
+                                    autocapitalize="off"
+                                    spellcheck="false"
+                                    data-lpignore="true"
+                                    name="d365_client_secret_field"
                                     placeholder="Client secret value">
                             </div>
 
@@ -641,18 +651,26 @@ SCAN STATUS + ACTION BUTTONS
                                 <button
                                     type="button"
                                     class="btn-toggle-token-mask"
-                                    (click)="toggleShowPassword('d365_pwd')"
-                                    [title]="isPasswordVisible('d365_pwd') ? 'Hide password' : 'Show password'"
-                                    [attr.aria-label]="isPasswordVisible('d365_pwd') ? 'Hide password' : 'Show password'">
-                                    <i class="bi" [ngClass]="isPasswordVisible('d365_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
-                                    <span>{{ isPasswordVisible('d365_pwd') ? 'Hide' : 'Show' }}</span>
+                                    (mousedown)="$event.preventDefault()"
+                                    (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('d365_pwd', connection.password)"
+                                    [disabled]="!connection.password"
+                                    [title]="isPasswordVisible('d365_pwd', connection.password) ? 'Hide password' : 'Show password'"
+                                    [attr.aria-label]="isPasswordVisible('d365_pwd', connection.password) ? 'Hide password' : 'Show password'">
+                                    <i class="bi" [ngClass]="isPasswordVisible('d365_pwd', connection.password) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                    <span>{{ isPasswordVisible('d365_pwd', connection.password) ? 'Hide' : 'Show' }}</span>
                                 </button>
                             </div>
 
                             <div class="input-with-action">
                                 <input
-                                    [type]="isPasswordVisible('d365_pwd') ? 'text' : 'password'"
+                                    [type]="isPasswordVisible('d365_pwd', connection.password) ? 'text' : 'password'"
                                     [(ngModel)]="connection.password"
+                                    autocomplete="new-password"
+                                    autocorrect="off"
+                                    autocapitalize="off"
+                                    spellcheck="false"
+                                    data-lpignore="true"
+                                    name="d365_pwd_field"
                                     placeholder="Dynamics 365 account password">
                             </div>
 
@@ -752,18 +770,26 @@ SCAN STATUS + ACTION BUTTONS
                                 <button
                                     type="button"
                                     class="btn-toggle-token-mask"
-                                    (click)="toggleShowPassword('sf_token')"
-                                    [title]="isPasswordVisible('sf_token') ? 'Hide token' : 'Show token'"
-                                    [attr.aria-label]="isPasswordVisible('sf_token') ? 'Hide token' : 'Show token'">
-                                    <i class="bi" [ngClass]="isPasswordVisible('sf_token') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
-                                    <span>{{ isPasswordVisible('sf_token') ? 'Hide' : 'Show' }}</span>
+                                    (mousedown)="$event.preventDefault()"
+                                    (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('sf_token', connection.token)"
+                                    [disabled]="!connection.token"
+                                    [title]="isPasswordVisible('sf_token', connection.token) ? 'Hide token' : 'Show token'"
+                                    [attr.aria-label]="isPasswordVisible('sf_token', connection.token) ? 'Hide token' : 'Show token'">
+                                    <i class="bi" [ngClass]="isPasswordVisible('sf_token', connection.token) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                    <span>{{ isPasswordVisible('sf_token', connection.token) ? 'Hide' : 'Show' }}</span>
                                 </button>
                             </div>
 
                             <div class="input-with-action">
                                 <input
-                                    [type]="isPasswordVisible('sf_token') ? 'text' : 'password'"
+                                    [type]="isPasswordVisible('sf_token', connection.token) ? 'text' : 'password'"
                                     [(ngModel)]="connection.token"
+                                    autocomplete="new-password"
+                                    autocorrect="off"
+                                    autocapitalize="off"
+                                    spellcheck="false"
+                                    data-lpignore="true"
+                                    name="sf_token_field"
                                     placeholder="Snowflake PAT">
                             </div>
 
@@ -780,18 +806,26 @@ SCAN STATUS + ACTION BUTTONS
                                 <button
                                     type="button"
                                     class="btn-toggle-token-mask"
-                                    (click)="toggleShowPassword('sf_pwd')"
-                                    [title]="isPasswordVisible('sf_pwd') ? 'Hide password' : 'Show password'"
-                                    [attr.aria-label]="isPasswordVisible('sf_pwd') ? 'Hide password' : 'Show password'">
-                                    <i class="bi" [ngClass]="isPasswordVisible('sf_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
-                                    <span>{{ isPasswordVisible('sf_pwd') ? 'Hide' : 'Show' }}</span>
+                                    (mousedown)="$event.preventDefault()"
+                                    (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('sf_pwd', connection.password)"
+                                    [disabled]="!connection.password"
+                                    [title]="isPasswordVisible('sf_pwd', connection.password) ? 'Hide password' : 'Show password'"
+                                    [attr.aria-label]="isPasswordVisible('sf_pwd', connection.password) ? 'Hide password' : 'Show password'">
+                                    <i class="bi" [ngClass]="isPasswordVisible('sf_pwd', connection.password) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                    <span>{{ isPasswordVisible('sf_pwd', connection.password) ? 'Hide' : 'Show' }}</span>
                                 </button>
                             </div>
 
                             <div class="input-with-action">
                                 <input
-                                    [type]="isPasswordVisible('sf_pwd') ? 'text' : 'password'"
-                                    [(ngModel)]="connection.password">
+                                    [type]="isPasswordVisible('sf_pwd', connection.password) ? 'text' : 'password'"
+                                    [(ngModel)]="connection.password"
+                                    autocomplete="new-password"
+                                    autocorrect="off"
+                                    autocapitalize="off"
+                                    spellcheck="false"
+                                    data-lpignore="true"
+                                    name="sf_pwd_field">
                             </div>
 
                         </div>
@@ -854,18 +888,26 @@ SCAN STATUS + ACTION BUTTONS
                             <button
                                 type="button"
                                 class="btn-toggle-token-mask"
-                                (click)="toggleShowPassword('gen_pwd')"
-                                [title]="isPasswordVisible('gen_pwd') ? 'Hide password' : 'Show password'"
-                                [attr.aria-label]="isPasswordVisible('gen_pwd') ? 'Hide password' : 'Show password'">
-                                <i class="bi" [ngClass]="isPasswordVisible('gen_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
-                                <span>{{ isPasswordVisible('gen_pwd') ? 'Hide' : 'Show' }}</span>
+                                (mousedown)="$event.preventDefault()"
+                                (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('gen_pwd', connection.password)"
+                                [disabled]="!connection.password"
+                                [title]="isPasswordVisible('gen_pwd', connection.password) ? 'Hide password' : 'Show password'"
+                                [attr.aria-label]="isPasswordVisible('gen_pwd', connection.password) ? 'Hide password' : 'Show password'">
+                                <i class="bi" [ngClass]="isPasswordVisible('gen_pwd', connection.password) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                <span>{{ isPasswordVisible('gen_pwd', connection.password) ? 'Hide' : 'Show' }}</span>
                             </button>
                         </div>
 
                         <div class="input-with-action">
                             <input
-                                [type]="isPasswordVisible('gen_pwd') ? 'text' : 'password'"
-                                [(ngModel)]="connection.password">
+                                [type]="isPasswordVisible('gen_pwd', connection.password) ? 'text' : 'password'"
+                                [(ngModel)]="connection.password"
+                                autocomplete="new-password"
+                                autocorrect="off"
+                                autocapitalize="off"
+                                spellcheck="false"
+                                data-lpignore="true"
+                                name="gen_pwd_field">
                         </div>
 
                     </div>
@@ -987,19 +1029,26 @@ SCAN STATUS + ACTION BUTTONS
                             <button
                                 type="button"
                                 class="btn-toggle-token-mask"
-                                (click)="toggleShowPassword('fabric_secret')"
-                                [title]="isPasswordVisible('fabric_secret') ? 'Hide secret' : 'Show secret'"
-                                [attr.aria-label]="isPasswordVisible('fabric_secret') ? 'Hide secret' : 'Show secret'">
-                                <i class="bi" [ngClass]="isPasswordVisible('fabric_secret') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
-                                <span>{{ isPasswordVisible('fabric_secret') ? 'Hide' : 'Show' }}</span>
+                                (mousedown)="$event.preventDefault()"
+                                (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('fabric_secret', fabricConnection.clientSecret)"
+                                [disabled]="!fabricConnection.clientSecret"
+                                [title]="isPasswordVisible('fabric_secret', fabricConnection.clientSecret) ? 'Hide secret' : 'Show secret'"
+                                [attr.aria-label]="isPasswordVisible('fabric_secret', fabricConnection.clientSecret) ? 'Hide secret' : 'Show secret'">
+                                <i class="bi" [ngClass]="isPasswordVisible('fabric_secret', fabricConnection.clientSecret) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                <span>{{ isPasswordVisible('fabric_secret', fabricConnection.clientSecret) ? 'Hide' : 'Show' }}</span>
                             </button>
                         </div>
                         <div class="input-with-action">
                             <input
-                                [type]="isPasswordVisible('fabric_secret') ? 'text' : 'password'"
+                                [type]="isPasswordVisible('fabric_secret', fabricConnection.clientSecret) ? 'text' : 'password'"
                                 [(ngModel)]="fabricConnection.clientSecret"
                                 placeholder="Client secret value"
-                                autocomplete="new-password">
+                                autocomplete="new-password"
+                                autocorrect="off"
+                                autocapitalize="off"
+                                spellcheck="false"
+                                data-lpignore="true"
+                                name="fabric_secret_field">
                         </div>
                         <small class="field-hint">Client secret generated in the Azure App Registration.</small>
                     </div>

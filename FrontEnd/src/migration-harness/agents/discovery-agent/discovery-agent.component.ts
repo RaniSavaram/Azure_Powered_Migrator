@@ -82,11 +82,18 @@ export class DiscoveryAgentComponent implements OnInit {
   public fieldErrors: Record<string, boolean> = {};
   public showPasswordMap: Record<string, boolean> = {};
 
-  toggleShowPassword(key: string): void {
+  toggleShowPassword(key: string, value?: string): void {
+    if (value !== undefined && (!value || !value.toString().trim())) {
+      this.showPasswordMap[key] = false;
+      return;
+    }
     this.showPasswordMap[key] = !this.showPasswordMap[key];
   }
 
-  isPasswordVisible(key: string): boolean {
+  isPasswordVisible(key: string, value?: string): boolean {
+    if (value !== undefined && (!value || !value.toString().trim())) {
+      return false;
+    }
     return !!this.showPasswordMap[key];
   }
 

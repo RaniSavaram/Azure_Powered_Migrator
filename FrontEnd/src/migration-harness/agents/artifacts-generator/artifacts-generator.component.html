@@ -235,12 +235,24 @@
                       <div class="conn-field-group conn-field-full">
                         <label class="conn-field-label" for="agSecret">Client Secret <span class="req">*</span></label>
                         <div class="conn-password-wrapper">
-                          <input id="agSecret" [type]="showSecret ? 'text' : 'password'" class="conn-field-input"
+                          <input id="agSecret" [type]="isSecretVisible() ? 'text' : 'password'" class="conn-field-input"
                                  [class.input-error]="fieldErrors()['clientSecret']"
                                  [(ngModel)]="form.clientSecret"
-                                 placeholder="••••••••••••" autocomplete="new-password">
-                          <button type="button" class="btn-toggle-pwd" (click)="showSecret = !showSecret" [title]="showSecret ? 'Hide secret' : 'Show secret'" [attr.aria-label]="showSecret ? 'Hide secret' : 'Show secret'">
-                            <i class="bi" [ngClass]="showSecret ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                 autocomplete="new-password"
+                                 autocorrect="off"
+                                 autocapitalize="off"
+                                 spellcheck="false"
+                                 data-lpignore="true"
+                                 name="ag_secret_field"
+                                 placeholder="••••••••••••">
+                          <button type="button" 
+                                  class="btn-toggle-pwd" 
+                                  (mousedown)="$event.preventDefault()"
+                                  (click)="$event.preventDefault(); $event.stopPropagation(); toggleSecret()" 
+                                  [disabled]="!form.clientSecret"
+                                  [title]="isSecretVisible() ? 'Hide secret' : 'Show secret'" 
+                                  [attr.aria-label]="isSecretVisible() ? 'Hide secret' : 'Show secret'">
+                            <i class="bi" [ngClass]="isSecretVisible() ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
                           </button>
                         </div>
                         @if (fieldErrors()['clientSecret']) {

@@ -1129,6 +1129,25 @@ button.btn-view-results-active:disabled {
   color: #0284c7;
 }
 
+.conn-password-wrapper .btn-toggle-pwd:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Hide native browser password reveal and credential autofill icons */
+.conn-password-wrapper input::-ms-reveal,
+.conn-password-wrapper input::-ms-clear {
+  display: none !important;
+}
+
+.conn-password-wrapper input::-webkit-credentials-auto-fill-button {
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  right: 0 !important;
+}
+
 .conn-field-input:focus {
   border-color: #0ea5e9;
   background: #ffffff;

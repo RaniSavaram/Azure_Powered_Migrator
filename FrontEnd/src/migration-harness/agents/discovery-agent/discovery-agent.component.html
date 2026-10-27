@@ -196,6 +196,12 @@
 
               <!-- Inputs Grid -->
               <div class="conn-inputs-grid">
+                <!-- Hidden trap for browser autofill -->
+                <div style="opacity: 0; position: absolute; top: -9999px; left: -9999px; height: 0; width: 0; z-index: -1; pointer-events: none;" aria-hidden="true">
+                  <input type="text" name="chrome_fake_user_da" tabindex="-1" autocomplete="off" />
+                  <input type="password" name="chrome_fake_pwd_da" tabindex="-1" autocomplete="off" />
+                </div>
+
                 <!-- Saved Connections Dropdown -->
                 <div class="conn-field-group conn-field-full">
                   <label class="conn-field-label">
@@ -249,13 +255,25 @@
                   <div class="conn-field-group conn-field-full">
                     <label class="conn-field-label">Password</label>
                     <div class="conn-password-wrapper">
-                      <input [type]="isPasswordVisible('sqlserver_pwd') ? 'text' : 'password'" 
+                      <input [type]="isPasswordVisible('sqlserver_pwd', connectionForm.password) ? 'text' : 'password'" 
                              class="conn-field-input" 
                              [class.input-error]="fieldErrors['password']"
                              [(ngModel)]="connectionForm.password" 
+                             autocomplete="new-password"
+                             autocorrect="off"
+                             autocapitalize="off"
+                             spellcheck="false"
+                             data-lpignore="true"
+                             name="sqlserver_pwd_field"
                              placeholder="••••••••••••">
-                      <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('sqlserver_pwd')" [title]="isPasswordVisible('sqlserver_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('sqlserver_pwd') ? 'Hide password' : 'Show password'">
-                        <i class="bi" [ngClass]="isPasswordVisible('sqlserver_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                      <button type="button" 
+                              class="btn-toggle-pwd" 
+                              (mousedown)="$event.preventDefault()"
+                              (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('sqlserver_pwd', connectionForm.password)" 
+                              [disabled]="!connectionForm.password"
+                              [title]="isPasswordVisible('sqlserver_pwd', connectionForm.password) ? 'Hide password' : 'Show password'" 
+                              [attr.aria-label]="isPasswordVisible('sqlserver_pwd', connectionForm.password) ? 'Hide password' : 'Show password'">
+                        <i class="bi" [ngClass]="isPasswordVisible('sqlserver_pwd', connectionForm.password) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
                       </button>
                     </div>
                     @if (fieldErrors['password']) {
@@ -287,13 +305,25 @@
                   <div class="conn-field-group conn-field-full">
                     <label class="conn-field-label">Personal Access Token</label>
                     <div class="conn-password-wrapper">
-                      <input [type]="isPasswordVisible('databricks_pat') ? 'text' : 'password'" 
+                      <input [type]="isPasswordVisible('databricks_pat', connectionForm.personalAccessToken) ? 'text' : 'password'" 
                              class="conn-field-input" 
                              [class.input-error]="fieldErrors['personalAccessToken']"
                              [(ngModel)]="connectionForm.personalAccessToken" 
+                             autocomplete="new-password"
+                             autocorrect="off"
+                             autocapitalize="off"
+                             spellcheck="false"
+                             data-lpignore="true"
+                             name="databricks_pat_field"
                              placeholder="dapi...">
-                      <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('databricks_pat')" [title]="isPasswordVisible('databricks_pat') ? 'Hide token' : 'Show token'" [attr.aria-label]="isPasswordVisible('databricks_pat') ? 'Hide token' : 'Show token'">
-                        <i class="bi" [ngClass]="isPasswordVisible('databricks_pat') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                      <button type="button" 
+                              class="btn-toggle-pwd" 
+                              (mousedown)="$event.preventDefault()"
+                              (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('databricks_pat', connectionForm.personalAccessToken)" 
+                              [disabled]="!connectionForm.personalAccessToken"
+                              [title]="isPasswordVisible('databricks_pat', connectionForm.personalAccessToken) ? 'Hide token' : 'Show token'" 
+                              [attr.aria-label]="isPasswordVisible('databricks_pat', connectionForm.personalAccessToken) ? 'Hide token' : 'Show token'">
+                        <i class="bi" [ngClass]="isPasswordVisible('databricks_pat', connectionForm.personalAccessToken) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
                       </button>
                     </div>
                     @if (fieldErrors['personalAccessToken']) {
@@ -349,13 +379,25 @@
                     <div class="conn-field-group conn-field-full">
                       <label class="conn-field-label">Client Secret</label>
                       <div class="conn-password-wrapper">
-                        <input [type]="isPasswordVisible('dynamics_secret') ? 'text' : 'password'" 
+                        <input [type]="isPasswordVisible('dynamics_secret', connectionForm.clientSecret) ? 'text' : 'password'" 
                                class="conn-field-input" 
                                [class.input-error]="fieldErrors['clientSecret']"
                                [(ngModel)]="connectionForm.clientSecret" 
+                               autocomplete="new-password"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false"
+                               data-lpignore="true"
+                               name="dynamics_secret_field"
                                placeholder="Client secret value">
-                        <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('dynamics_secret')" [title]="isPasswordVisible('dynamics_secret') ? 'Hide secret' : 'Show secret'" [attr.aria-label]="isPasswordVisible('dynamics_secret') ? 'Hide secret' : 'Show secret'">
-                          <i class="bi" [ngClass]="isPasswordVisible('dynamics_secret') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                        <button type="button" 
+                                class="btn-toggle-pwd" 
+                                (mousedown)="$event.preventDefault()"
+                                (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('dynamics_secret', connectionForm.clientSecret)" 
+                                [disabled]="!connectionForm.clientSecret"
+                                [title]="isPasswordVisible('dynamics_secret', connectionForm.clientSecret) ? 'Hide secret' : 'Show secret'" 
+                                [attr.aria-label]="isPasswordVisible('dynamics_secret', connectionForm.clientSecret) ? 'Hide secret' : 'Show secret'">
+                          <i class="bi" [ngClass]="isPasswordVisible('dynamics_secret', connectionForm.clientSecret) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
                         </button>
                       </div>
                     </div>
@@ -371,13 +413,25 @@
                     <div class="conn-field-group">
                       <label class="conn-field-label">Password</label>
                       <div class="conn-password-wrapper">
-                        <input [type]="isPasswordVisible('dynamics_pwd') ? 'text' : 'password'" 
+                        <input [type]="isPasswordVisible('dynamics_pwd', connectionForm.password) ? 'text' : 'password'" 
                                class="conn-field-input" 
                                [class.input-error]="fieldErrors['password']"
                                [(ngModel)]="connectionForm.password" 
+                               autocomplete="new-password"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false"
+                               data-lpignore="true"
+                               name="dynamics_pwd_field"
                                placeholder="Dynamics 365 password">
-                        <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('dynamics_pwd')" [title]="isPasswordVisible('dynamics_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('dynamics_pwd') ? 'Hide password' : 'Show password'">
-                          <i class="bi" [ngClass]="isPasswordVisible('dynamics_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                        <button type="button" 
+                                class="btn-toggle-pwd" 
+                                (mousedown)="$event.preventDefault()"
+                                (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('dynamics_pwd', connectionForm.password)" 
+                                [disabled]="!connectionForm.password"
+                                [title]="isPasswordVisible('dynamics_pwd', connectionForm.password) ? 'Hide password' : 'Show password'" 
+                                [attr.aria-label]="isPasswordVisible('dynamics_pwd', connectionForm.password) ? 'Hide password' : 'Show password'">
+                          <i class="bi" [ngClass]="isPasswordVisible('dynamics_pwd', connectionForm.password) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
                         </button>
                       </div>
                     </div>
@@ -423,13 +477,25 @@
                     <div class="conn-field-group conn-field-full">
                       <label class="conn-field-label">Access Token</label>
                       <div class="conn-password-wrapper">
-                        <input [type]="isPasswordVisible('snowflake_token') ? 'text' : 'password'" 
+                        <input [type]="isPasswordVisible('snowflake_token', connectionForm.token) ? 'text' : 'password'" 
                                class="conn-field-input" 
                                [class.input-error]="fieldErrors['token']"
                                [(ngModel)]="connectionForm.token" 
+                               autocomplete="new-password"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false"
+                               data-lpignore="true"
+                               name="snowflake_token_field"
                                placeholder="eyJhbGciOi...">
-                        <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('snowflake_token')" [title]="isPasswordVisible('snowflake_token') ? 'Hide token' : 'Show token'" [attr.aria-label]="isPasswordVisible('snowflake_token') ? 'Hide token' : 'Show token'">
-                          <i class="bi" [ngClass]="isPasswordVisible('snowflake_token') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                        <button type="button" 
+                                class="btn-toggle-pwd" 
+                                (mousedown)="$event.preventDefault()"
+                                (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('snowflake_token', connectionForm.token)" 
+                                [disabled]="!connectionForm.token"
+                                [title]="isPasswordVisible('snowflake_token', connectionForm.token) ? 'Hide token' : 'Show token'" 
+                                [attr.aria-label]="isPasswordVisible('snowflake_token', connectionForm.token) ? 'Hide token' : 'Show token'">
+                          <i class="bi" [ngClass]="isPasswordVisible('snowflake_token', connectionForm.token) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
                         </button>
                       </div>
                     </div>
@@ -445,13 +511,25 @@
                     <div class="conn-field-group">
                       <label class="conn-field-label">Password</label>
                       <div class="conn-password-wrapper">
-                        <input [type]="isPasswordVisible('snowflake_pwd') ? 'text' : 'password'" 
+                        <input [type]="isPasswordVisible('snowflake_pwd', connectionForm.password) ? 'text' : 'password'" 
                                class="conn-field-input" 
                                [class.input-error]="fieldErrors['password']"
                                [(ngModel)]="connectionForm.password" 
+                               autocomplete="new-password"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false"
+                               data-lpignore="true"
+                               name="snowflake_pwd_field"
                                placeholder="••••••••••••">
-                        <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('snowflake_pwd')" [title]="isPasswordVisible('snowflake_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('snowflake_pwd') ? 'Hide password' : 'Show password'">
-                          <i class="bi" [ngClass]="isPasswordVisible('snowflake_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                        <button type="button" 
+                                class="btn-toggle-pwd" 
+                                (mousedown)="$event.preventDefault()"
+                                (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('snowflake_pwd', connectionForm.password)" 
+                                [disabled]="!connectionForm.password"
+                                [title]="isPasswordVisible('snowflake_pwd', connectionForm.password) ? 'Hide password' : 'Show password'" 
+                                [attr.aria-label]="isPasswordVisible('snowflake_pwd', connectionForm.password) ? 'Hide password' : 'Show password'">
+                          <i class="bi" [ngClass]="isPasswordVisible('snowflake_pwd', connectionForm.password) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
                         </button>
                       </div>
                     </div>
@@ -493,13 +571,25 @@
                   <div class="conn-field-group">
                     <label class="conn-field-label">Password</label>
                     <div class="conn-password-wrapper">
-                      <input [type]="isPasswordVisible('oracle_pwd') ? 'text' : 'password'" 
+                      <input [type]="isPasswordVisible('oracle_pwd', connectionForm.password) ? 'text' : 'password'" 
                              class="conn-field-input" 
                              [class.input-error]="fieldErrors['password']"
                              [(ngModel)]="connectionForm.password" 
+                             autocomplete="new-password"
+                             autocorrect="off"
+                             autocapitalize="off"
+                             spellcheck="false"
+                             data-lpignore="true"
+                             name="oracle_pwd_field"
                              placeholder="••••••••••••">
-                      <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('oracle_pwd')" [title]="isPasswordVisible('oracle_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('oracle_pwd') ? 'Hide password' : 'Show password'">
-                        <i class="bi" [ngClass]="isPasswordVisible('oracle_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                      <button type="button" 
+                              class="btn-toggle-pwd" 
+                              (mousedown)="$event.preventDefault()"
+                              (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('oracle_pwd', connectionForm.password)" 
+                              [disabled]="!connectionForm.password"
+                              [title]="isPasswordVisible('oracle_pwd', connectionForm.password) ? 'Hide password' : 'Show password'" 
+                              [attr.aria-label]="isPasswordVisible('oracle_pwd', connectionForm.password) ? 'Hide password' : 'Show password'">
+                        <i class="bi" [ngClass]="isPasswordVisible('oracle_pwd', connectionForm.password) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
                       </button>
                     </div>
                   </div>
@@ -540,13 +630,25 @@
                   <div class="conn-field-group">
                     <label class="conn-field-label">Password</label>
                     <div class="conn-password-wrapper">
-                      <input [type]="isPasswordVisible('hana_pwd') ? 'text' : 'password'" 
+                      <input [type]="isPasswordVisible('hana_pwd', connectionForm.password) ? 'text' : 'password'" 
                              class="conn-field-input" 
                              [class.input-error]="fieldErrors['password']"
                              [(ngModel)]="connectionForm.password" 
+                             autocomplete="new-password"
+                             autocorrect="off"
+                             autocapitalize="off"
+                             spellcheck="false"
+                             data-lpignore="true"
+                             name="hana_pwd_field"
                              placeholder="••••••••••••">
-                      <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('hana_pwd')" [title]="isPasswordVisible('hana_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('hana_pwd') ? 'Hide password' : 'Show password'">
-                        <i class="bi" [ngClass]="isPasswordVisible('hana_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                      <button type="button" 
+                              class="btn-toggle-pwd" 
+                              (mousedown)="$event.preventDefault()"
+                              (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('hana_pwd', connectionForm.password)" 
+                              [disabled]="!connectionForm.password"
+                              [title]="isPasswordVisible('hana_pwd', connectionForm.password) ? 'Hide password' : 'Show password'" 
+                              [attr.aria-label]="isPasswordVisible('hana_pwd', connectionForm.password) ? 'Hide password' : 'Show password'">
+                        <i class="bi" [ngClass]="isPasswordVisible('hana_pwd', connectionForm.password) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
                       </button>
                     </div>
                   </div>
@@ -580,13 +682,25 @@
                   <div class="conn-field-group">
                     <label class="conn-field-label">Password</label>
                     <div class="conn-password-wrapper">
-                      <input [type]="isPasswordVisible('synapse_pwd') ? 'text' : 'password'" 
+                      <input [type]="isPasswordVisible('synapse_pwd', connectionForm.password) ? 'text' : 'password'" 
                              class="conn-field-input" 
                              [class.input-error]="fieldErrors['password']"
                              [(ngModel)]="connectionForm.password" 
+                             autocomplete="new-password"
+                             autocorrect="off"
+                             autocapitalize="off"
+                             spellcheck="false"
+                             data-lpignore="true"
+                             name="synapse_pwd_field"
                              placeholder="••••••••••••">
-                      <button type="button" class="btn-toggle-pwd" (click)="toggleShowPassword('synapse_pwd')" [title]="isPasswordVisible('synapse_pwd') ? 'Hide password' : 'Show password'" [attr.aria-label]="isPasswordVisible('synapse_pwd') ? 'Hide password' : 'Show password'">
-                        <i class="bi" [ngClass]="isPasswordVisible('synapse_pwd') ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                      <button type="button" 
+                              class="btn-toggle-pwd" 
+                              (mousedown)="$event.preventDefault()"
+                              (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('synapse_pwd', connectionForm.password)" 
+                              [disabled]="!connectionForm.password"
+                              [title]="isPasswordVisible('synapse_pwd', connectionForm.password) ? 'Hide password' : 'Show password'" 
+                              [attr.aria-label]="isPasswordVisible('synapse_pwd', connectionForm.password) ? 'Hide password' : 'Show password'">
+                        <i class="bi" [ngClass]="isPasswordVisible('synapse_pwd', connectionForm.password) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
                       </button>
                     </div>
                   </div>

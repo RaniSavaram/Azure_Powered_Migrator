@@ -961,6 +961,25 @@ CONNECTION DIALOG
     color: #0369a1;
 }
 
+.btn-toggle-token-mask:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Hide native browser password reveal and credential autofill icons */
+.dialog-body input::-ms-reveal,
+.dialog-body input::-ms-clear {
+    display: none !important;
+}
+
+.dialog-body input::-webkit-credentials-auto-fill-button {
+    visibility: hidden !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    right: 0 !important;
+}
+
 .input-with-action {
     position: relative;
     width: 100%;

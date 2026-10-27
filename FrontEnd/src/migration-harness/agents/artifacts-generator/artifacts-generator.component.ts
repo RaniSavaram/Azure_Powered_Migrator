@@ -82,6 +82,18 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   showSecret = false;
   userInput = '';
 
+  toggleSecret(): void {
+    if (!this.form.clientSecret || !this.form.clientSecret.trim()) {
+      this.showSecret = false;
+      return;
+    }
+    this.showSecret = !this.showSecret;
+  }
+
+  isSecretVisible(): boolean {
+    return this.showSecret && !!this.form.clientSecret?.trim();
+  }
+
   private nextId = 1;
   private shouldScroll = false;
 
