@@ -104,6 +104,22 @@ export class ConstraintAgentComponent implements OnInit, AfterViewChecked, OnDes
   gateDecision = computed(() => this.report()?.decision ?? null);
   canProceed = computed(() => this.report()?.decision === 'PASS' && !this.isBusy());
 
+  getLockReason(): string {
+    if (!this.isSourceConnected) {
+      return 'Locked: Awaiting source database connection in Discovery Agent';
+    }
+    if (this.isBusy()) {
+      return 'Locked: Executing Layer 1 constraint checks...';
+    }
+    if (!this.report()) {
+      return 'Locked: Constraint checks have not been run yet';
+    }
+    if (this.report()!.decision === 'FAIL') {
+      return 'Locked: Layer 1 constraint gate failed. Fix failing rules to proceed.';
+    }
+    return '';
+  }
+
   private streamTimer: ReturnType<typeof setInterval> | null = null;
   private shouldScroll = false;
   private msgSeq = 0;
@@ -272,9 +288,9 @@ export class ConstraintAgentComponent implements OnInit, AfterViewChecked, OnDes
         metrics: r.metrics,
         rules: r.rules.map(rule => ({ id: rule.id, desc: rule.desc, status: rule.status, ruleRef: rule })),
         actions: [
-          ...(r.decision === 'PASS'
-            ? [{ label: `Proceed to ${this.nextPhaseName}`, action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true }]
-            : [{ label: 'Show failing rules', action: 'issues', icon: 'bi-bug', primary: true }]),
+          ...(r.decision !== 'PASS'
+            ? [{ label: 'Show failing rules', action: 'issues', icon: 'bi-bug', primary: true }]
+            : []),
           { label: 'Remediation SQL', action: 'remediations', icon: 'bi-code-slash' },
           { label: 'Re-run checks', action: 'audit', icon: 'bi-arrow-repeat' },
           { label: 'Re-extract from source', action: 'refresh', icon: 'bi-plug' }

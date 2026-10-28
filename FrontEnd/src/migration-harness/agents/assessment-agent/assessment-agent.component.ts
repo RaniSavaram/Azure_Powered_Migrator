@@ -125,6 +125,22 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
   verdict = computed(() => this.report()?.verdict ?? null);
   canProceed = computed(() => !!this.report() && this.report()!.verdict !== 'blocked' && !this.isBusy());
 
+  getLockReason(): string {
+    if (!this.isSourceConnected) {
+      return 'Locked: Awaiting source database connection in Discovery Agent';
+    }
+    if (this.isBusy()) {
+      return 'Locked: Evaluating table schemas and compiling assessment...';
+    }
+    if (!this.report()) {
+      return 'Locked: Assessment has not been run yet';
+    }
+    if (this.report()!.verdict === 'blocked') {
+      return 'Locked: Assessment is blocked by Layer 1 constraint errors. Resolve them in Constraint Agent.';
+    }
+    return '';
+  }
+
   filteredTables = computed<AssessmentTable[]>(() => {
     const r = this.report();
     if (!r) return [];
@@ -306,9 +322,9 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
       {
         metrics: r.metrics,
         actions: [
-          ...(r.verdict !== 'blocked'
-            ? [{ label: `Proceed to ${this.nextPhaseName}`, action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true }]
-            : [{ label: 'Open Constraint Agent', action: 'constraints', icon: 'bi-shield-exclamation', primary: true }]),
+          ...(r.verdict === 'blocked'
+            ? [{ label: 'Open Constraint Agent', action: 'constraints', icon: 'bi-shield-exclamation', primary: true }]
+            : []),
           { label: 'Table explorer', action: 'explorer', icon: 'bi-table' },
           { label: 'Migration waves', action: 'waves', icon: 'bi-layers' },
           ...(r.report_file ? [{ label: 'View report', action: 'view_doc', icon: 'bi-box-arrow-up-right' },

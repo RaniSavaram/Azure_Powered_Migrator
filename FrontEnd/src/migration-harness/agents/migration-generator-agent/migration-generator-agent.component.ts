@@ -60,6 +60,17 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
     return this.harnessDataService.getConnectionConfig();
   }
 
+  get canProceed(): boolean {
+    return this.isSourceConnected && !!this.latestPlanFile && !this.isTyping;
+  }
+
+  getLockReason(): string {
+    if (!this.isSourceConnected) return 'Locked: Awaiting source database connection in Discovery Agent';
+    if (this.isTyping) return 'Locked: Generating migration plan...';
+    if (!this.latestPlanFile) return 'Locked: Generate migration plan first';
+    return '';
+  }
+
   userInput: string = '';
   isTyping: boolean = false;
   private shouldScroll: boolean = false;

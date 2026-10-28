@@ -23,23 +23,16 @@
       </div>
     </div>
     <div class="header-right-actions">
-      @if (!isSourceConnected) {
-        <span class="badge bg-warning text-dark px-3 py-2 fw-semibold gate-badge">
-          <i class="bi bi-lock-fill me-1"></i> Awaiting Source Connection
-        </span>
-      } @else if (canProceed()) {
+      @if (canProceed()) {
         <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Migration Generator Agent">
-          <span>Next Phase</span>
+          <span>Proceed to Migration Generator</span>
           <i class="bi bi-arrow-right"></i>
         </a>
-      } @else if (isBusy()) {
-        <span class="badge bg-light text-dark px-3 py-2 fw-semibold gate-badge">
-          <i class="bi bi-hourglass-split me-1"></i> Assessing tables
-        </span>
       } @else {
-        <span class="badge bg-danger px-3 py-2 fw-semibold gate-badge">
-          <i class="bi bi-lock-fill me-1"></i> {{ verdict() === 'blocked' ? 'Blocked: next phase locked' : 'Assessment not run' }}
-        </span>
+        <button type="button" class="btn-next-phase btn-next-phase-locked" disabled [title]="getLockReason()">
+          <i class="bi bi-lock-fill me-1"></i>
+          <span>Proceed to Migration Generator</span>
+        </button>
       }
     </div>
   </div>
@@ -67,19 +60,14 @@
           </div>
         </div>
       </div>
-      <div class="prompt-banner-actions">
-        @if (r.verdict === 'blocked') {
+      @if (r.verdict === 'blocked') {
+        <div class="prompt-banner-actions">
           <button type="button" class="btn-proceed-agent" (click)="handleActionClick('constraints')" [disabled]="isBusy()">
             <span>Open Constraint Agent</span>
             <i class="bi bi-shield-exclamation"></i>
           </button>
-        } @else {
-          <button type="button" class="btn-proceed-agent" (click)="handleActionClick('next')" [disabled]="isBusy()">
-            <span>Proceed to Migration Generator</span>
-            <i class="bi bi-arrow-right-circle-fill"></i>
-          </button>
-        }
-      </div>
+        </div>
+      }
     </div>
   }
 

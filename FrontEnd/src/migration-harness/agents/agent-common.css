@@ -220,6 +220,31 @@
   transform: translateX(3px);
 }
 
+.btn-next-phase-locked,
+button.btn-next-phase:disabled {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+  pointer-events: auto !important;
+}
+
+.btn-next-phase-locked:hover,
+button.btn-next-phase:disabled:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn-next-phase-locked i {
+  color: #94a3b8 !important;
+  font-size: 12px;
+}
+
 .header-right-actions {
   display: flex;
   align-items: center;

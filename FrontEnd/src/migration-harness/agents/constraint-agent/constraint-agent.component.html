@@ -23,23 +23,16 @@
       </div>
     </div>
     <div class="header-right-actions">
-      @if (!isSourceConnected) {
-        <span class="badge bg-warning text-dark px-3 py-2 fw-semibold" style="font-size: 12px; border-radius: 8px;">
-          <i class="bi bi-lock-fill me-1"></i> Awaiting Source Connection
-        </span>
-      } @else if (canProceed()) {
+      @if (canProceed()) {
         <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Assessment Agent">
           <span>Proceed to Assessment Agent</span>
           <i class="bi bi-arrow-right"></i>
         </a>
-      } @else if (isBusy()) {
-        <span class="badge bg-light text-dark px-3 py-2 fw-semibold gate-badge">
-          <i class="bi bi-hourglass-split me-1"></i> Running Layer 1 checks
-        </span>
       } @else {
-        <span class="badge bg-danger px-3 py-2 fw-semibold gate-badge" title="Fix the failing rules to unlock the Assessment Agent">
-          <i class="bi bi-lock-fill me-1"></i> {{ gateDecision() === 'FAIL' ? 'Gate failed: Assessment locked' : 'Checks not run' }}
-        </span>
+        <button type="button" class="btn-next-phase btn-next-phase-locked" disabled [title]="getLockReason()">
+          <i class="bi bi-lock-fill me-1"></i>
+          <span>Proceed to Assessment Agent</span>
+        </button>
       }
     </div>
   </div>
@@ -68,19 +61,14 @@
           </div>
         </div>
       </div>
-      <div class="prompt-banner-actions">
-        @if (r.decision === 'PASS') {
-          <button type="button" class="btn-proceed-agent" (click)="handleActionClick('next')" [disabled]="isBusy()">
-            <span>Proceed to Assessment Agent</span>
-            <i class="bi bi-arrow-right-circle-fill"></i>
-          </button>
-        } @else {
+      @if (r.decision === 'FAIL') {
+        <div class="prompt-banner-actions">
           <button type="button" class="btn-proceed-agent gate-fail-btn" (click)="handleActionClick('issues')" [disabled]="isBusy()">
             <span>Show failing rules</span>
             <i class="bi bi-bug-fill"></i>
           </button>
-        }
-      </div>
+        </div>
+      }
     </div>
   }
 
