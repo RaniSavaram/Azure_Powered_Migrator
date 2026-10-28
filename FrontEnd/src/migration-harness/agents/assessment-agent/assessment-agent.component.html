@@ -123,10 +123,48 @@
           </div>
           <div class="chat-toolbar-actions">
             @if (report()?.report_file) {
-              <button type="button" class="btn-toolbar-ghost" (click)="handleActionClick('view_doc')" title="View the Assessment Report">
-                <i class="bi bi-file-earmark-word text-success"></i>
-                <span>View Report</span>
-              </button>
+              <div class="report-dropdown-wrapper">
+                <button type="button" 
+                        class="btn-toolbar-ghost report-dropdown-toggle" 
+                        (click)="toggleReportDropdown($event)" 
+                        [class.active]="isReportDropdownOpen()"
+                        title="View or download Assessment Report">
+                  <i class="bi bi-file-earmark-word text-success"></i>
+                  <span>View / Download</span>
+                  <i class="bi bi-chevron-down dropdown-chevron" [class.rotated]="isReportDropdownOpen()"></i>
+                </button>
+
+                @if (isReportDropdownOpen()) {
+                  <div class="report-dropdown-menu" (click)="$event.stopPropagation()">
+                    <div class="dropdown-header">
+                      <span class="dropdown-header-title">Assessment Report (.docx)</span>
+                      <span class="dropdown-header-badge" [title]="getReportFilename()">{{ getReportFilename() }}</span>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <button type="button" class="dropdown-item-btn" (click)="viewReport()">
+                      <div class="dropdown-item-icon view-icon">
+                        <i class="bi bi-eye"></i>
+                      </div>
+                      <div class="dropdown-item-details">
+                        <span class="dropdown-item-title">View Report</span>
+                        <span class="dropdown-item-subtitle">Preview in browser / Word Online</span>
+                      </div>
+                      <i class="bi bi-box-arrow-up-right dropdown-item-arrow"></i>
+                    </button>
+
+                    <button type="button" class="dropdown-item-btn" (click)="downloadReport()">
+                      <div class="dropdown-item-icon download-icon">
+                        <i class="bi bi-download"></i>
+                      </div>
+                      <div class="dropdown-item-details">
+                        <span class="dropdown-item-title">Download Report</span>
+                        <span class="dropdown-item-subtitle">Save .docx document to your device</span>
+                      </div>
+                      <i class="bi bi-arrow-down-circle dropdown-item-arrow"></i>
+                    </button>
+                  </div>
+                }
+              </div>
             }
             <button type="button" class="btn-toolbar-ghost" (click)="handleActionClick('rerun')" [disabled]="isBusy()" title="Re-run the assessment">
               <i class="bi bi-arrow-clockwise"></i>

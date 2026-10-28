@@ -1,4 +1,4 @@
-import { AfterViewChecked, Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -112,6 +112,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
   consoleLines = signal<ConstraintLogLine[]>([]);
   logFilter = signal<LogFilter>('all');
   copied = signal(false);
+  isReportDropdownOpen = signal(false);
 
   // Table explorer state (shared by every explorer card in the chat).
   tierFilter = signal<AssessmentTier | 'all'>('all');
@@ -352,14 +353,64 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
         this.runAssessment(true);
         break;
       case 'view_doc':
-        if (r?.report_url) window.open(r.report_url, '_blank', 'noopener');
+        this.viewReport();
         break;
       case 'download_doc':
-        if (r?.download_url) window.open(r.download_url, '_blank', 'noopener');
+        this.downloadReport();
         break;
       default:
         this.answer(action);
     }
+  }
+
+  getReportFilename(): string {
+    const r = this.report();
+    if (r?.report_file) return r.report_file;
+    const platform = (this.connectionConfig?.platform || 'sqlserver').toLowerCase();
+    return `${platform}_Assessment_Report.docx`;
+  }
+
+  toggleReportDropdown(event?: MouseEvent): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.isReportDropdownOpen.update(open => !open);
+  }
+
+  closeReportDropdown(): void {
+    this.isReportDropdownOpen.set(false);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.report-dropdown-wrapper')) {
+      this.closeReportDropdown();
+    }
+  }
+
+  viewReport(): void {
+    this.closeReportDropdown();
+    const r = this.report();
+    if (r?.report_url) {
+      window.open(r.report_url, '_blank', 'noopener');
+    } else {
+      const filename = this.getReportFilename();
+      window.open(`/output/${filename}?view=1`, '_blank', 'noopener');
+    }
+  }
+
+  downloadReport(): void {
+    this.closeReportDropdown();
+    const r = this.report();
+    const filename = this.getReportFilename();
+    const downloadUrl = r?.download_url || `/output/${filename}`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   openTable(key: string): void {
@@ -591,6 +642,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
   }
 
   clearChat(): void {
+    this.closeReportDropdown();
     this.stopStream();
     this.messages.set([]);
     this.runPhase.set('idle');
