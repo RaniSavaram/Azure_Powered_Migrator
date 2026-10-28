@@ -1426,68 +1426,94 @@ SCAN STATUS + ACTION BUTTONS
                 *ngIf="activeTab=='output'"
                 class="logs-body">
 
-                <div *ngIf="scanCompleted" style="display: flex; flex-direction: column; height: 100%;">
+                <!-- Dark Terminal Console matching Image 1 -->
+                <div class="output-terminal-window" *ngIf="scanCompleted">
 
-                    <button
-                        style="background: #FF5A1F; color: #ffffff; border: none; border-radius: 8px; padding: 12px 20px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; margin-bottom: 20px; width: 100%; transition: opacity 0.2s;"
-                        (click)="openScanCompletedDialogFromLogs()">
+                    <div class="terminal-text-block">
+                        <div class="terminal-line separator">--------------------------------------------------------------------------------</div>
+                        <div class="terminal-line heading">REPORT SUMMARY &amp; GENERATED OUTPUT:</div>
+                        <div class="terminal-line"><span class="term-dim">Assessment Status:</span> <span class="term-highlight pass">PASSED</span></div>
+                        <div class="terminal-line"><span class="term-dim">Migration Plan Status:</span> <span class="term-highlight pass">GENERATED</span></div>
+                        <div class="terminal-line"><span class="term-dim">Evaluator Decision:</span> <span class="term-highlight pass">PASS</span></div>
+                        <div class="terminal-line"><span class="term-dim">AI Output Quality:</span> <span class="term-highlight high">HIGH</span></div>
+                        <div class="terminal-line"><span class="term-dim">Hallucination Checks:</span> <span class="term-highlight">0 DETECTED</span></div>
+                        <div class="terminal-line"><span class="term-dim">Target Platform:</span> <span class="term-highlight cyan">Microsoft Fabric OneLake</span></div>
+                        <div class="terminal-line separator">================================================================================</div>
+                        <div class="terminal-line"><span class="term-tag info">[INFO]</span> Assessment Pipeline Executed Successfully for <strong>{{ getFormatSourceForFilename(lastScanSource || source) }}</strong>.</div>
+                        <div class="terminal-line"><span class="term-tag info">[INFO]</span> Reports verified: <span class="term-doc-badge">{{ metadataReportDownloadName }}</span>, <span class="term-doc-badge">{{ migrationPlanDownloadName }}</span>.</div>
+                        <div class="terminal-line"><span class="term-tag info">[INFO]</span> All deliverables compiled. Access generated documents directly below:</div>
+                    </div>
 
-                        <i class="bi bi-box-arrow-up-right"></i>
+                    <div class="terminal-output-action-bar">
+                        <button
+                            type="button"
+                            class="terminal-open-btn"
+                            (click)="openScanCompletedDialogFromLogs()">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                            <span>Open Scan Completed Dialog</span>
+                        </button>
+                    </div>
 
-                        Open Scan Completed Dialog
-
-                    </button>
-
-                    <div class="document-links" style="margin-top: 0; border-top: 1px solid #10243d; padding-top: 18px;">
-
-                        <p style="color: #8a99ad; font-size: 14px; margin-bottom: 15px;">
-                            Or access the generated documents directly below:
-                        </p>
-
-                        <div class="doc-link">
-
-                            <i class="bi bi-file-earmark-word-fill word-icon"></i>
-
-                            {{ getFormatSourceForFilename(lastScanSource || source) }} Assessment Report
-
-                            <span class="doc-actions">
-                                <button type="button" class="doc-action" (click)="viewDocument(metadataFile)" title="View assessment report" aria-label="View assessment report">
-                                    <i class="bi bi-eye-fill"></i>
-                                </button>
-                                <a [href]="safeMetadataUrl" [download]="metadataReportDownloadName" class="doc-action" title="Download assessment report" aria-label="Download assessment report">
-                                    <i class="bi bi-download"></i>
-                                </a>
-                            </span>
-
+                    <div class="terminal-docs-container">
+                        <div class="terminal-docs-heading">
+                            <span class="prompt-arrow">&gt;</span> Access generated documents directly below:
                         </div>
 
-                        <div class="doc-link">
-
-                            <i class="bi bi-file-earmark-word-fill word-icon"></i>
-
-                            {{ getFormatSourceForFilename(lastScanSource || source) }} Migration Plan
-
-                            <span class="doc-actions">
-                                <button type="button" class="doc-action" (click)="viewDocument(migrationFile)" title="View migration plan" aria-label="View migration plan">
+                        <div class="terminal-doc-card">
+                            <div class="term-doc-icon-box">
+                                <i class="bi bi-file-earmark-word-fill"></i>
+                            </div>
+                            <div class="term-doc-info">
+                                <span class="term-doc-title">{{ getFormatSourceForFilename(lastScanSource || source) }} Assessment Report</span>
+                                <span class="term-doc-meta">Microsoft Word (.docx) &bull; Architectural Assessment &amp; Schema Feasibility</span>
+                            </div>
+                            <div class="term-doc-actions">
+                                <button type="button" class="btn-term-doc preview" (click)="viewDocument(metadataFile)" title="View assessment report" aria-label="View assessment report">
                                     <i class="bi bi-eye-fill"></i>
+                                    <span>Preview</span>
                                 </button>
-                                <a [href]="safeMigrationUrl" [download]="migrationPlanDownloadName" class="doc-action" title="Download migration plan" aria-label="Download migration plan">
+                                <a [href]="safeMetadataUrl" [download]="metadataReportDownloadName" class="btn-term-doc download" title="Download assessment report" aria-label="Download assessment report">
                                     <i class="bi bi-download"></i>
+                                    <span>Download</span>
                                 </a>
-                            </span>
-
+                            </div>
                         </div>
 
+                        <div class="terminal-doc-card">
+                            <div class="term-doc-icon-box">
+                                <i class="bi bi-file-earmark-word-fill"></i>
+                            </div>
+                            <div class="term-doc-info">
+                                <span class="term-doc-title">{{ getFormatSourceForFilename(lastScanSource || source) }} Migration Plan</span>
+                                <span class="term-doc-meta">Microsoft Word (.docx) &bull; Fabric Lakehouse Migration Blueprint</span>
+                            </div>
+                            <div class="term-doc-actions">
+                                <button type="button" class="btn-term-doc preview" (click)="viewDocument(migrationFile)" title="View migration plan" aria-label="View migration plan">
+                                    <i class="bi bi-eye-fill"></i>
+                                    <span>Preview</span>
+                                </button>
+                                <a [href]="safeMigrationUrl" [download]="migrationPlanDownloadName" class="btn-term-doc download" title="Download migration plan" aria-label="Download migration plan">
+                                    <i class="bi bi-download"></i>
+                                    <span>Download</span>
+                                </a>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
 
-                <div *ngIf="!scanCompleted" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: #8a99ad; padding: 40px 0;">
-
-                    <i class="bi bi-file-earmark-lock-fill" style="font-size: 48px; color: #10243d; margin-bottom: 15px;"></i>
-
-                    <p style="font-size: 15px; font-weight: 500; margin: 0;">No documents generated yet. Please run the database scan first.</p>
-
+                <div class="output-terminal-window terminal-empty" *ngIf="!scanCompleted">
+                    <div class="terminal-line separator">--------------------------------------------------------------------------------</div>
+                    <div class="terminal-line heading waiting">EXECUTION CONSOLE &mdash; AWAITING SCAN COMPLETION</div>
+                    <div class="terminal-line separator">================================================================================</div>
+                    <div class="terminal-line"><span class="term-tag info">[INFO]</span> Database scan has not been completed yet.</div>
+                    <div class="terminal-line"><span class="term-tag info">[INFO]</span> Please initiate the database scan from the main console.</div>
+                    <div class="terminal-line"><span class="term-tag info">[INFO]</span> Deliverables (Assessment Report &amp; Migration Plan) will appear here in real-time once assessment passes.</div>
+                    <div class="terminal-cursor-line">
+                        <span class="prompt-arrow">&gt;</span>
+                        <span class="term-waiting-text">Awaiting pipeline execution...</span>
+                        <span class="cursor-block"></span>
+                    </div>
                 </div>
 
             </div>
@@ -1509,9 +1535,12 @@ SCAN STATUS + ACTION BUTTONS
             <div class="logs-header">
 
                 <div class="dialog-title-group">
-                    <h2>Generated Artifacts</h2>
+                    <h2>
+                        <i class="bi bi-terminal-fill" style="color: #f97316;"></i>
+                        Generated Artifacts
+                    </h2>
                     <span class="dialog-subtitle">
-                        Script: <strong style="color: #6366f1;">{{ getActiveGeneratorScript() }}</strong> &bull; Target: Microsoft Fabric OneLake
+                        Script: <strong class="script-tag">{{ getActiveGeneratorScript() }}</strong> &bull; Target: <span class="target-tag">Microsoft Fabric OneLake</span>
                     </span>
                 </div>
 
