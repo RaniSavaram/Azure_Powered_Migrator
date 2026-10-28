@@ -778,6 +778,32 @@ button.btn-view-results-active:disabled {
   transform: translateY(-1px);
 }
 
+.prompt-chip--disabled,
+.prompt-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+}
+
+
+/* Disabled / coming-soon state for the input bar */
+.chat-input-bar--disabled {
+  background: #f8fafc;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.chat-input-bar--disabled .chat-input-field {
+  background: #f1f5f9;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+  font-style: italic;
+}
+
 /* Input bar */
 .chat-input-bar {
   padding: 8px 14px 10px 14px;

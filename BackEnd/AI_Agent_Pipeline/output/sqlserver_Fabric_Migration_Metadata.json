@@ -1,7 +1,7 @@
 {
   "metadata": {
     "scan_id": null,
-    "generated_at": "2026-10-26T16:15:34.036449Z",
+    "generated_at": "2026-10-28T08:20:18.013829Z",
     "source_platform": "SQL Server",
     "target_platform": "Microsoft Fabric (OneLake)",
     "total_tables": 68,

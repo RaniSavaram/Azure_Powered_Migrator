@@ -53,6 +53,17 @@ export class HarnessDataService {
   private assessmentResult$ = new BehaviorSubject<any | null>(null);
   assessmentResultObservable$: Observable<any | null> = this.assessmentResult$.asObservable();
 
+  private sourceMetadata$ = new BehaviorSubject<any | null>(null);
+  sourceMetadataObservable$: Observable<any | null> = this.sourceMetadata$.asObservable();
+
+  getSourceMetadata(): any | null {
+    return this.sourceMetadata$.value;
+  }
+
+  setSourceMetadata(metadata: any | null): void {
+    this.sourceMetadata$.next(metadata);
+  }
+
   getAssessmentResult(): any | null {
     return this.assessmentResult$.value;
   }
@@ -119,6 +130,7 @@ export class HarnessDataService {
     this.setSourceConnected(false);
     this.connectionStatus$.next('idle');
     this.connectionLogs$.next([]);
+    this.sourceMetadata$.next(null);
     this.constraintLogs$.next(null);
     this.constraintResult$.next(null);
     this.assessmentResult$.next(null);

@@ -423,7 +423,9 @@ SCAN STATUS + ACTION BUTTONS
 
                 <div class="form-group" *ngIf="savedConnectionOptions.length">
                     <label>Saved connections</label>
-                    <select [(ngModel)]="selectedSavedConnection" (change)="onSavedConnectionChange()">
+                    <select [ngModel]="selectedSavedConnection" 
+                            (ngModelChange)="onSavedConnectionChange($event)"
+                            (change)="onSavedConnectionChange($any($event.target).value)">
                         <option value="__new__">+ Add new connection...</option>
                         <option *ngFor="let profile of savedConnectionOptions"
                             [value]="getSavedProfileKey(profile)">

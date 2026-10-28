@@ -99,8 +99,211 @@
               <!-- Message Text -->
               <div class="msg-content" [innerHTML]="formatMessageText(msg.text)"></div>
 
-              <!-- Metric Pills -->
-              @if (msg.metrics && msg.metrics.length > 0) {
+              <!-- Metadata Summary Card -->
+              @if (msg.metadataSummary) {
+                <div class="metadata-summary-container">
+                  <!-- Header with Live Badge & Platform info -->
+                  <div class="meta-card-header">
+                    <div class="meta-source-info">
+                      <div class="meta-platform-title">
+                        <i class="bi bi-database-check text-primary"></i>
+                        <span>{{ msg.metadataSummary.platform }} Schema Catalog</span>
+                        <span class="meta-origin-badge" [ngClass]="msg.metadataSummary.origin === 'Live Production Connection' ? 'badge-live' : 'badge-catalog'">
+                          <i class="bi bi-broadcast"></i> {{ msg.metadataSummary.origin || 'Live Verified' }}
+                        </span>
+                      </div>
+                      <div class="meta-endpoint-sub">
+                        <span>Server: <code>{{ msg.metadataSummary.server }}</code></span>
+                        <span class="dot-sep">•</span>
+                        <span>Database: <code>{{ msg.metadataSummary.database }}</code></span>
+                      </div>
+                    </div>
+                    <button type="button" class="btn-meta-export" (click)="downloadMetadataJson(msg.metadataSummary)" title="Export Metadata JSON">
+                      <i class="bi bi-download"></i>
+                      <span>Export JSON</span>
+                    </button>
+                  </div>
+
+                  <!-- Key Metrics Grid -->
+                  <div class="meta-metrics-grid">
+                    <div class="meta-metric-card" title="Discovered Tables">
+                      <div class="meta-metric-icon blue-tint"><i class="bi bi-table"></i></div>
+                      <div class="meta-metric-content">
+                        <div class="meta-metric-num">{{ msg.metadataSummary.summary.tables }}</div>
+                        <div class="meta-metric-label">Discovered Tables</div>
+                      </div>
+                    </div>
+                    <div class="meta-metric-card" title="Total Attributes">
+                      <div class="meta-metric-icon indigo-tint"><i class="bi bi-layout-three-columns"></i></div>
+                      <div class="meta-metric-content">
+                        <div class="meta-metric-num">{{ msg.metadataSummary.summary.columns }}</div>
+                        <div class="meta-metric-label">Total Attributes</div>
+                      </div>
+                    </div>
+                    <div class="meta-metric-card" title="Total Records">
+                      <div class="meta-metric-icon green-tint"><i class="bi bi-card-checklist"></i></div>
+                      <div class="meta-metric-content">
+                        <div class="meta-metric-num">{{ formatNumber(msg.metadataSummary.summary.total_rows) }}</div>
+                        <div class="meta-metric-label">Total Records</div>
+                      </div>
+                    </div>
+                    <div class="meta-metric-card" title="Source Storage Volume">
+                      <div class="meta-metric-icon orange-tint"><i class="bi bi-hdd-stack"></i></div>
+                      <div class="meta-metric-content">
+                        <div class="meta-metric-num">{{ formatVolume(msg.metadataSummary.summary.total_volume_mb) }}</div>
+                        <div class="meta-metric-label">Source Volume</div>
+                      </div>
+                    </div>
+                    <div class="meta-metric-card" title="Estimated OneLake Delta Lakehouse Size">
+                      <div class="meta-metric-icon teal-tint"><i class="bi bi-cloud-arrow-down-fill"></i></div>
+                      <div class="meta-metric-content">
+                        <div class="meta-metric-num">{{ formatVolume(msg.metadataSummary.summary.est_fabric_volume_mb) }}</div>
+                        <div class="meta-metric-label">Est. OneLake Delta</div>
+                      </div>
+                    </div>
+                    <div class="meta-metric-card" title="Views and Stored Procedures">
+                      <div class="meta-metric-icon purple-tint"><i class="bi bi-code-square"></i></div>
+                      <div class="meta-metric-content">
+                        <div class="meta-metric-num">{{ (msg.metadataSummary.summary.procedures || 0) + (msg.metadataSummary.summary.views || 0) }}</div>
+                        <div class="meta-metric-label">Views &amp; Procedures</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Schemas Distribution Chips -->
+                  @if (msg.metadataSummary.schemaDistribution && msg.metadataSummary.schemaDistribution.length > 0) {
+                    <div class="meta-schemas-section">
+                      <div class="section-micro-label">
+                        <i class="bi bi-diagram-3-fill"></i> Discovered Schemas ({{ msg.metadataSummary.schemaDistribution.length }}):
+                      </div>
+                      <div class="schema-chips-wrap">
+                        @for (s of msg.metadataSummary.schemaDistribution; track s.name) {
+                          <span class="schema-chip" 
+                                [class.active-filter]="selectedSchemaFilter === s.name"
+                                (click)="toggleSchemaFilter(s.name)"
+                                [title]="'Filter tables by ' + s.name">
+                            <i class="bi bi-folder2-open"></i>
+                            <span class="schema-chip-name">{{ s.name }}</span>
+                            <span class="schema-chip-count">{{ s.count }} tables</span>
+                          </span>
+                        }
+                        @if (selectedSchemaFilter) {
+                          <button type="button" class="btn-clear-filter" (click)="toggleSchemaFilter(null)">
+                            <i class="bi bi-x-circle"></i> Clear filter
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Discovered Tables Inventory Preview -->
+                  @if (msg.metadataSummary.tables && msg.metadataSummary.tables.length > 0) {
+                    <div class="meta-tables-section">
+                      <div class="meta-tables-header">
+                        <div class="meta-tables-title">
+                          <i class="bi bi-table"></i>
+                          <span>Table Catalog Preview ({{ getFilteredTables(msg.metadataSummary.tables).length }} of {{ msg.metadataSummary.tables.length }} tables)</span>
+                        </div>
+                        <div class="meta-tables-controls">
+                          <div class="table-search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" 
+                                   placeholder="Filter table name..." 
+                                   [(ngModel)]="tableSearchQuery"
+                                   (input)="onTableSearch()">
+                          </div>
+                          @if (msg.metadataSummary.tables.length > 6) {
+                            <button type="button" class="btn-expand-tables" (click)="toggleExpandTables()">
+                              <i class="bi" [ngClass]="isTablesExpanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                              <span>{{ isTablesExpanded ? 'Show Top 6' : 'View All (' + msg.metadataSummary.tables.length + ')' }}</span>
+                            </button>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- Table Grid -->
+                      <div class="table-preview-wrapper">
+                        <table class="inventory-table">
+                          <thead>
+                            <tr>
+                              <th>Schema</th>
+                              <th>Table Name</th>
+                              <th>Rows</th>
+                              <th>Source Size</th>
+                              <th>Columns</th>
+                              <th>Primary Key</th>
+                              <th>Foreign Keys</th>
+                              <th>Tier</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (tbl of getVisibleTables(msg.metadataSummary.tables); track (tbl.full_name || tbl.name)) {
+                              <tr>
+                                <td><span class="schema-tag">{{ tbl.schema || 'dbo' }}</span></td>
+                                <td class="tbl-name-cell">
+                                  <strong>{{ tbl.name }}</strong>
+                                </td>
+                                <td class="tbl-num">{{ formatNumber(tbl.row_count) }}</td>
+                                <td class="tbl-num">{{ formatVolume(tbl.size_mb) }}</td>
+                                <td class="tbl-num">{{ tbl.column_count || (tbl.columns ? tbl.columns.length : '-') }}</td>
+                                <td>
+                                  @if (tbl.primary_key && tbl.primary_key.length > 0) {
+                                    <span class="pk-badge" [title]="'Primary Key: ' + tbl.primary_key">
+                                      <i class="bi bi-key-fill"></i> {{ formatPk(tbl.primary_key) }}
+                                    </span>
+                                  } @else {
+                                    <span class="no-pk-text">—</span>
+                                  }
+                                </td>
+                                <td>
+                                  @if (tbl.foreign_keys && tbl.foreign_keys.length > 0) {
+                                    <span class="fk-badge" [title]="tbl.foreign_keys.length + ' foreign keys'">
+                                      <i class="bi bi-link-45deg"></i> {{ tbl.foreign_keys.length }} FKs
+                                    </span>
+                                  } @else {
+                                    <span class="no-pk-text">—</span>
+                                  }
+                                </td>
+                                <td>
+                                  <span class="size-category-badge" [ngClass]="(tbl.size_category || 'Small').toLowerCase()">
+                                    {{ tbl.size_category || 'Small' }}
+                                  </span>
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Standalone Execution Logs if codeBlock without metadataSummary -->
+              @if (msg.codeBlock && !msg.metadataSummary) {
+                <div class="discovery-terminal-card" style="margin: 10px 0;">
+                  <div class="terminal-header" (click)="toggleTerminalLogs(msg.id)">
+                    <div class="terminal-title">
+                      <span class="terminal-dot dot-red"></span>
+                      <span class="terminal-dot dot-yellow"></span>
+                      <span class="terminal-dot dot-green"></span>
+                      <span class="terminal-title-text"><i class="bi bi-terminal-fill"></i> Catalog Execution Logs</span>
+                    </div>
+                    <div class="terminal-controls">
+                      <button type="button" class="btn-terminal-copy" (click)="$event.stopPropagation(); copyLogs(msg.codeBlock)" title="Copy Logs">
+                        <i class="bi bi-clipboard"></i> <span>Copy</span>
+                      </button>
+                      <i class="bi terminal-toggle-icon" [ngClass]="isTerminalCollapsed(msg.id) ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+                    </div>
+                  </div>
+                  @if (!isTerminalCollapsed(msg.id)) {
+                    <div class="terminal-body">{{ msg.codeBlock }}</div>
+                  }
+                </div>
+              }
+
+              <!-- Metric Pills (only if not already shown inside metadataSummary) -->
+              @if (msg.metrics && msg.metrics.length > 0 && !msg.metadataSummary) {
                 <div class="msg-metrics-grid">
                   @for (m of msg.metrics; track m.label) {
                     <div class="msg-metric-pill">
@@ -110,22 +313,6 @@
                   }
                 </div>
               }
-
-              <!-- Rule Items -->
-              @if (msg.rules && msg.rules.length > 0) {
-                <div class="msg-rules-list">
-                  @for (r of msg.rules; track r.id) {
-                    <div class="msg-rule-item">
-                      <div class="rule-info">
-                        <span class="rule-id">{{ r.id }}</span>
-                        <span class="rule-desc">{{ r.desc }}</span>
-                      </div>
-                      <span class="rule-badge" [ngClass]="r.status">{{ r.status }}</span>
-                    </div>
-                  }
-                </div>
-              }
-
 
               <!-- Action buttons -->
               @if (msg.actions && msg.actions.length > 0) {
@@ -208,8 +395,9 @@
                     <span>Saved connections</span>
                   </label>
                   <select class="conn-field-select" 
-                          [(ngModel)]="connectionForm.savedConnection" 
-                          (change)="onSavedConnectionChange()">
+                          [ngModel]="connectionForm.savedConnection" 
+                          (ngModelChange)="onSavedConnectionChange($event)"
+                          (change)="onSavedConnectionChange($any($event.target).value)">
                     <option value="__new__">+ Add new connection...</option>
                     @for (opt of currentSavedOptions; track opt.key) {
                       <option [value]="opt.key">{{ opt.label }}</option>
@@ -777,26 +965,28 @@
       <!-- Quick Prompts Tray -->
       <div class="chat-quick-prompts-tray">
         @for (prompt of quickPrompts; track prompt.label) {
-          <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)">
+          <button type="button"
+                  class="prompt-chip"
+                  [class.prompt-chip--disabled]="!isSourceConnected"
+                  [disabled]="!isSourceConnected"
+                  [title]="isSourceConnected ? prompt.label : 'Connect a source database first'"
+                  (click)="handlePromptClick(prompt)">
             <i class="bi" [ngClass]="prompt.icon"></i>
             <span>{{ prompt.label }}</span>
           </button>
         }
       </div>
 
-      <!-- Input Bar -->
-      <div class="chat-input-bar">
-        <input type="text" 
-               class="chat-input-field" 
-               placeholder="Ask Discovery Agent about schema inventory, connections, table volumes..." 
-               [(ngModel)]="userInput" 
-               (keydown.enter)="sendMessage()" 
-               [disabled]="isTyping">
-        <button type="button" 
-                class="btn-chat-send" 
-                (click)="sendMessage()" 
-                [disabled]="!userInput.trim() || isTyping"
-                title="Send Message">
+      <!-- Input Bar (disabled – chat coming soon) -->
+      <div class="chat-input-bar chat-input-bar--disabled">
+        <input type="text"
+               class="chat-input-field"
+               placeholder="Chat coming soon — use the quick actions above"
+               [disabled]="true">
+        <button type="button"
+                class="btn-chat-send"
+                [disabled]="true"
+                title="Chat coming soon">
           <i class="bi bi-send-fill"></i>
         </button>
       </div>
