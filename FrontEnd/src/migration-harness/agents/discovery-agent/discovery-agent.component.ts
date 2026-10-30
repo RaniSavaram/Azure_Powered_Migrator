@@ -174,7 +174,6 @@ export class DiscoveryAgentComponent implements OnInit {
     { label: 'Show schema inventory', query: 'Show me the schema inventory and table catalog', icon: 'bi-table' },
     { label: 'How many tables?', query: 'How many tables were discovered in the source?', icon: 'bi-grid-3x3' },
     { label: 'Storage & volume', query: 'Show me the storage volume and row count profile', icon: 'bi-bar-chart-fill' },
-    { label: 'ER relationships', query: 'Show the ER relationships and foreign key dependencies', icon: 'bi-diagram-3' },
     { label: 'Largest tables', query: 'What are the largest tables by row count?', icon: 'bi-sort-down' },
     { label: 'Proceed to Phase 2', query: 'Proceed to Constraint Agent Phase 2', icon: 'bi-arrow-right-circle' }
   ];

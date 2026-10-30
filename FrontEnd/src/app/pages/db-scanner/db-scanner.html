@@ -25,11 +25,19 @@ START PART 1
         </div>
 
         <div class="header-right-actions">
-            <a routerLink="/" class="btn-return-agents" title="Switch to Step-by-Step Agent Process">
-                <i class="bi bi-diagram-3-fill"></i>
-                <span>Step-by-Step Agent Process</span>
-                <i class="bi bi-arrow-right"></i>
-            </a>
+            @if (!loading) {
+                <a routerLink="/" class="btn-return-agents" title="Switch to Step-by-Step Agent Process">
+                    <i class="bi bi-diagram-3-fill"></i>
+                    <span>Step-by-Step Agent Process</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            } @else {
+                <button type="button" class="btn-return-agents btn-return-agents-disabled" disabled title="Scan in progress — Step-by-Step Agent Process is disabled until scan completes">
+                    <i class="bi bi-lock-fill"></i>
+                    <span>Step-by-Step Agent Process</span>
+                    <i class="bi bi-arrow-right"></i>
+                </button>
+            }
         </div>
 
     </div>

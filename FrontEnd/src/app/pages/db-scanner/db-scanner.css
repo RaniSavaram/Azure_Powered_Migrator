@@ -138,6 +138,24 @@ HEADER
     transform:translateX(2px);
 }
 
+.btn-return-agents-disabled,
+button.btn-return-agents:disabled {
+    background-color: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #94a3b8 !important;
+    cursor: not-allowed !important;
+    opacity: 0.65;
+    transform: none !important;
+    box-shadow: none !important;
+    pointer-events: auto !important;
+}
+
+.btn-return-agents-disabled i,
+button.btn-return-agents:disabled i {
+    color: #94a3b8 !important;
+    transform: none !important;
+}
+
 /*====================================================
 OVERVIEW
 ====================================================*/
