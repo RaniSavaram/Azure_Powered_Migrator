@@ -196,24 +196,6 @@ export class HarnessDataService {
       route: '/agents/assessment'
     },
     {
-      id: 'evaluation-agent',
-      phase: 4,
-      name: 'Evaluation Agent',
-      sidebarName: 'Evaluation Agent',
-      sidebarSubtext: 'Ground Truth • Audit • Critique Loop',
-      phaseTag: 'FEEDBACK BRIDGE · EVALUATION & AUDIT',
-      category: 'Quality & Feedback Loop',
-      color: '#8b5cf6',
-      accentBorder: '#8b5cf6',
-      bgTint: 'rgba(139, 92, 246, 0.1)',
-      icon: 'bi-cpu',
-      status: 'live',
-      executionStatus: 'idle',
-      badgeText: 'Bridge',
-      description: 'Closed-loop AI evaluator that audits assessment summaries and migration plans against source schema ground truth — eliminating hallucinations and ensuring architectural precision.',
-      route: '/agents/evaluation'
-    },
-    {
       id: 'migration-generator-agent',
       phase: 4,
       name: 'Migration Generator Agent',
@@ -230,6 +212,24 @@ export class HarnessDataService {
       badgeText: 'Phase 4',
       description: 'Generates complete 9-section migration plans — establishing topological execution order, 5-stage dependency batching, Full vs Incremental load strategies, and Microsoft Fabric target architecture.',
       route: '/agents/migration-generator'
+    },
+    {
+      id: 'evaluation-agent',
+      phase: 5,
+      name: 'Evaluation Agent',
+      sidebarName: 'Evaluation Agent',
+      sidebarSubtext: 'Ground Truth • Audit • Critique Loop',
+      phaseTag: 'FEEDBACK BRIDGE · EVALUATION & AUDIT',
+      category: 'Quality & Feedback Loop',
+      color: '#8b5cf6',
+      accentBorder: '#8b5cf6',
+      bgTint: 'rgba(139, 92, 246, 0.1)',
+      icon: 'bi-cpu',
+      status: 'live',
+      executionStatus: 'idle',
+      badgeText: 'Bridge',
+      description: 'Closed-loop AI evaluator that audits assessment summaries and migration plans against source schema ground truth — eliminating hallucinations and ensuring architectural precision.',
+      route: '/agents/evaluation'
     },
     {
       id: 'artifacts-generator',
@@ -274,8 +274,8 @@ export class HarnessDataService {
     'discovery-agent',
     'constraint-agent',
     'assessment-agent',
-    'evaluation-agent',
     'migration-generator-agent',
+    'evaluation-agent',
     'artifacts-generator'
   ];
 

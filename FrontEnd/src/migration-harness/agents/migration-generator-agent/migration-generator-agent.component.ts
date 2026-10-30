@@ -49,8 +49,8 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
 
   agentName = 'Migration Generator Agent';
   phase = 'Phase 4 · Code & Pipeline Generation';
-  nextPhaseRoute = '/agents/artifacts-generator';
-  nextPhaseName = 'Artifacts Generator';
+  nextPhaseRoute = '/agents/evaluation';
+  nextPhaseName = 'Evaluation Agent';
 
   get isSourceConnected(): boolean {
     return this.harnessDataService.isSourceConnected();

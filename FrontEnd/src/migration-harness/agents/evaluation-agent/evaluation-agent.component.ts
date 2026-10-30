@@ -15,8 +15,8 @@ export class EvaluationAgentComponent {
 
   agentName = 'Evaluation Agent';
   phase = 'Evaluator-Generator Feedback Loop';
-  nextPhaseRoute = '/agents/migration-generator';
-  nextPhaseName = 'Migration Generator Agent';
+  nextPhaseRoute = '/agents/artifacts-generator';
+  nextPhaseName = 'Artifacts Generator';
 
   get isSourceConnected(): boolean {
     return this.harnessDataService.isSourceConnected();
