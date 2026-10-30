@@ -93,7 +93,16 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
 
   readonly readinessLabel = READINESS_LABEL;
 
-  readonly quickPrompts: QuickPrompt[] = [];
+  readonly quickPrompts: QuickPrompt[] = [
+    { label: 'Re-run assessment', query: 'Run the assessment again', icon: 'bi-arrow-clockwise' },
+    { label: 'Table explorer', query: 'Open the table explorer', icon: 'bi-table' },
+    { label: 'Migration waves', query: 'Show the migration waves', icon: 'bi-layers' },
+    { label: 'Complex tables', query: 'Which tables are the most complex?', icon: 'bi-graph-up-arrow' },
+    { label: 'Needs review', query: 'Which tables need review?', icon: 'bi-exclamation-triangle' },
+    { label: 'Load strategy', query: 'Which tables can load incrementally?', icon: 'bi-arrow-repeat' },
+    { label: 'Largest tables', query: 'Show the largest tables', icon: 'bi-hdd-stack' },
+    { label: 'Assessment report', query: 'Open the assessment report', icon: 'bi-file-earmark-word' }
+  ];
 
   userInput = '';
 
@@ -311,7 +320,16 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
       `- Migration waves: **${s.wave_count}** (dependencies: ${s.dependency_source})\n` +
       `- Constraint gate (Phase 2): **${s.constraints_gate}**${docNote}${originNote}`,
       {
-        metrics: r.metrics
+        metrics: r.metrics,
+        actions: [
+          ...(r.verdict === 'blocked'
+            ? [{ label: 'Open Constraint Agent', action: 'constraints', icon: 'bi-shield-exclamation', primary: true }]
+            : []),
+          { label: 'Table explorer', action: 'explorer', icon: 'bi-table' },
+          { label: 'Migration waves', action: 'waves', icon: 'bi-layers' },
+          ...(r.report_file ? [{ label: 'View report', action: 'view_doc', icon: 'bi-box-arrow-up-right' },
+                               { label: 'Download .docx', action: 'download_doc', icon: 'bi-download' }] : [])
+        ]
       }
     );
   }

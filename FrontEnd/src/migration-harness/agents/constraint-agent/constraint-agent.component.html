@@ -325,19 +325,16 @@
           </div>
         }
 
-        <!-- Input Bar -->
-        <div class="chat-input-bar">
+        <!-- Input Bar (disabled – chat coming soon) -->
+        <div class="chat-input-bar chat-input-bar--disabled">
           <input type="text"
                  class="chat-input-field"
-                 placeholder="Ask about primary/foreign keys, data types, governance, a table name, or say re-run…"
-                 [(ngModel)]="userInput"
-                 (keydown.enter)="sendMessage()"
-                 [disabled]="isBusy()">
+                 placeholder="Chat coming soon — use the quick actions above"
+                 [disabled]="true">
           <button type="button"
                   class="btn-chat-send"
-                  (click)="sendMessage()"
-                  [disabled]="!userInput.trim() || isBusy()"
-                  title="Send Message">
+                  [disabled]="true"
+                  title="Chat coming soon">
             <i class="bi bi-send-fill"></i>
           </button>
         </div>

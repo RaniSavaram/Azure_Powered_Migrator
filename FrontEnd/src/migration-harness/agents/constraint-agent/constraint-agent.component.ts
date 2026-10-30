@@ -81,7 +81,15 @@ export class ConstraintAgentComponent implements OnInit, AfterViewChecked, OnDes
   nextPhaseRoute = '/agents/assessment';
   nextPhaseName = 'Assessment Agent';
 
-  readonly quickPrompts: QuickPrompt[] = [];
+  readonly quickPrompts: QuickPrompt[] = [
+    { label: 'Re-run checks', query: 'Run the constraint checks again', icon: 'bi-arrow-clockwise' },
+    { label: 'Primary keys', query: 'Show primary key coverage', icon: 'bi-key' },
+    { label: 'Foreign keys', query: 'Show foreign key integrity', icon: 'bi-diagram-3' },
+    { label: 'Data types', query: 'Which columns need a Fabric data type change?', icon: 'bi-exclamation-triangle' },
+    { label: 'Governance & PII', query: 'Show governance and sensitive data findings', icon: 'bi-card-checklist' },
+    { label: 'Errors & warnings', query: 'Show all errors and warnings', icon: 'bi-bug' },
+    { label: 'Remediation SQL', query: 'Show the Fabric remediation SQL', icon: 'bi-code-slash' }
+  ];
 
   userInput = '';
 
@@ -278,7 +286,15 @@ export class ConstraintAgentComponent implements OnInit, AfterViewChecked, OnDes
       `Click a rule to see the affected tables and columns.${originNote}`,
       {
         metrics: r.metrics,
-        rules: r.rules.map(rule => ({ id: rule.id, desc: rule.desc, status: rule.status, ruleRef: rule }))
+        rules: r.rules.map(rule => ({ id: rule.id, desc: rule.desc, status: rule.status, ruleRef: rule })),
+        actions: [
+          ...(r.decision !== 'PASS'
+            ? [{ label: 'Show failing rules', action: 'issues', icon: 'bi-bug', primary: true }]
+            : []),
+          { label: 'Remediation SQL', action: 'remediations', icon: 'bi-code-slash' },
+          { label: 'Re-run checks', action: 'audit', icon: 'bi-arrow-repeat' },
+          { label: 'Re-extract from source', action: 'refresh', icon: 'bi-plug' }
+        ]
       }
     );
   }
