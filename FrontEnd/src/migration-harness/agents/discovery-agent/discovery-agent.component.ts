@@ -624,7 +624,7 @@ Connected to **${cfg.server} / ${cfg.database}** (Live Session Verified). Synchr
 - **Database**: \`${this.connectionForm.database || 'ANALYTICS_DB'}\`
 - **Auth**: ${this.connectionForm.snowflakeAuthMode === 'token' ? 'Programmatic Access Token (PAT)' : 'Password'}`;
     } else {
-      detailBullets = `- **Target Server**: \`${this.connectionForm.server}\`
+      detailBullets = `- **Source Server**: \`${this.connectionForm.server}\`
 - **Database Catalog**: \`${this.connectionForm.database}\`
 - **Username**: \`${this.connectionForm.username}\``;
     }
@@ -672,8 +672,8 @@ Connected to **${cfg.server} / ${cfg.database}** (Live Session Verified). Synchr
           this.showInlineConnectCard = false;
           const logs = connRes.connection_logs || connRes.logs || [
             `[INFO] Connect request received for source platform: ${this.connectionForm.platform}`,
-            `[INFO] Target Server / Endpoint: ${this.connectionForm.server || this.connectionForm.account}`,
-            `[INFO] Target Database: ${this.connectionForm.database || this.connectionForm.catalog || 'Default'}`,
+            `[INFO] Source Server / Endpoint: ${this.connectionForm.server || this.connectionForm.account}`,
+            `[INFO] Source Database: ${this.connectionForm.database || this.connectionForm.catalog || 'Default'}`,
             `[SUCCESS] Handshake verified with ${this.connectionForm.platform} (Live database session established)`,
             `[SUCCESS] Source is connected successfully.`
           ];
@@ -690,8 +690,8 @@ Connected to **${cfg.server} / ${cfg.database}** (Live Session Verified). Synchr
           this.connectionErrorMessage = failMsg;
           const failLogs = connRes?.connection_logs || connRes?.logs || [
             `[INFO] Connect request received for source platform: ${this.connectionForm.platform}`,
-            `[INFO] Target Server: ${this.connectionForm.server || this.connectionForm.account}`,
-            `[INFO] Target Database: ${this.connectionForm.database || this.connectionForm.catalog || 'Default'}`,
+            `[INFO] Source Server: ${this.connectionForm.server || this.connectionForm.account}`,
+            `[INFO] Source Database: ${this.connectionForm.database || this.connectionForm.catalog || 'Default'}`,
             `[ERROR] Connection handshake failed: ${failMsg}`,
             `[ERROR] Source database is NOT connected.`,
             `[ACTION REQUIRED] Please verify host endpoint, port, credentials, and network reachability.`
@@ -711,8 +711,8 @@ Connected to **${cfg.server} / ${cfg.database}** (Live Session Verified). Synchr
         this.connectionErrorMessage = failMsg;
         const failLogs = err.error?.connection_logs || err.error?.logs || [
           `[INFO] Connect request received for source platform: ${this.connectionForm.platform}`,
-          `[INFO] Target Server: ${this.connectionForm.server || this.connectionForm.account}`,
-          `[INFO] Target Database: ${this.connectionForm.database || this.connectionForm.catalog || 'Default'}`,
+          `[INFO] Source Server: ${this.connectionForm.server || this.connectionForm.account}`,
+          `[INFO] Source Database: ${this.connectionForm.database || this.connectionForm.catalog || 'Default'}`,
           `[ERROR] Connection handshake failed: ${failMsg}`,
           `[ERROR] Source database is NOT connected. (Backend verification rejected)`,
           `[ACTION REQUIRED] Please check host, port, credentials, and network firewall rules.`

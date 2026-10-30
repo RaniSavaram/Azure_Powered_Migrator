@@ -461,14 +461,16 @@
         </div>
 
         <!-- Quick Prompts Tray -->
-        <div class="chat-quick-prompts-tray">
-          @for (prompt of quickPrompts; track prompt.label) {
-            <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)" [disabled]="isBusy()">
-              <i class="bi" [ngClass]="prompt.icon"></i>
-              <span>{{ prompt.label }}</span>
-            </button>
-          }
-        </div>
+        @if (quickPrompts.length > 0) {
+          <div class="chat-quick-prompts-tray">
+            @for (prompt of quickPrompts; track prompt.label) {
+              <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)" [disabled]="isBusy()">
+                <i class="bi" [ngClass]="prompt.icon"></i>
+                <span>{{ prompt.label }}</span>
+              </button>
+            }
+          </div>
+        }
 
         <!-- Input Bar -->
         <div class="chat-input-bar">

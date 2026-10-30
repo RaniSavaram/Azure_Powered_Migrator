@@ -93,16 +93,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
 
   readonly readinessLabel = READINESS_LABEL;
 
-  readonly quickPrompts: QuickPrompt[] = [
-    { label: 'Re-run assessment', query: 'Run the assessment again', icon: 'bi-arrow-clockwise' },
-    { label: 'Table explorer', query: 'Open the table explorer', icon: 'bi-table' },
-    { label: 'Migration waves', query: 'Show the migration waves', icon: 'bi-layers' },
-    { label: 'Complex tables', query: 'Which tables are the most complex?', icon: 'bi-graph-up-arrow' },
-    { label: 'Needs review', query: 'Which tables need review?', icon: 'bi-exclamation-triangle' },
-    { label: 'Load strategy', query: 'Which tables can load incrementally?', icon: 'bi-arrow-repeat' },
-    { label: 'Largest tables', query: 'Show the largest tables', icon: 'bi-hdd-stack' },
-    { label: 'Assessment report', query: 'Open the assessment report', icon: 'bi-file-earmark-word' }
-  ];
+  readonly quickPrompts: QuickPrompt[] = [];
 
   userInput = '';
 
@@ -320,16 +311,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
       `- Migration waves: **${s.wave_count}** (dependencies: ${s.dependency_source})\n` +
       `- Constraint gate (Phase 2): **${s.constraints_gate}**${docNote}${originNote}`,
       {
-        metrics: r.metrics,
-        actions: [
-          ...(r.verdict === 'blocked'
-            ? [{ label: 'Open Constraint Agent', action: 'constraints', icon: 'bi-shield-exclamation', primary: true }]
-            : []),
-          { label: 'Table explorer', action: 'explorer', icon: 'bi-table' },
-          { label: 'Migration waves', action: 'waves', icon: 'bi-layers' },
-          ...(r.report_file ? [{ label: 'View report', action: 'view_doc', icon: 'bi-box-arrow-up-right' },
-                               { label: 'Download .docx', action: 'download_doc', icon: 'bi-download' }] : [])
-        ]
+        metrics: r.metrics
       }
     );
   }
@@ -349,9 +331,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
         if (this.canProceed()) {
           this.router.navigate([this.nextPhaseRoute]);
         } else {
-          this.agentSays('The assessment is blocked, so the Migration Generator stays locked. Fix the Layer 1 errors in the Constraint Agent, then re-run.', {
-            actions: [{ label: 'Open Constraint Agent', action: 'constraints', icon: 'bi-shield-exclamation', primary: true }]
-          });
+          this.agentSays('The assessment is blocked, so the Migration Generator stays locked. Fix the Layer 1 errors in the Constraint Agent, then re-run.');
         }
         break;
       case 'constraints':
@@ -505,8 +485,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
         this.agentSays(
           `**${s.readiness_breakdown.blocked}** blocked and **${s.readiness_breakdown.needs_review}** need review. Showing the first ${Math.min(open.length, 15)}:`,
           {
-            rows: open.slice(0, 15).map(t => this.tableRow(t, this.reviewReason(t))),
-            actions: [{ label: 'Open in table explorer', action: 'explorer', icon: 'bi-table' }]
+            rows: open.slice(0, 15).map(t => this.tableRow(t, this.reviewReason(t)))
           }
         );
         return;
@@ -538,22 +517,14 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
       case 'gate':
         this.agentSays(
           `The Phase 2 constraint gate is **${s.constraints_gate}**. ` +
-          (s.constraints_gate === 'PASS' ? 'Column type changes, missing keys and sensitive columns from it feed into each table\'s score.' : 'Fix the failing rules in the Constraint Agent, then re-run the assessment.'),
-          { actions: [{ label: 'Open Constraint Agent', action: 'constraints', icon: 'bi-shield-check' }] }
+          (s.constraints_gate === 'PASS' ? 'Column type changes, missing keys and sensitive columns from it feed into each table\'s score.' : 'Fix the failing rules in the Constraint Agent, then re-run the assessment.')
         );
         return;
       case 'report':
         if (r.report_file) {
-          this.agentSays(`The Assessment Report is \`${r.report_file}\`.`, {
-            actions: [
-              { label: 'View report', action: 'view_doc', icon: 'bi-box-arrow-up-right', primary: true },
-              { label: 'Download .docx', action: 'download_doc', icon: 'bi-download' }
-            ]
-          });
+          this.agentSays(`The Assessment Report is \`${r.report_file}\`.`);
         } else {
-          this.agentSays(`The Word report wasn't generated${r.document_error ? ': ' + r.document_error : ''}.`, {
-            actions: [{ label: 'Re-run assessment', action: 'rerun', icon: 'bi-arrow-repeat', primary: true }]
-          });
+          this.agentSays(`The Word report wasn't generated${r.document_error ? ': ' + r.document_error : ''}.`);
         }
         return;
       case 'summary':

@@ -832,8 +832,8 @@ def extract_metadata_service(data: dict = None) -> dict:
 
     connection_logs = [
         f"[INFO] Connect request received for source platform: {display_name}",
-        f"[INFO] Target Server / Endpoint: {active_pipeline['server']}",
-        f"[INFO] Target Database / Catalog: {database}",
+        f"[INFO] Source Server / Endpoint: {active_pipeline['server']}",
+        f"[INFO] Source Database / Catalog: {database}",
     ]
     if cfg.get("username"):
         connection_logs.append(f"[INFO] Authenticated User: {cfg.get('username')}")
