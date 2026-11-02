@@ -33,6 +33,7 @@ from Migrator.pipeline_services import (
     validate_constraints_service,
     generate_assessment_report_service,
     generate_migration_plan_service,
+    evaluate_agent_service,
     get_pipeline_state_service,
     active_pipeline
 )
@@ -665,6 +666,25 @@ def generate_assessment(request):
 
 
 @api_view(["GET", "POST"])
+def evaluate_agent(request):
+    """
+    Runs Harness Layer 2 Evaluator-Generator Feedback validation:
+    Validates AI Table Summarizer observations against ground truth catalog,
+    detects hallucinations, audits migration plan dependency ordering,
+    and verifies target Microsoft Fabric Lakehouse artifact completeness.
+    Matches the Harness Layer 2 logic and generator-evaluator feedback logs of phase_0.
+    """
+    try:
+        data = request.data if request.method == "POST" else {}
+        result = evaluate_agent_service(data)
+        if result.get("status") == "error":
+            return Response(result, status=409 if result.get("code") == "SOURCE_NOT_CONNECTED" else 502)
+        return Response(result, status=200)
+    except Exception as exc:
+        traceback.print_exc()
+        return Response({"status": "error", "message": str(exc)}, status=400)
+
+
 def generate_migration_plan_view(request):
     """
     Generates the comprehensive Medallion Architecture roadmap (Bronze, Silver, Gold),

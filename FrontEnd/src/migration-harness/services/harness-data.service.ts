@@ -51,6 +51,11 @@ export class HarnessDataService {
   constraintResultObservable$: Observable<any | null> = this.constraintResult$.asObservable();
 
   private assessmentResult$ = new BehaviorSubject<any | null>(null);
+  private evaluationResult$ = new BehaviorSubject<any | null>(null);
+  evaluationResultObservable$: Observable<any | null> = this.evaluationResult$.asObservable();
+
+  private evaluationLogs$ = new BehaviorSubject<string | null>(null);
+  evaluationLogsObservable$: Observable<string | null> = this.evaluationLogs$.asObservable();
   assessmentResultObservable$: Observable<any | null> = this.assessmentResult$.asObservable();
 
   private sourceMetadata$ = new BehaviorSubject<any | null>(null);
@@ -70,6 +75,23 @@ export class HarnessDataService {
 
   setAssessmentResult(result: any | null): void {
     this.assessmentResult$.next(result);
+
+  }
+
+  getEvaluationResult(): any | null {
+    return this.evaluationResult$.value;
+  }
+
+  setEvaluationResult(result: any | null): void {
+    this.evaluationResult$.next(result);
+  }
+
+  getEvaluationLogs(): string | null {
+    return this.evaluationLogs$.value;
+  }
+
+  setEvaluationLogs(logs: string | null): void {
+    this.evaluationLogs$.next(logs);
   }
 
   isSourceConnected(): boolean {
@@ -134,6 +156,8 @@ export class HarnessDataService {
     this.constraintLogs$.next(null);
     this.constraintResult$.next(null);
     this.assessmentResult$.next(null);
+    this.evaluationResult$.next(null);
+    this.evaluationLogs$.next(null);
     this.setDiscoveryConversationDone(false);
   }
 

@@ -116,6 +116,84 @@ export interface ConstraintReport {
   harness_result: unknown;
 }
 
+
+export interface EvaluationIssue {
+  rule: string;
+  severity: 'ERROR' | 'WARNING' | 'INFO';
+  message: string;
+}
+
+export interface EvaluationRule {
+  id: string;
+  category: string;
+  name: string;
+  desc: string;
+  status: 'pass' | 'warn' | 'fail';
+  details: string;
+}
+
+export interface EvaluationMetric {
+  label: string;
+  value: string;
+  color?: string;
+}
+
+export interface EvaluationTableResult {
+  table_name: string;
+  schema_name: string;
+  passed: boolean;
+  column_count: number;
+  issues: EvaluationIssue[];
+}
+
+export interface EvaluationSection {
+  section: string;
+  passed: boolean;
+  issues: EvaluationIssue[];
+}
+
+export interface EvaluationReport {
+  status: 'success' | 'error';
+  code?: string;
+  message?: string;
+  decision: 'PASS' | 'FAIL';
+  ai_output_quality: 'HIGH' | 'DEGRADED';
+  quality_score: number;
+  hallucinations_detected: number;
+  total_errors: number;
+  total_warnings: number;
+  generated_at?: string;
+  duration_ms?: number;
+  source: {
+    platform: string;
+    platform_slug: string;
+    server: string;
+    database: string;
+    live_connected: boolean;
+  };
+  summary: {
+    total_tables: number;
+    total_errors: number;
+    total_warnings: number;
+    hallucinations: number;
+    decision: 'PASS' | 'FAIL';
+    target_platform: string;
+  };
+  metrics: EvaluationMetric[];
+  rules: EvaluationRule[];
+  sections: EvaluationSection[];
+  table_evaluations: EvaluationTableResult[];
+  report_text: string;
+  logs: ConstraintLogLine[];
+  artifacts: {
+    assessment_report_docx: boolean;
+    migration_plan_docx: boolean;
+    fabric_migration_metadata_json: boolean;
+  };
+  layer2_result?: any;
+  reconnected?: boolean;
+}
+
 export type AssessmentTier = 'Simple' | 'Medium' | 'Complex';
 export type AssessmentReadiness = 'ready' | 'needs_review' | 'blocked';
 
@@ -669,6 +747,15 @@ export class Scanner {
   /**
    * Telemetry state across all phases.
    */
+  
+  /**
+   * Phase 5 (Evaluation Agent): runs Harness Layer 2 Evaluator-Generator Feedback Harness,
+   * auditing Table Summarizer observations, Migration Plan, and Fabric artifacts against ground truth.
+   */
+  evaluatePipeline(options: { connection?: Record<string, unknown>; refresh?: boolean } = {}) {
+    return this.http.post<EvaluationReport>(`${this.api.baseUrl}/evaluate-agent/`, options);
+  }
+
   getPipelineState() {
     return this.http.get<{
       source_connected: boolean;

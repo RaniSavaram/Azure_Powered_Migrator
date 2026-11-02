@@ -50,7 +50,7 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
   agentName = 'Migration Generator Agent';
   phase = 'Phase 4 · Code & Pipeline Generation';
   nextPhaseRoute = '/agents/evaluation';
-  nextPhaseName = 'Evaluation Agent';
+  nextPhaseName = 'Evaluator Agent';
 
   get isSourceConnected(): boolean {
     return this.harnessDataService.isSourceConnected();
@@ -230,7 +230,7 @@ ${wavesBullet}
           { label: 'Execution Waves', value: `${waves.length} Waves` }
         ],
         actions: [
-          { label: 'Proceed to Artifacts Generator', action: 'next', icon: 'bi-arrow-right-circle', primary: true },
+          { label: 'Proceed to Evaluator Agent', action: 'next', icon: 'bi-arrow-right-circle', primary: true },
           { label: 'View Migration Plan (.docx)', action: 'view_doc', icon: 'bi-box-arrow-up-right' },
           { label: 'Download Document', action: 'download_doc', icon: 'bi-download' }
         ]
@@ -250,7 +250,7 @@ ${wavesBullet}
       ],
       actions: [
         { label: 'Generate Migration Plan (.docx)', action: 'generate', icon: 'bi-file-earmark-word', primary: true },
-        { label: 'Proceed to Artifacts Generator', action: 'next', icon: 'bi-arrow-right-circle' }
+        { label: 'Proceed to Evaluator Agent', action: 'next', icon: 'bi-arrow-right-circle' }
       ]
     });
   }

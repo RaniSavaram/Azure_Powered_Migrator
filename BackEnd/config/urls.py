@@ -23,6 +23,7 @@ urlpatterns = [
     path("api/validate-constraints/", views.validate_constraints),
     path("api/assessment-report/", views.generate_assessment),
     path("api/migration-plan/", views.generate_migration_plan_view),
+    path("api/evaluate-agent/", views.evaluate_agent),
     path("api/pipeline-state/", views.pipeline_state),
     path("api/connection/", views.saved_connection),
     path("api/connections/", views.saved_connections),
