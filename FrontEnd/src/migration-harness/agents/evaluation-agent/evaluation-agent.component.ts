@@ -141,7 +141,7 @@ export class EvaluationAgentComponent implements OnInit, AfterViewChecked, OnDes
       {
         id: 'msg-cached',
         sender: 'agent',
-        text: `Loaded existing **Evaluator-Generator Feedback** audit for **${rep.source.database}** (${rep.source.platform}).\n\nDecision: **${rep.decision}** · Quality: **${rep.ai_output_quality}** · Hallucinations: **${rep.hallucinations_detected}** detected · Fidelity Score: **${rep.quality_score}%**.`,
+        text: `Loaded existing **Evaluator-Generator Feedback** audit for **${rep.source.database}** (${rep.source.platform}).\n\nDecision: **${rep.decision}** · Quality: **${rep.ai_output_quality}** · Hallucinations: **${rep.hallucinations_detected}** detected.`,
         timestamp: new Date(),
         metrics: rep.metrics
       }

@@ -1587,7 +1587,6 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
         {"label": "Evaluator Decision", "value": decision, "color": "#10b981" if decision == "PASS" else "#ef4444"},
         {"label": "AI Output Quality", "value": quality, "color": "#06b6d4"},
         {"label": "Hallucinations", "value": f"{hallucination_count} DETECTED", "color": "#10b981" if hallucination_count == 0 else "#ef4444"},
-        {"label": "Fidelity Score", "value": f"{quality_score}%", "color": "#8b5cf6"},
         {"label": "Verified Tables", "value": f"{table_count} Tables", "color": "#0ea5e9"},
 
         {"label": "Artifact Completeness", "value": f"{sum([assessment_doc_ok, migration_doc_ok, fabric_json_ok])}/3 Ready", "color": "#ec4899"},
