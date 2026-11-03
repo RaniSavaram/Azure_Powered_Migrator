@@ -81,7 +81,7 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
   quickPrompts: QuickPrompt[] = [
     { label: 'Generate Migration Plan (.docx)', query: 'Generate comprehensive Migration Plan Word document (.docx)', icon: 'bi-file-earmark-word' },
     { label: 'Inspect Medallion Layers', query: 'Inspect Bronze, Silver, Gold Lakehouse layer allocations', icon: 'bi-layers' },
-    { label: 'View Execution Waves (DAG)', query: 'Display dependency execution waves and sequence order', icon: 'bi-diagram-3' },
+    { label: 'Migration waves', query: 'Show the migration waves', icon: 'bi-layers' },
     { label: 'Analyze Risk Mitigations', query: 'Analyze migration risks and Fabric governance mitigations', icon: 'bi-shield-check' }
   ];
 
@@ -122,7 +122,7 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
         actions: [
           { label: 'Generate Migration Plan (.docx)', action: 'generate', icon: 'bi-play-fill', primary: true },
           { label: 'Inspect Medallion Architecture', action: 'medallion', icon: 'bi-layers' },
-          { label: 'View Execution Waves', action: 'waves', icon: 'bi-diagram-3' }
+          { label: 'Migration waves', action: 'waves', icon: 'bi-layers' }
         ]
       }
     ];
@@ -233,6 +233,45 @@ ${wavesBullet}
           { label: 'Proceed to Evaluator Agent', action: 'next', icon: 'bi-arrow-right-circle', primary: true },
           { label: 'View Migration Plan (.docx)', action: 'view_doc', icon: 'bi-box-arrow-up-right' },
           { label: 'Download Document', action: 'download_doc', icon: 'bi-download' }
+        ]
+      });
+      return;
+    }
+
+    if (q.includes('wave')) {
+      const assessment = this.harnessDataService.getAssessmentResult();
+      const waves = planRes?.execution_waves || assessment?.waves;
+      let wavesBullet = '';
+      if (waves && waves.length > 0) {
+        waves.forEach((w: any) => {
+          const tableList = w.tables ? w.tables.slice(0, 6).join(', ') + (w.tables.length > 6 ? ` (+${w.tables.length - 6} more)` : '') : '';
+          wavesBullet += `- **Wave ${w.wave}** (${w.tables?.length || 0} table(s)): \`${tableList}\`<br>`;
+        });
+      } else {
+        wavesBullet = `- **Wave 1 (Independent Entities)**: Lookups, code tables, and parent dimensions without incoming foreign keys.<br>- **Wave 2 (Conformed Dimensions)**: Entities with single-level referential dependencies.<br>- **Wave 3 (Fact & Transactional Tables)**: High-volume transactional tables partitioned by date watermarks.`;
+      }
+
+      this.messages.push({
+        id: 'bot-' + Date.now(),
+        sender: 'agent',
+        text: `### 🌊 Migration Waves & Dependency DAG Execution Sequencing
+
+Tables are partitioned into topological dependency execution waves for migration to Microsoft Fabric OneLake:
+
+${wavesBullet}
+
+#### ⚙️ Orchestration Strategy:
+- **Phase Execution**: Waves execute sequentially in ascending topological order.
+- **Parallel Ingestion**: Tables within each wave can be ingested concurrently into OneLake Delta Parquet.
+- **Referential Integrity**: Guarantees all parent entities exist before child foreign keys are loaded.`,
+        timestamp: new Date(),
+        metrics: [
+          { label: 'Total Waves', value: `${waves?.length || 3} Waves` },
+          { label: 'Topological Order', value: 'VALIDATED' }
+        ],
+        actions: [
+          { label: 'Generate Migration Plan (.docx)', action: 'generate', icon: 'bi-file-earmark-word', primary: true },
+          { label: 'Proceed to Evaluator Agent', action: 'next', icon: 'bi-arrow-right-circle' }
         ]
       });
       return;

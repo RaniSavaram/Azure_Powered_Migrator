@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { HarnessDataService } from '../../services/harness-data.service';
 import { AgentInfo } from '../../models/agent.model';
+import { ResultsDialogComponent } from '../../components/results-dialog/results-dialog.component';
 
 @Component({
   selector: 'app-harness-home',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, ResultsDialogComponent],
   templateUrl: './harness-home.component.html',
   styleUrl: './harness-home.component.css'
 })
@@ -32,6 +33,7 @@ export class HarnessHomeComponent {
   }
 
   showStartPhase1Modal = false;
+  showResultsDialog = false;
 
   openStartPhase1Modal(): void {
     this.showStartPhase1Modal = true;
@@ -44,5 +46,13 @@ export class HarnessHomeComponent {
   confirmStartPhase1(): void {
     this.showStartPhase1Modal = false;
     this.router.navigate(['/agents/discovery']);
+  }
+
+  openResultsDialog(): void {
+    this.showResultsDialog = true;
+  }
+
+  closeResultsDialog(): void {
+    this.showResultsDialog = false;
   }
 }

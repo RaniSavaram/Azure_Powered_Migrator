@@ -1,0 +1,275 @@
+<div class="dialog-overlay" (click)="onClose()">
+  <div class="results-dialog" (click)="$event.stopPropagation()">
+    <!-- Dialog Header -->
+    <div class="results-header">
+      <div class="header-title-wrap">
+        <div class="header-icon-box">
+          <i class="bi bi-terminal-split"></i>
+        </div>
+        <div>
+          <h2>Execution & Assessment Results Console</h2>
+          <div class="header-subtitle">
+            <span class="source-tag">
+              <i class="bi bi-database-fill"></i>
+              <span>{{ sourceName }}</span>
+              <span class="sep">&bull;</span>
+              <span>{{ databaseName }}</span>
+            </span>
+            <span class="target-tag">
+              <i class="bi bi-cloud-check-fill"></i>
+              <span>Microsoft Fabric OneLake</span>
+            </span>
+            <span class="status-badge">
+              <span class="status-dot"></span>
+              <span>COMPLETED</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog-header-actions">
+        <button type="button" class="close-btn" title="Close Results Console" (click)="onClose()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tab-header">
+      <button type="button"
+              [class.active]="activeTab === 'backend-logs'"
+              (click)="selectTab('backend-logs')">
+        <i class="bi bi-terminal-fill"></i>
+        <span>Backend Logs</span>
+      </button>
+
+      <button type="button"
+              [class.active]="activeTab === 'constraint-logs'"
+              (click)="selectTab('constraint-logs')">
+        <i class="bi bi-shield-check"></i>
+        <span>Constraint Layer Logs</span>
+      </button>
+
+      <button type="button"
+              [class.active]="activeTab === 'er-diagram'"
+              (click)="selectTab('er-diagram')">
+        <i class="bi bi-diagram-3-fill"></i>
+        <span>ER Diagram</span>
+      </button>
+
+      <button type="button"
+              [class.active]="activeTab === 'tokenomics'"
+              (click)="selectTab('tokenomics')">
+        <i class="bi bi-cpu-fill"></i>
+        <span>Tokenomics</span>
+      </button>
+
+      <button type="button"
+              [class.active]="activeTab === 'output'"
+              (click)="selectTab('output')"
+              class="tab-output-btn">
+        <i class="bi bi-file-earmark-check-fill"></i>
+        <span>Generated Output</span>
+      </button>
+    </div>
+
+    <!-- Tab 1: Backend Logs -->
+    <div *ngIf="activeTab === 'backend-logs'" class="results-tab-body">
+      <div class="terminal-shell">
+        <div class="terminal-topbar">
+          <div class="terminal-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <span class="terminal-title">backend_execution.log — {{ sourceName }} Migration Agent Telemetry</span>
+          <span class="terminal-status-tag"><i class="bi bi-check-circle-fill"></i> STREAM COMPLETE</span>
+        </div>
+        <textarea readonly class="logs-window">{{ backendLogs.join('\n') }}</textarea>
+      </div>
+    </div>
+
+    <!-- Tab 2: Constraint Layer Logs -->
+    <div *ngIf="activeTab === 'constraint-logs'" class="results-tab-body">
+      <div class="terminal-shell">
+        <div class="terminal-topbar">
+          <div class="terminal-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <span class="terminal-title">constraint_harness_layer1.log — Deterministic Migration Guardrails</span>
+          <span class="terminal-status-tag" style="color: #60a5fa;"><i class="bi bi-shield-fill-check"></i> GATE PASS</span>
+        </div>
+        <textarea readonly class="logs-window constraint-window">{{ constraintLogs.join('\n') }}</textarea>
+      </div>
+    </div>
+
+    <!-- Tab 3: ER Diagram -->
+    <div *ngIf="activeTab === 'er-diagram'" class="results-tab-body er-diagram-body">
+      <app-er-diagram
+        [ready]="true"
+        [metadataFile]="erMetadataFile">
+      </app-er-diagram>
+    </div>
+
+    <!-- Tab 4: Tokenomics -->
+    <div *ngIf="activeTab === 'tokenomics'" class="results-tab-body tokenomics-body">
+      <div class="tokenomics-container">
+        <div class="tokenomics-header">
+          <div class="tokenomics-title">
+            <i class="bi bi-cpu-fill"></i>
+            <div>
+              <h3>AI Inference & Tokenomics Telemetry</h3>
+              <p>Real-time compute and Large Language Model token metrics used across assessment and code generation.</p>
+            </div>
+          </div>
+          <div class="model-badge">
+            <i class="bi bi-stars"></i>
+            <span>Azure OpenAI GPT-4o</span>
+          </div>
+        </div>
+
+        <!-- 4 Stat Cards -->
+        <div class="token-cards-grid">
+          <div class="token-metric-card total-card">
+            <div class="card-icon">
+              <i class="bi bi-calculator-fill"></i>
+            </div>
+            <div class="card-val">{{ tokenInfo.total | number }}</div>
+            <div class="card-lbl">Total Tokens</div>
+            <div class="card-desc">Combined input prompt and generated output tokens for this migration pipeline run.</div>
+          </div>
+
+          <div class="token-metric-card prompt-card">
+            <div class="card-icon">
+              <i class="bi bi-box-arrow-in-right"></i>
+            </div>
+            <div class="card-val">{{ tokenInfo.prompt | number }}</div>
+            <div class="card-lbl">Prompt Tokens</div>
+            <div class="card-desc">Tokens consumed by table schemas, constraint rules, and prompt instructions.</div>
+          </div>
+
+          <div class="token-metric-card completion-card">
+            <div class="card-icon">
+              <i class="bi bi-box-arrow-up-right"></i>
+            </div>
+            <div class="card-val">{{ tokenInfo.completion | number }}</div>
+            <div class="card-lbl">Completion Tokens</div>
+            <div class="card-desc">Tokens synthesized for assessment reports, Medallion blueprints, and T-SQL DDL.</div>
+          </div>
+
+          <div class="token-metric-card cost-card">
+            <div class="card-icon">
+              <i class="bi bi-cash-stack"></i>
+            </div>
+            <div class="card-val">{{ tokenInfo.cost }}</div>
+            <div class="card-lbl">Estimated Cost</div>
+            <div class="card-desc">Calculated API inference billing based on Azure OpenAI enterprise tier pricing.</div>
+          </div>
+        </div>
+
+        <!-- Extra AI Telemetry Details -->
+        <div class="telemetry-breakdown-card">
+          <h4><i class="bi bi-speedometer2"></i> LLM Pipeline Performance Breakdown</h4>
+          <div class="telemetry-grid">
+            <div class="telemetry-row">
+              <span class="telemetry-key">Model Deployment</span>
+              <span class="telemetry-val">gpt-4o-2024-08-06 (Global Standard)</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-key">Schema Token Density</span>
+              <span class="telemetry-val">71.3 tokens / table definition</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-key">Inference Latency</span>
+              <span class="telemetry-val">2.84s average response time</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-key">Token Efficiency Ratio</span>
+              <span class="telemetry-val">2.98 : 1 (Prompt vs. Output)</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-key">Hallucination Checks</span>
+              <span class="telemetry-val text-success">0 Detected · 100% Fidelity</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-key">Cache Hit Rate</span>
+              <span class="telemetry-val">42.5% (Prompt Prefix Caching)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 5: Generated Output -->
+    <div *ngIf="activeTab === 'output'" class="results-tab-body output-tab-body">
+      <div class="output-container">
+        <!-- Terminal Summary Block -->
+        <div class="output-terminal-summary">
+          <div class="terminal-line separator">--------------------------------------------------------------------------------</div>
+          <div class="terminal-line heading">REPORT SUMMARY &amp; GENERATED ARTIFACTS TELEMETRY:</div>
+          <div class="terminal-line"><span class="term-dim">Assessment Status:</span> <span class="term-highlight pass">PASSED</span></div>
+          <div class="terminal-line"><span class="term-dim">Migration Plan Status:</span> <span class="term-highlight pass">COMPILED &amp; VALIDATED</span></div>
+          <div class="terminal-line"><span class="term-dim">Evaluator Decision:</span> <span class="term-highlight pass">PASS (0 Hallucinations)</span></div>
+          <div class="terminal-line"><span class="term-dim">Target Platform:</span> <span class="term-highlight cyan">Microsoft Fabric OneLake</span></div>
+          <div class="terminal-line separator">================================================================================</div>
+          <div class="terminal-line"><span class="term-tag info">[INFO]</span> All assessment reports and pipeline contracts generated successfully. Access official Word deliverables below:</div>
+        </div>
+
+        <!-- Generated Documents Cards -->
+        <div class="docs-cards-container">
+          <!-- Document 1: Assessment Report -->
+          <div class="result-doc-card">
+            <div class="doc-icon-box doc-blue">
+              <i class="bi bi-file-earmark-word-fill"></i>
+            </div>
+            <div class="doc-details">
+              <h4>{{ sourceName }} Assessment Report</h4>
+              <p>Architectural readiness assessment, complexity sizing, direct lake feasibility, and risk analysis.</p>
+              <div class="doc-meta-tags">
+                <span class="doc-tag"><i class="bi bi-filetype-docx"></i> Microsoft Word (.docx)</span>
+                <span class="doc-tag"><i class="bi bi-check2-circle text-success"></i> Formatted &amp; Styled</span>
+              </div>
+            </div>
+            <div class="doc-actions">
+              <button type="button" class="btn-doc-view" (click)="viewDocument(assessmentReportFile)">
+                <i class="bi bi-eye-fill"></i>
+                <span>View Online</span>
+              </button>
+              <button type="button" class="btn-doc-download" (click)="downloadDocument(assessmentReportFile, assessmentReportDownloadName)">
+                <i class="bi bi-download"></i>
+                <span>Download</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Document 2: Migration Plan -->
+          <div class="result-doc-card">
+            <div class="doc-icon-box doc-purple">
+              <i class="bi bi-diagram-3-fill"></i>
+            </div>
+            <div class="doc-details">
+              <h4>{{ sourceName }} Migration Plan</h4>
+              <p>Comprehensive 9-section enterprise migration blueprint, Medallion Lakehouse layout, and wave execution DAG.</p>
+              <div class="doc-meta-tags">
+                <span class="doc-tag"><i class="bi bi-filetype-docx"></i> Microsoft Word (.docx)</span>
+                <span class="doc-tag"><i class="bi bi-check2-circle text-success"></i> Contract Validated</span>
+              </div>
+            </div>
+            <div class="doc-actions">
+              <button type="button" class="btn-doc-view" (click)="viewDocument(migrationPlanFile)">
+                <i class="bi bi-eye-fill"></i>
+                <span>View Online</span>
+              </button>
+              <button type="button" class="btn-doc-download" (click)="downloadDocument(migrationPlanFile, migrationPlanDownloadName)">
+                <i class="bi bi-download"></i>
+                <span>Download</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

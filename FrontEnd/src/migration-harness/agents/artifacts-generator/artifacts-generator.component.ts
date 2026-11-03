@@ -40,10 +40,12 @@ interface QuickPrompt {
  * connect_fabric view, and stores them as the Scanner's fabricDestination -
  * which Generate Artifacts deploys into once a scan completes.
  */
+import { ResultsDialogComponent } from '../../components/results-dialog/results-dialog.component';
+
 @Component({
   selector: 'app-artifacts-generator',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, ResultsDialogComponent],
   templateUrl: './artifacts-generator.component.html',
   styleUrl: './artifacts-generator.component.css'
 })
@@ -51,6 +53,16 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   private harnessDataService = inject(HarnessDataService);
   private scanner = inject(Scanner);
   private router = inject(Router);
+
+  showResultsDialog = signal(false);
+
+  openResultsDialog(): void {
+    this.showResultsDialog.set(true);
+  }
+
+  closeResultsDialog(): void {
+    this.showResultsDialog.set(false);
+  }
 
   @ViewChild('chatScroll') private chatScroll?: ElementRef<HTMLElement>;
 

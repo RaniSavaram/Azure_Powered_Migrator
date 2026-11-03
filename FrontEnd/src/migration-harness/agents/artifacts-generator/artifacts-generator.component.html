@@ -23,6 +23,10 @@
       </div>
     </div>
     <div class="header-right-actions">
+      <button type="button" class="btn-toolbar-ghost" (click)="openResultsDialog()" title="View Assessment & Pipeline Results" style="background: #ffffff; border: 1px solid #bae6fd; color: #0284c7; padding: 7px 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+        <i class="bi bi-bar-chart-steps" style="color: #0ea5e9;"></i>
+        <span>View Results</span>
+      </button>
       @if (isSourceConnected) {
         <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Return to Home Dashboard">
           <span>Complete Workflow</span>
@@ -461,5 +465,10 @@
         </div>
       </div>
     </div>
+  }
+
+  <!-- Results Dialog Box -->
+  @if (showResultsDialog()) {
+    <app-results-dialog (close)="closeResultsDialog()"></app-results-dialog>
   }
 </div>
