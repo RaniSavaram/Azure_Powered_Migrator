@@ -87,15 +87,6 @@
         </div>
 
         <div class="card-actions-row">
-          <!-- View Results Button (Disabled with no action for now) -->
-          <button class="btn-view-results" 
-                  [disabled]="true"
-                  type="button" 
-                  title="View Results">
-            <i class="bi bi-bar-chart-steps"></i>
-            <span>View Results</span>
-          </button>
-
           <!-- Start Conversation Button -->
           <button class="btn-start-convo" 
                   type="button" 
@@ -134,10 +125,6 @@
         </div>
 
         <div class="card-actions-row">
-          <button class="btn-harness-layer" type="button" title="Harness Layer">
-            <i class="bi bi-shield-lock"></i>
-            <span>Harness Layer</span>
-          </button>
           <button class="btn-start-convo" type="button" [routerLink]="agent.route" title="Start conversation">
             <span>Start conversation</span>
             <i class="bi bi-arrow-right"></i>
@@ -283,9 +270,13 @@
         </div>
 
         <div class="card-actions-row">
-          <button class="btn-harness-layer" type="button" title="Harness Layer">
-            <i class="bi bi-shield-lock"></i>
-            <span>Harness Layer</span>
+          <!-- View Results Button (Disabled with no action for now) -->
+          <button class="btn-view-results" 
+                  [disabled]="true"
+                  type="button" 
+                  title="View Results">
+            <i class="bi bi-bar-chart-steps"></i>
+            <span>View Results</span>
           </button>
           <button class="btn-start-convo" type="button" [routerLink]="agent.route" title="Start conversation">
             <span>Start conversation</span>
