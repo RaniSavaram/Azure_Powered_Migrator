@@ -120,8 +120,8 @@
           <div class="tokenomics-title">
             <i class="bi bi-cpu-fill"></i>
             <div>
-              <h3>AI Inference & Tokenomics Telemetry</h3>
-              <p>Real-time compute and Large Language Model token metrics used across assessment and code generation.</p>
+              <h3>Tokenomics</h3>
+              <p>Real-time AI token usage and estimated inference cost.</p>
             </div>
           </div>
           <div class="model-badge">
@@ -138,7 +138,6 @@
             </div>
             <div class="card-val">{{ tokenInfo.total | number }}</div>
             <div class="card-lbl">Total Tokens</div>
-            <div class="card-desc">Combined input prompt and generated output tokens for this migration pipeline run.</div>
           </div>
 
           <div class="token-metric-card prompt-card">
@@ -147,7 +146,6 @@
             </div>
             <div class="card-val">{{ tokenInfo.prompt | number }}</div>
             <div class="card-lbl">Prompt Tokens</div>
-            <div class="card-desc">Tokens consumed by table schemas, constraint rules, and prompt instructions.</div>
           </div>
 
           <div class="token-metric-card completion-card">
@@ -156,7 +154,6 @@
             </div>
             <div class="card-val">{{ tokenInfo.completion | number }}</div>
             <div class="card-lbl">Completion Tokens</div>
-            <div class="card-desc">Tokens synthesized for assessment reports, Medallion blueprints, and T-SQL DDL.</div>
           </div>
 
           <div class="token-metric-card cost-card">
@@ -165,38 +162,6 @@
             </div>
             <div class="card-val">{{ tokenInfo.cost }}</div>
             <div class="card-lbl">Estimated Cost</div>
-            <div class="card-desc">Calculated API inference billing based on Azure OpenAI enterprise tier pricing.</div>
-          </div>
-        </div>
-
-        <!-- Extra AI Telemetry Details -->
-        <div class="telemetry-breakdown-card">
-          <h4><i class="bi bi-speedometer2"></i> LLM Pipeline Performance Breakdown</h4>
-          <div class="telemetry-grid">
-            <div class="telemetry-row">
-              <span class="telemetry-key">Model Deployment</span>
-              <span class="telemetry-val">gpt-4o-2024-08-06 (Global Standard)</span>
-            </div>
-            <div class="telemetry-row">
-              <span class="telemetry-key">Schema Token Density</span>
-              <span class="telemetry-val">71.3 tokens / table definition</span>
-            </div>
-            <div class="telemetry-row">
-              <span class="telemetry-key">Inference Latency</span>
-              <span class="telemetry-val">2.84s average response time</span>
-            </div>
-            <div class="telemetry-row">
-              <span class="telemetry-key">Token Efficiency Ratio</span>
-              <span class="telemetry-val">2.98 : 1 (Prompt vs. Output)</span>
-            </div>
-            <div class="telemetry-row">
-              <span class="telemetry-key">Hallucination Checks</span>
-              <span class="telemetry-val text-success">0 Detected · 100% Fidelity</span>
-            </div>
-            <div class="telemetry-row">
-              <span class="telemetry-key">Cache Hit Rate</span>
-              <span class="telemetry-val">42.5% (Prompt Prefix Caching)</span>
-            </div>
           </div>
         </div>
       </div>
