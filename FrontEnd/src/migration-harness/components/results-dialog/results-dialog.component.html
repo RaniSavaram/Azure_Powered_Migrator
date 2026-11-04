@@ -138,6 +138,7 @@
             </div>
             <div class="card-val">{{ tokenInfo.total | number }}</div>
             <div class="card-lbl">Total Tokens</div>
+            <div class="card-desc">Combined input prompt and generated output tokens for this migration pipeline run.</div>
           </div>
 
           <div class="token-metric-card prompt-card">
@@ -146,6 +147,7 @@
             </div>
             <div class="card-val">{{ tokenInfo.prompt | number }}</div>
             <div class="card-lbl">Prompt Tokens</div>
+            <div class="card-desc">Tokens consumed by table schemas, constraint rules, and prompt instructions.</div>
           </div>
 
           <div class="token-metric-card completion-card">
@@ -154,6 +156,7 @@
             </div>
             <div class="card-val">{{ tokenInfo.completion | number }}</div>
             <div class="card-lbl">Completion Tokens</div>
+            <div class="card-desc">Tokens synthesized for assessment reports, Medallion blueprints, and T-SQL DDL.</div>
           </div>
 
           <div class="token-metric-card cost-card">
@@ -162,6 +165,7 @@
             </div>
             <div class="card-val">{{ tokenInfo.cost }}</div>
             <div class="card-lbl">Estimated Cost</div>
+            <div class="card-desc">Calculated API inference billing based on Azure OpenAI enterprise tier pricing.</div>
           </div>
         </div>
       </div>
