@@ -119,6 +119,176 @@
                   </div>
                 }
 
+                <!-- Interactive deployment results -->
+                @if (msg.deployment; as d) {
+                  <div class="dep-panel">
+
+                    <div class="dep-head">
+                      <span class="dep-status" [ngClass]="'tone-' + statusMeta(d.status).tone">
+                        <i class="bi" [ngClass]="statusMeta(d.status).icon"></i>
+                        <span>{{ statusMeta(d.status).label }}</span>
+                      </span>
+                      @if (d.lakehouseName) {
+                        <span class="dep-lakehouse"><i class="bi bi-house-door"></i> {{ d.lakehouseName }}</span>
+                      }
+                    </div>
+
+                    <!-- KPI row -->
+                    <div class="dep-kpis">
+                      <div class="dep-kpi">
+                        <span class="dep-kpi-val">{{ d.tables.length }}</span>
+                        <span class="dep-kpi-lbl">Delta tables</span>
+                      </div>
+                      <div class="dep-kpi">
+                        <span class="dep-kpi-val">{{ totalColumns(d) }}</span>
+                        <span class="dep-kpi-lbl">Columns</span>
+                      </div>
+                      @if (d.pipelineActivities) {
+                        <div class="dep-kpi">
+                          <span class="dep-kpi-val">{{ d.pipelineActivities }}</span>
+                          <span class="dep-kpi-lbl">Pipeline activities</span>
+                        </div>
+                      }
+                      @if (d.volumes.length) {
+                        <div class="dep-kpi">
+                          <span class="dep-kpi-val">{{ d.volumes.length }}</span>
+                          <span class="dep-kpi-lbl">Volume folders</span>
+                        </div>
+                      }
+                      @if (d.warehouseObjects.length) {
+                        <div class="dep-kpi">
+                          <span class="dep-kpi-val">{{ d.warehouseObjects.length }}</span>
+                          <span class="dep-kpi-lbl">Warehouse objects</span>
+                        </div>
+                      }
+                      <div class="dep-kpi" [class.dep-kpi-bad]="d.errors.length">
+                        <span class="dep-kpi-val">{{ d.errors.length }}</span>
+                        <span class="dep-kpi-lbl">Errors</span>
+                      </div>
+                    </div>
+
+                    <!-- Tables -->
+                    @if (d.tables.length) {
+                      <div class="dep-section">
+                        <button type="button" class="dep-sec-head" (click)="toggleSection('tables')"
+                                [attr.aria-expanded]="isSectionOpen('tables')">
+                          <i class="bi" [ngClass]="isSectionOpen('tables') ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                          <span>Tables created</span>
+                          <span class="dep-count">{{ d.tables.length }}</span>
+                        </button>
+
+                        @if (isSectionOpen('tables')) {
+                          <div class="dep-filter-row">
+                            <div class="dep-search">
+                              <i class="bi bi-search"></i>
+                              <input type="text" placeholder="Filter by table, schema or layer"
+                                     [value]="tableFilter()"
+                                     (input)="tableFilter.set($any($event.target).value)" />
+                              @if (tableFilter()) {
+                                <button type="button" class="dep-clear" (click)="tableFilter.set('')" title="Clear filter">
+                                  <i class="bi bi-x"></i>
+                                </button>
+                              }
+                            </div>
+                            <span class="dep-showing">{{ filteredTables(d).length }} of {{ d.tables.length }}</span>
+                          </div>
+
+                          <div class="dep-table-list">
+                            @for (t of filteredTables(d); track t.schema + '.' + t.table) {
+                              <div class="dep-row">
+                                <i class="bi bi-table dep-row-ico"></i>
+                                <span class="dep-row-name">{{ t.schema }}.{{ t.table }}</span>
+                                <span class="dep-chip">{{ t.columns }} cols</span>
+                                @if (t.layer) {
+                                  <span class="dep-chip dep-chip-layer">{{ t.layer }}</span>
+                                }
+                                @if (t.uri) {
+                                  <button type="button" class="dep-copy"
+                                          (click)="copyText(t.uri, t.schema + '.' + t.table)"
+                                          [title]="t.uri">
+                                    <i class="bi" [ngClass]="copiedKey() === t.schema + '.' + t.table ? 'bi-check2' : 'bi-clipboard'"></i>
+                                  </button>
+                                }
+                              </div>
+                            } @empty {
+                              <div class="dep-empty">No tables match that filter.</div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    <!-- Errors -->
+                    @if (d.errors.length) {
+                      <div class="dep-section">
+                        <button type="button" class="dep-sec-head" (click)="toggleSection('errors')"
+                                [attr.aria-expanded]="isSectionOpen('errors')">
+                          <i class="bi" [ngClass]="isSectionOpen('errors') ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                          <span>Errors</span>
+                          <span class="dep-count dep-count-bad">{{ d.errors.length }}</span>
+                        </button>
+                        @if (isSectionOpen('errors')) {
+                          <div class="dep-table-list">
+                            @for (e of d.errors; track $index) {
+                              <div class="dep-row dep-row-bad">
+                                <i class="bi bi-x-octagon-fill dep-row-ico"></i>
+                                <span class="dep-row-name">{{ e }}</span>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    <!-- Pipeline / Warehouse -->
+                    @if (d.pipelineName || d.warehouseName) {
+                      <div class="dep-meta">
+                        @if (d.pipelineName) {
+                          <div class="dep-meta-item">
+                            <i class="bi" [ngClass]="d.pipelineError ? 'bi-x-octagon-fill' : 'bi-diagram-3-fill'"></i>
+                            @if (d.pipelineError) {
+                              <span><strong>{{ d.pipelineName }}</strong> - {{ d.pipelineError }}</span>
+                            } @else {
+                              <span><strong>{{ d.pipelineName }}</strong> - {{ d.pipelineActivities }} Copy activities, source connections still need configuring</span>
+                            }
+                          </div>
+                        }
+                        @if (d.warehouseName) {
+                          <div class="dep-meta-item">
+                            <i class="bi bi-building"></i>
+                            <span>Warehouse <strong>{{ d.warehouseName }}</strong> - {{ d.warehouseObjects.length }} placeholder object(s)</span>
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    <!-- Raw log -->
+                    @if (d.logs.length) {
+                      <div class="dep-section">
+                        <button type="button" class="dep-sec-head" (click)="toggleSection('logs')"
+                                [attr.aria-expanded]="isSectionOpen('logs')">
+                          <i class="bi" [ngClass]="isSectionOpen('logs') ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                          <span>Raw log</span>
+                          <span class="dep-count">{{ d.logs.length }}</span>
+                        </button>
+                        @if (isSectionOpen('logs')) {
+                          <div class="dep-log-wrap">
+                            <button type="button" class="dep-log-copy" (click)="copyLogs(d)">
+                              <i class="bi" [ngClass]="copiedKey() === 'logs' ? 'bi-check2' : 'bi-clipboard'"></i>
+                              <span>{{ copiedKey() === 'logs' ? 'Copied' : 'Copy' }}</span>
+                            </button>
+                            <div class="dep-log">
+                              @for (line of d.logs; track $index) {
+                                <div class="dep-log-line">{{ line }}</div>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
                 <!-- Action buttons -->
                 @if (msg.actions && msg.actions.length > 0) {
                   <div class="msg-actions-row">

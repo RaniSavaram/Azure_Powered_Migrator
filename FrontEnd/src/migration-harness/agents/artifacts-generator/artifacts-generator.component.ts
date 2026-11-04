@@ -8,13 +8,38 @@ import { Scanner, FabricConnectionDetails } from '../../../app/services/scanner/
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type DestinationType = 'Microsoft Fabric';
-type ArtifactsAction = 'use-saved' | 'new-destination' | 'change-destination' | 'go-scan';
+type ArtifactsAction = 'use-saved' | 'new-destination' | 'change-destination' | 'go-scan' | 'generate';
 
 export interface ArtifactsChatAction {
   label: string;
   icon: string;
   action: ArtifactsAction;
   primary?: boolean;
+}
+
+/** One Delta table created in the Lakehouse. */
+export interface DeploymentTable {
+  schema: string;
+  table: string;
+  columns: number;
+  uri: string;
+  layer: string;
+}
+
+/** Normalised view of a generate-fabric-artifacts response. */
+export interface DeploymentResult {
+  status: string;
+  message: string;
+  lakehouseName: string;
+  tables: DeploymentTable[];
+  errors: string[];
+  logs: string[];
+  volumes: string[];
+  warehouseName: string;
+  warehouseObjects: string[];
+  pipelineName: string;
+  pipelineActivities: number;
+  pipelineError: string;
 }
 
 export interface ArtifactsChatMessage {
@@ -24,6 +49,8 @@ export interface ArtifactsChatMessage {
   timestamp: Date;
   /** Label/value rows, e.g. the destination summary after a successful connect. */
   details?: Array<{ label: string; value: string }>;
+  /** Interactive results panel for a completed deployment. */
+  deployment?: DeploymentResult;
   actions?: ArtifactsChatAction[];
 }
 
@@ -77,7 +104,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
     { label: 'Change destination', icon: 'bi-arrow-left-right', query: 'Change destination' },
     { label: 'Current destination', icon: 'bi-geo-alt', query: 'Show my current destination' },
     { label: 'What gets deployed?', icon: 'bi-box-seam', query: 'What gets deployed?' },
-    { label: 'Scan & generate', icon: 'bi-database', query: 'How do I generate the artifacts?' }
+    { label: 'Generate artifacts', icon: 'bi-box-seam', query: 'Generate the artifacts now' }
   ];
 
   messages = signal<ArtifactsChatMessage[]>([]);
@@ -106,8 +133,57 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
     return this.showSecret && !!this.form.clientSecret?.trim();
   }
 
+  /** Results-panel state: table search, which sections are open, copy feedback. */
+  tableFilter = signal('');
+  openSections = signal<Record<string, boolean>>({ tables: true, errors: true, logs: false });
+  copiedKey = signal<string | null>(null);
+
   private nextId = 1;
   private shouldScroll = false;
+  private copyTimer: ReturnType<typeof setTimeout> | null = null;
+
+  toggleSection(key: string): void {
+    this.openSections.update(open => ({ ...open, [key]: !open[key] }));
+  }
+
+  isSectionOpen(key: string): boolean {
+    return !!this.openSections()[key];
+  }
+
+  /** Case-insensitive match on schema, table or layer. */
+  filteredTables(d: DeploymentResult): DeploymentTable[] {
+    const q = this.tableFilter().trim().toLowerCase();
+    if (!q) return d.tables;
+    return d.tables.filter(t =>
+      `${t.schema}.${t.table}`.toLowerCase().includes(q) || (t.layer || '').toLowerCase().includes(q)
+    );
+  }
+
+  totalColumns(d: DeploymentResult): number {
+    return d.tables.reduce((sum, t) => sum + (t.columns || 0), 0);
+  }
+
+  /**
+   * Status is never carried by colour alone - every badge pairs the colour
+   * with an icon and a text label.
+   */
+  statusMeta(status: string): { label: string; icon: string; tone: string } {
+    if (status === 'success') return { label: 'Deployed', icon: 'bi-check-circle-fill', tone: 'good' };
+    if (status === 'partial') return { label: 'Partial', icon: 'bi-exclamation-triangle-fill', tone: 'warn' };
+    return { label: 'Failed', icon: 'bi-x-octagon-fill', tone: 'bad' };
+  }
+
+  copyText(text: string, key: string): void {
+    navigator.clipboard?.writeText(text).then(() => {
+      this.copiedKey.set(key);
+      if (this.copyTimer) clearTimeout(this.copyTimer);
+      this.copyTimer = setTimeout(() => this.copiedKey.set(null), 1600);
+    });
+  }
+
+  copyLogs(d: DeploymentResult): void {
+    this.copyText(d.logs.join(String.fromCharCode(10)), 'logs');
+  }
 
   constructor() {
     this.startConversation();
@@ -170,10 +246,108 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
         this.userSays(action === 'new-destination' ? 'Enter new details' : 'Change destination');
         this.openDestinationCard();
         break;
+      case 'generate':
+        this.userSays('Generate artifacts now');
+        this.runGeneration();
+        break;
       case 'go-scan':
         this.router.navigate(['/dbscanner']);
         break;
     }
+  }
+
+  /**
+   * Deploys the artifacts straight from this conversation rather than sending
+   * the user to the scanner page. Generation reuses the metadata from the last
+   * completed scan, so pipeline state is checked first and the scanner page is
+   * only offered when there is nothing to deploy yet.
+   */
+  runGeneration(): void {
+    if (this.isTyping()) return;
+
+    const destination = this.scanner.getFabricDestination();
+    if (!destination) {
+      this.agentSays('Choose a destination first, then I can create the artifacts in it.');
+      this.openDestinationCard();
+      return;
+    }
+
+    this.isTyping.set(true);
+    this.scanner.getPipelineState().subscribe({
+      next: (state) => {
+        if (!state.has_metadata) {
+          this.isTyping.set(false);
+          this.agentSays(
+            'There is no scanned metadata to deploy yet. Run a database scan first, then come back and I will create the artifacts here.',
+            { actions: [{ label: 'Open scanner page', icon: 'bi-database', action: 'go-scan', primary: true }] }
+          );
+          return;
+        }
+        this.deployArtifacts(state.platform_slug, destination);
+      },
+      // Pipeline state is only a pre-check - let the backend decide the source.
+      error: () => this.deployArtifacts('', destination)
+    });
+  }
+
+  private deployArtifacts(sourceSlug: string, destination: FabricConnectionDetails): void {
+    this.agentSays('Creating the artifacts in Microsoft Fabric. This can take a few minutes...');
+    this.scanner.generateFabricArtifacts(sourceSlug || undefined, undefined, destination).subscribe({
+      next: (res) => {
+        this.isTyping.set(false);
+        if (res.status === 'error') {
+          this.agentSays(res.message || 'The artifacts could not be created.', { actions: this.retryActions() });
+          return;
+        }
+        this.agentSays(res.message || 'Artifacts created in Microsoft Fabric.', {
+          deployment: this.toDeployment(res)
+        });
+      },
+      error: (err) => {
+        this.isTyping.set(false);
+        this.agentSays(
+          err.error?.message || err.message || 'Could not reach the artifacts generator.',
+          { actions: this.retryActions() }
+        );
+      }
+    });
+  }
+
+  private retryActions(): ArtifactsChatAction[] {
+    return [
+      { label: 'Try again', icon: 'bi-arrow-clockwise', action: 'generate', primary: true },
+      { label: 'Open scanner page', icon: 'bi-database', action: 'go-scan' }
+    ];
+  }
+
+  /**
+   * Flattens the generator response into the shape the results panel renders.
+   * Prefers `processed` (carries uri and layer) over `tables_info`.
+   */
+  private toDeployment(res: any): DeploymentResult {
+    const rows: any[] = (res.processed?.length ? res.processed : res.tables_info) || [];
+    const pipeline = res.pipeline || {};
+    const warehouse = res.warehouse || {};
+    return {
+      status: res.status || 'success',
+      message: res.message || '',
+      lakehouseName: res.lakehouse_name || res.target?.report_name || '',
+      tables: rows.map(r => ({
+        schema: r.schema || '',
+        table: r.table || '',
+        columns: r.columns ?? r.columns_count ?? 0,
+        uri: r.uri || '',
+        layer: r.layer || 'Table'
+      })),
+      errors: res.errors || [],
+      logs: res.logs || [],
+      volumes: res.volumes?.created || [],
+      warehouseName: warehouse.name || '',
+      warehouseObjects: warehouse.created || [],
+      pipelineName: pipeline.name || '',
+      pipelineActivities: pipeline.activities || 0,
+      pipelineError: pipeline.error || ''
+    };
   }
 
   handlePromptClick(prompt: QuickPrompt): void {
@@ -210,9 +384,16 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
     } else if (/(scan|generate|run|how)/.test(q)) {
       this.agentSays(
         saved
-          ? 'Run a database scan, then click Generate Artifacts on the results. Everything is created in the destination above.'
-          : 'First choose a destination below, then run a database scan and click Generate Artifacts.',
-        saved ? { actions: [{ label: 'Scan & generate artifacts', icon: 'bi-database', action: 'go-scan', primary: true }] } : undefined
+          ? 'I can create the artifacts in your saved destination now, using the metadata from your last scan.'
+          : 'First choose a destination below, then I can create the artifacts.',
+        saved
+          ? {
+              actions: [
+                { label: 'Generate artifacts now', icon: 'bi-box-seam', action: 'generate', primary: true },
+                { label: 'Open scanner page', icon: 'bi-database', action: 'go-scan' }
+              ]
+            }
+          : undefined
       );
       if (!saved) this.openDestinationCard();
     } else {
@@ -293,10 +474,11 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   private confirmDestination(text: string, d: FabricConnectionDetails, workspaceName?: string): void {
     this.agentSays(text, { details: this.summaryRows(d, workspaceName) });
     this.agentSays(
-      'Next, run a database scan. When it completes, click Generate Artifacts and they will be created in this destination.',
+      'I can create the artifacts in this destination now, using the metadata from your last scan.',
       {
         actions: [
-          { label: 'Scan & generate artifacts', icon: 'bi-database', action: 'go-scan', primary: true },
+          { label: 'Generate artifacts now', icon: 'bi-box-seam', action: 'generate', primary: true },
+          { label: 'Open scanner page', icon: 'bi-database', action: 'go-scan' },
           { label: 'Change destination', icon: 'bi-pencil', action: 'change-destination' }
         ]
       }
@@ -336,7 +518,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
     ];
   }
 
-  private agentSays(text: string, extra?: Pick<ArtifactsChatMessage, 'details' | 'actions'>): void {
+  private agentSays(text: string, extra?: Pick<ArtifactsChatMessage, 'details' | 'actions' | 'deployment'>): void {
     this.push({ sender: 'agent', text, ...extra });
   }
 

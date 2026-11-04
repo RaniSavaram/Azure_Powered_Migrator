@@ -644,6 +644,10 @@ export class Scanner {
       lakehouse_name?: string;
       warehouse?: any;
       pipeline?: any;
+      // Richer per-table rows (schema, table, columns, uri, layer) and the
+      // Files/ folders created - both are what the results panel renders.
+      processed?: any[];
+      volumes?: any;
     }>(
       `${this.api.baseUrl}/generate-fabric-artifacts/`,
       payload

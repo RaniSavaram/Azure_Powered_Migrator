@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -46,6 +46,7 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
   private router = inject(Router);
   private harnessDataService = inject(HarnessDataService);
   private scanner = inject(Scanner);
+  private cdr = inject(ChangeDetectorRef);
 
   agentName = 'Migration Generator Agent';
   phase = 'Phase 4 · Code & Pipeline Generation';
@@ -153,12 +154,14 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
         this.generateAgentResponse(textToSend, res);
         this.isTyping = false;
         this.shouldScroll = true;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.warn('Backend migration plan error:', err);
         this.generateAgentResponse(textToSend, null);
         this.isTyping = false;
         this.shouldScroll = true;
+        this.cdr.detectChanges();
       }
     });
   }

@@ -948,45 +948,53 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
     // either via an Azure AD app registration (org URL + tenant/client
     // id/secret) or, for free/developer accounts with no app registration,
     // via the user's own username/password (no client secret needed).
-    const missingFields = isDynamics365
-      ? (
-          this.connection.server.trim() === '' ||
-          (this.dynamicsAuthMode === 'secret'
-            ? (
-                (this.connection.tenantId ?? '').trim() === '' ||
-                (this.connection.clientId ?? '').trim() === '' ||
-                (this.connection.clientSecret ?? '').trim() === ''
-              )
-            : (
-                this.connection.username.trim() === '' ||
-                this.connection.password.trim() === ''
-              ))
-        )
+    const required: [string, string | undefined][] = isDynamics365
+      ? [
+          ['Server', this.connection.server],
+          ...(this.dynamicsAuthMode === 'secret'
+            ? [
+                ['Tenant ID', this.connection.tenantId],
+                ['Client ID', this.connection.clientId],
+                ['Client Secret', this.connection.clientSecret],
+              ] as [string, string | undefined][]
+            : [
+                ['Username', this.connection.username],
+                ['Password', this.connection.password],
+              ] as [string, string | undefined][]),
+        ]
       // Snowflake connects via account identifier + warehouse rather than a
       // host - the "Server" field isn't shown to the user, it's derived
       // from the account identifier below since the backend still requires
       // it to be non-empty. Username is required in both auth modes -
       // Snowflake validates a PAT against the login name it was issued for.
       : isSnowflake
-      ? (
-          (this.connection.account ?? '').trim() === '' ||
-          this.connection.database.trim() === '' ||
-          (this.connection.warehouse ?? '').trim() === '' ||
-          this.connection.username.trim() === '' ||
-          (this.snowflakeAuthMode === 'token'
-            ? (this.connection.token ?? '').trim() === ''
-            : this.connection.password.trim() === '')
-        )
-      : (
-          this.connection.server.trim() === '' ||
-          this.connection.database.trim() === '' ||
-          (!isDatabricks && this.connection.username.trim() === '') ||
-          this.connection.password.trim() === '' ||
-          (isDatabricks && (this.connection.httpPath ?? '').trim() === '')
-        );
+      ? [
+          ['Account Identifier', this.connection.account],
+          ['Database', this.connection.database],
+          ['Warehouse', this.connection.warehouse],
+          ['Username', this.connection.username],
+          this.snowflakeAuthMode === 'token'
+            ? ['Programmatic Access Token', this.connection.token]
+            : ['Password', this.connection.password],
+        ]
+      : [
+          ['Server', this.connection.server],
+          ['Database', this.connection.database],
+          ...(!isDatabricks ? [['Username', this.connection.username]] as [string, string | undefined][] : []),
+          ['Password', this.connection.password],
+          ...(isDatabricks ? [['HTTP Path', this.connection.httpPath]] as [string, string | undefined][] : []),
+        ];
 
-    if (missingFields) {
-      alert('Please fill all mandatory fields.');
+    const missingFields = required
+      .filter(([, value]) => (value ?? '').trim() === '')
+      .map(([label]) => label);
+
+    if (missingFields.length > 0) {
+
+      // Name the empty fields - placeholders (e.g. "COMPUTE_WH") and
+      // browser autofill can make a field look filled when it isn't.
+      alert(`Please fill all mandatory fields. Missing: ${missingFields.join(', ')}.`);
+
       return;
     }
 

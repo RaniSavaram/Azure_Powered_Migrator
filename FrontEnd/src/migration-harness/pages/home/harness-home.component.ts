@@ -1,14 +1,17 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { HarnessDataService } from '../../services/harness-data.service';
 import { AgentInfo } from '../../models/agent.model';
 import { ResultsDialogComponent } from '../../components/results-dialog/results-dialog.component';
+import { FabricDestinationDialogComponent } from '../../components/fabric-destination-dialog/fabric-destination-dialog.component';
+
+const ARTIFACTS_GENERATOR_ID = 'artifacts-generator';
 
 @Component({
   selector: 'app-harness-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, ResultsDialogComponent],
+  imports: [CommonModule, RouterModule, ResultsDialogComponent, FabricDestinationDialogComponent],
   templateUrl: './harness-home.component.html',
   styleUrl: './harness-home.component.css'
 })
@@ -54,5 +57,34 @@ export class HarnessHomeComponent {
 
   closeResultsDialog(): void {
     this.showResultsDialog = false;
+  }
+
+  /** Agent waiting on the Fabric destination dialog before its conversation starts. */
+  pendingDestinationAgent = signal<AgentInfo | null>(null);
+
+  onHarnessClick(agent: AgentInfo): void {
+    if (agent.status === 'upcoming') return;
+    // Teammate integration point: Add harness layer functionality here
+  }
+
+  onStartConversationClick(agent: AgentInfo): void {
+    if (agent.status === 'upcoming') return;
+    // The Artifacts Generator needs to know which Fabric workspace /
+    // Lakehouse / Warehouse to deploy into before it can start.
+    if (agent.id === ARTIFACTS_GENERATOR_ID) {
+      this.pendingDestinationAgent.set(agent);
+      return;
+    }
+    this.harnessDataService.startPipelineFrom(agent.id);
+  }
+
+  onDestinationConnected(): void {
+    const agent = this.pendingDestinationAgent();
+    this.pendingDestinationAgent.set(null);
+    if (agent) this.harnessDataService.startPipelineFrom(agent.id);
+  }
+
+  onDestinationCancelled(): void {
+    this.pendingDestinationAgent.set(null);
   }
 }

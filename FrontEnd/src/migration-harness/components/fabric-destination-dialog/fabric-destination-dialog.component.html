@@ -1,0 +1,156 @@
+<div class="fd-overlay" (click)="cancel()">
+  <div class="fd-dialog" role="dialog" aria-modal="true" aria-labelledby="fdTitle" (click)="$event.stopPropagation()">
+
+    <div class="fd-header">
+      <div class="fd-icon"><i class="bi bi-box-seam"></i></div>
+      <div>
+        <h2 id="fdTitle">{{ destination ? destinationLabel + ' connection' : 'Artifacts destination' }}</h2>
+        <p>Artifacts generated after the scan completes will be created in this destination.</p>
+      </div>
+      <button type="button" class="fd-close" (click)="cancel()" [disabled]="connecting()" title="Close">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    @if (result(); as r) {
+      <div class="fd-body">
+        <div class="fd-success">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>{{ r.message }}</span>
+        </div>
+        <dl class="fd-summary">
+          <dt>Workspace</dt>
+          <dd>{{ r.workspaceName || form.workspaceId }}</dd>
+          @if (form.tenantId) {
+            <dt>Tenant ID</dt>
+            <dd class="mono">{{ form.tenantId }}</dd>
+          }
+          <dt>Lakehouse</dt>
+          <dd>{{ r.lakehouseName || form.lakehouseId || 'Auto-created per source' }}</dd>
+          <dt>Warehouse</dt>
+          <dd>{{ r.warehouseName || form.warehouseId || form.warehouseHost || 'Not configured' }}</dd>
+        </dl>
+        <p class="fd-note">
+          Next: run a database scan. When it completes, <strong>Generate Artifacts</strong> deploys to this destination.
+        </p>
+      </div>
+      <div class="fd-actions">
+        <button type="button" class="fd-btn primary" (click)="done()">Continue</button>
+      </div>
+    } @else {
+      <form class="fd-body" (ngSubmit)="submit()">
+        <div class="fd-field">
+          <label for="fdDestination">Please select your destination <span class="req">*</span></label>
+          <select id="fdDestination" name="destination" [(ngModel)]="destination" (ngModelChange)="onDestinationChange()">
+            <option value="" disabled>Select destination</option>
+            @for (d of destinations; track d.value) {
+              <option [value]="d.value">{{ d.label }}</option>
+            }
+          </select>
+        </div>
+
+        @if (destination === 'fabric') {
+        <div class="fd-section-label">Connection details</div>
+
+        <div class="fd-field">
+          <label for="fdWorkspace">Workspace ID <span class="req">*</span></label>
+          <input id="fdWorkspace" name="workspaceId" [(ngModel)]="form.workspaceId"
+                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="fd-field">
+          <label for="fdAuth">Authentication</label>
+          <select id="fdAuth" name="authMode" [(ngModel)]="form.authMode">
+            <option value="servicePrincipal">Service Principal (client secret)</option>
+            <option value="default">Default Azure Credential (az login / managed identity)</option>
+          </select>
+        </div>
+
+        @if (isServicePrincipal) {
+          <div class="fd-field">
+            <label for="fdTenant">Tenant ID <span class="req">*</span></label>
+            <input id="fdTenant" name="tenantId" [(ngModel)]="form.tenantId"
+                   placeholder="Directory (tenant) ID" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="fd-row">
+            <div class="fd-field">
+              <label for="fdClient">Client ID <span class="req">*</span></label>
+              <input id="fdClient" name="clientId" [(ngModel)]="form.clientId"
+                     placeholder="App registration ID" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="fd-field">
+              <label for="fdSecret">Client Secret <span class="req">*</span></label>
+              <input id="fdSecret" name="clientSecret" type="password" [(ngModel)]="form.clientSecret"
+                     placeholder="Secret value" autocomplete="new-password">
+            </div>
+          </div>
+        } @else {
+          <div class="fd-field">
+            <label for="fdTenantOpt">Tenant ID</label>
+            <input id="fdTenantOpt" name="tenantId" [(ngModel)]="form.tenantId"
+                   placeholder="Optional" autocomplete="off" spellcheck="false">
+          </div>
+        }
+
+        <div class="fd-row">
+          <div class="fd-field">
+            <label for="fdLakehouse">Lakehouse ID</label>
+            <input id="fdLakehouse" name="lakehouseId" [(ngModel)]="form.lakehouseId"
+                   placeholder="Optional - auto-created if empty" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="fd-field">
+            <label for="fdWarehouse">Warehouse ID</label>
+            <input id="fdWarehouse" name="warehouseId" [(ngModel)]="form.warehouseId"
+                   placeholder="For views &amp; procedures" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+
+        <button type="button" class="fd-toggle" (click)="showAdvanced = !showAdvanced">
+          <i class="bi" [class.bi-chevron-down]="!showAdvanced" [class.bi-chevron-up]="showAdvanced"></i>
+          Names &amp; SQL endpoint (optional)
+        </button>
+
+        @if (showAdvanced) {
+          <div class="fd-row">
+            <div class="fd-field">
+              <label for="fdLhName">Lakehouse name</label>
+              <input id="fdLhName" name="lakehouseName" [(ngModel)]="form.lakehouseName"
+                     placeholder="Get-or-create by name">
+            </div>
+            <div class="fd-field">
+              <label for="fdWhName">Warehouse name</label>
+              <input id="fdWhName" name="warehouseName" [(ngModel)]="form.warehouseName"
+                     placeholder="Looked up by name">
+            </div>
+          </div>
+          <div class="fd-field">
+            <label for="fdWhHost">Warehouse SQL endpoint</label>
+            <input id="fdWhHost" name="warehouseHost" [(ngModel)]="form.warehouseHost"
+                   placeholder="xxxx.datawarehouse.fabric.microsoft.com" spellcheck="false">
+          </div>
+        }
+
+        <label class="fd-check">
+          <input type="checkbox" name="rememberMe" [(ngModel)]="rememberMe">
+          Remember these details on this browser
+        </label>
+        }
+
+        @if (error()) {
+          <div class="fd-error" role="alert"><i class="bi bi-exclamation-triangle-fill"></i> {{ error() }}</div>
+        }
+
+        <div class="fd-actions">
+          <button type="button" class="fd-btn" (click)="cancel()" [disabled]="connecting()">Cancel</button>
+          <button type="submit" class="fd-btn primary" [disabled]="connecting() || !destination">
+            @if (connecting()) {
+              <span class="fd-spinner"></span> Validating…
+            } @else {
+              Connect &amp; save
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</div>

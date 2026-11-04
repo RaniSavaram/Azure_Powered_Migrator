@@ -685,6 +685,7 @@ def evaluate_agent(request):
         return Response({"status": "error", "message": str(exc)}, status=400)
 
 
+@api_view(["GET", "POST"])
 def generate_migration_plan_view(request):
     """
     Generates the comprehensive Medallion Architecture roadmap (Bronze, Silver, Gold),

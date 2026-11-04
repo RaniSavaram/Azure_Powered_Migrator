@@ -36,13 +36,15 @@ else:
 # --- Applications -------------------------------------------------------
 INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
+    # Listed before staticfiles so its custom runserver (which rebuilds the
+    # Angular frontend first) takes precedence; whitenoise above wraps it.
+    'Migrator',
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'Migrator',
     'rest_framework',
     "corsheaders",
 ]

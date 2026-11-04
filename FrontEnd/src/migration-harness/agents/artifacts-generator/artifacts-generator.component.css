@@ -39,3 +39,316 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ---------------------------------------------------------------------------
+   Deployment results panel
+   Status is never colour-alone: every badge pairs its tone with an icon and
+   a text label. Tones reuse the app palette (emerald / orange / rose).
+   --------------------------------------------------------------------------- */
+
+.dep-panel {
+  margin-top: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.dep-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.dep-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.dep-status.tone-good { background: rgba(16, 185, 129, 0.12); color: #047857; }
+.dep-status.tone-warn { background: rgba(249, 115, 22, 0.14); color: #c2410c; }
+.dep-status.tone-bad  { background: rgba(225, 29, 72, 0.12);  color: #be123c; }
+
+.dep-lakehouse {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.76rem;
+  color: #475569;
+}
+
+/* KPI row --------------------------------------------------------------- */
+
+.dep-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dep-kpi {
+  flex: 1 1 96px;
+  min-width: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.dep-kpi-val {
+  font-size: 1.18rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.dep-kpi-lbl {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.dep-kpi-bad { border-color: rgba(225, 29, 72, 0.4); background: rgba(225, 29, 72, 0.06); }
+.dep-kpi-bad .dep-kpi-val { color: #be123c; }
+
+/* Collapsible sections --------------------------------------------------- */
+
+.dep-section { border-bottom: 1px solid #e2e8f0; }
+.dep-section:last-child { border-bottom: 0; }
+
+.dep-sec-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: left;
+}
+
+.dep-sec-head:hover { background: #f1f5f9; }
+
+.dep-count {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.dep-count-bad { background: rgba(225, 29, 72, 0.12); color: #be123c; }
+
+/* Filter row ------------------------------------------------------------- */
+
+.dep-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 8px;
+}
+
+.dep-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+}
+
+.dep-search > .bi-search {
+  position: absolute;
+  left: 9px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.dep-search input {
+  width: 100%;
+  padding: 6px 28px 6px 28px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.dep-search input:focus {
+  outline: none;
+  border-color: #db2777;
+  box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.12);
+}
+
+.dep-clear {
+  position: absolute;
+  right: 6px;
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px;
+}
+
+.dep-clear:hover { color: #0f172a; }
+
+.dep-showing {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Rows ------------------------------------------------------------------- */
+
+.dep-table-list {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0 6px 8px;
+}
+
+.dep-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: #0f172a;
+}
+
+.dep-row:hover { background: #f1f5f9; }
+
+.dep-row-ico { color: #94a3b8; font-size: 0.8rem; flex: 0 0 auto; }
+.dep-row-bad .dep-row-ico { color: #e11d48; }
+.dep-row-bad .dep-row-name { color: #be123c; }
+
+.dep-row-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.74rem;
+}
+
+.dep-chip {
+  flex: 0 0 auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.dep-chip-layer { background: rgba(14, 165, 233, 0.12); color: #0369a1; }
+
+.dep-copy {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.dep-copy:hover { color: #db2777; }
+
+.dep-empty {
+  padding: 12px 10px;
+  font-size: 0.76rem;
+  color: #64748b;
+  text-align: center;
+}
+
+/* Pipeline / warehouse --------------------------------------------------- */
+
+.dep-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.dep-meta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 0.76rem;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.dep-meta-item .bi { color: #64748b; margin-top: 2px; flex: 0 0 auto; }
+.dep-meta-item .bi-x-octagon-fill { color: #e11d48; }
+.dep-meta-item strong { color: #0f172a; }
+
+/* Raw log ---------------------------------------------------------------- */
+
+.dep-log-wrap { position: relative; padding: 0 12px 12px; }
+
+.dep-log-copy {
+  position: absolute;
+  top: -32px;
+  right: 46px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dep-log-copy:hover { border-color: #db2777; color: #db2777; }
+
+.dep-log {
+  max-height: 240px;
+  overflow: auto;
+  padding: 9px 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #0f172a;
+}
+
+.dep-log-line {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

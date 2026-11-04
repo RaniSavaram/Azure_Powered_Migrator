@@ -370,3 +370,10 @@
     <app-results-dialog (close)="closeResultsDialog()"></app-results-dialog>
   }
 </div>
+
+@if (pendingDestinationAgent()) {
+  <app-fabric-destination-dialog
+    (connected)="onDestinationConnected()"
+    (cancelled)="onDestinationCancelled()">
+  </app-fabric-destination-dialog>
+}
