@@ -20,9 +20,11 @@
 
 .harness-sidebar.collapsed .header-text-container,
 .harness-sidebar.collapsed .section-label,
+.harness-sidebar.collapsed .poc-subgroup-label,
 .harness-sidebar.collapsed .agent-count-badge,
 .harness-sidebar.collapsed .nav-text-col,
 .harness-sidebar.collapsed .nav-status-col,
+.harness-sidebar.collapsed .external-link-icon,
 .harness-sidebar.collapsed .sidebar-footer {
   display: none !important;
 }
@@ -414,6 +416,46 @@
 
 .poc-item:hover .bi-icon {
   color: #eab308;
+}
+
+.poc-subgroup-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #38bdf8;
+  text-transform: uppercase;
+  padding: 12px 8px 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 6px;
+}
+
+.poc-subgroup-label i {
+  font-size: 11px;
+}
+
+.poc-item:hover .hornets-icon {
+  color: #38bdf8;
+}
+
+.poc-item:hover .timezone-icon {
+  color: #a855f7;
+}
+
+.external-link-icon {
+  font-size: 11px;
+  color: #64748b;
+  margin-left: auto;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+}
+
+.external-poc-item:hover .external-link-icon {
+  color: #38bdf8;
+  opacity: 1;
+  transform: translate(1px, -1px);
 }
 
 .poc-item.active {
