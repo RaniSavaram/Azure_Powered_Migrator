@@ -15,7 +15,7 @@ export class MedicationComponent {
 
   demoUrl = 'https://medication-adherence-dashboard.onrender.com/';
 
-  videoUrl = '';
+  videoUrl = 'https://ranisavaram.github.io/Medication-Adherence/';
 
   viewPPT() {
     window.open(this.pptUrl, '_blank');
@@ -26,11 +26,7 @@ export class MedicationComponent {
   }
 
   viewVideo() {
-    if (this.videoUrl) {
-      window.open(this.videoUrl, '_blank');
-    } else {
-      window.open(this.demoUrl, '_blank');
-    }
+    window.open(this.videoUrl, '_blank');
   }
 
 }
