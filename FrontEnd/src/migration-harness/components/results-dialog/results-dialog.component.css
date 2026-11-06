@@ -596,19 +596,6 @@
   margin: 0;
 }
 
-.model-badge {
-  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
-  border: 1px solid #ddd6fe;
-  color: #6d28d9;
-  font-weight: 700;
-  font-size: 12.5px;
-  padding: 7px 14px;
-  border-radius: 20px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .token-cards-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
