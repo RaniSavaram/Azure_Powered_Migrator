@@ -10,14 +10,19 @@
           <h2>Execution & Assessment Results Console</h2>
           <div class="header-subtitle">
             <span class="source-tag">
-              <i class="bi bi-database-fill"></i>
+              <i class="bi" [ngClass]="getSourceIcon()"></i>
               <span>{{ sourceName }}</span>
               <span class="sep">&bull;</span>
               <span>{{ databaseName }}</span>
             </span>
+            <span class="flow-arrow-tag">
+              <i class="bi bi-arrow-right-short"></i>
+            </span>
             <span class="target-tag">
-              <i class="bi bi-cloud-check-fill"></i>
+              <img src="assets/logo/azure_logo.svg" alt="Azure" class="header-azure-icon" />
               <span>Microsoft Fabric OneLake</span>
+              <span class="sep">&bull;</span>
+              <span>{{ destinationLakehouse }}</span>
             </span>
             <span class="status-badge">
               <span class="status-dot"></span>
@@ -31,6 +36,92 @@
         <button type="button" class="close-btn" title="Close Results Console" (click)="onClose()">
           <i class="bi bi-x-lg"></i>
         </button>
+      </div>
+    </div>
+
+    <!-- Source & Destination Selected Showcase Banner -->
+    <div class="results-endpoints-showcase">
+      <!-- Source Card -->
+      <div class="endpoint-card source-card">
+        <div class="endpoint-header">
+          <div class="endpoint-badge source-badge">
+            <span class="pulse-dot"></span>
+            <span>SOURCE SELECTED</span>
+          </div>
+          <span class="endpoint-type-tag">Source Engine</span>
+        </div>
+        <div class="endpoint-main">
+          <div class="endpoint-icon-box source-icon">
+            <i class="bi" [ngClass]="getSourceIcon()"></i>
+          </div>
+          <div class="endpoint-meta">
+            <h3 class="endpoint-name">{{ sourceName }}</h3>
+            <div class="endpoint-db-pill">
+              <i class="bi bi-hdd-network"></i>
+              <span>Database: <strong>{{ databaseName }}</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="endpoint-details-grid">
+          <div class="detail-item">
+            <span class="detail-label">Endpoint:</span>
+            <span class="detail-val" [title]="sourceEndpoint">{{ sourceEndpoint }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Objects:</span>
+            <span class="detail-val">68 Tables · 13 Views · 24 SPs</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Migration Flow Indicator -->
+      <div class="migration-flow-indicator">
+        <div class="flow-pill">
+          <i class="bi bi-cpu-fill flow-ai-icon"></i>
+          <span>AI AGENT PIPELINE</span>
+        </div>
+        <div class="flow-line">
+          <span class="flow-dot dot-1"></span>
+          <span class="flow-dot dot-2"></span>
+          <span class="flow-dot dot-3"></span>
+          <i class="bi bi-arrow-right-circle-fill flow-arrow"></i>
+        </div>
+        <div class="flow-medallion-badge">
+          <span>Delta Medallion Sync</span>
+        </div>
+      </div>
+
+      <!-- Destination Card -->
+      <div class="endpoint-card destination-card">
+        <div class="endpoint-header">
+          <div class="endpoint-badge destination-badge">
+            <span class="pulse-dot dest-dot"></span>
+            <span>DESTINATION SELECTED</span>
+          </div>
+          <span class="endpoint-type-tag dest-tag">Target Lakehouse</span>
+        </div>
+        <div class="endpoint-main">
+          <div class="endpoint-icon-box dest-icon">
+            <img src="assets/logo/azure_logo.svg" alt="Microsoft Fabric / Azure" class="dest-azure-img" />
+          </div>
+          <div class="endpoint-meta">
+            <h3 class="endpoint-name">{{ destinationPlatform }}</h3>
+            <div class="endpoint-db-pill dest-pill">
+              <i class="bi bi-cloud-check-fill"></i>
+              <span>Lakehouse: <strong>{{ destinationLakehouse }}</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="endpoint-details-grid">
+          <div class="detail-item">
+            <span class="detail-label">Warehouse:</span>
+            <span class="detail-val" [title]="destinationWarehouse">{{ destinationWarehouse }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Storage:</span>
+            <span class="detail-val">{{ destinationStorage }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -177,11 +268,15 @@
         <!-- Terminal Summary Block -->
         <div class="output-terminal-summary">
           <div class="terminal-line separator">--------------------------------------------------------------------------------</div>
+          <div class="terminal-line heading">MIGRATION TOPOLOGY &amp; SELECTED ENDPOINTS:</div>
+          <div class="terminal-line"><span class="term-dim">Source Selected:</span> <span class="term-highlight pass">{{ sourceName }}</span> · Database: <span class="term-highlight">{{ databaseName }}</span> (Endpoint: {{ sourceEndpoint }})</div>
+          <div class="terminal-line"><span class="term-dim">Destination Selected:</span> <span class="term-highlight cyan">{{ destinationPlatform }}</span> · Lakehouse: <span class="term-highlight cyan">{{ destinationLakehouse }}</span></div>
+          <div class="terminal-line"><span class="term-dim">Storage &amp; Engine:</span> <span class="term-highlight yellow">{{ destinationStorage }}</span> · Direct Lake Analytics Enabled</div>
+          <div class="terminal-line separator">--------------------------------------------------------------------------------</div>
           <div class="terminal-line heading">REPORT SUMMARY &amp; GENERATED ARTIFACTS TELEMETRY:</div>
           <div class="terminal-line"><span class="term-dim">Assessment Status:</span> <span class="term-highlight pass">PASSED</span></div>
-          <div class="terminal-line"><span class="term-dim">Migration Plan Status:</span> <span class="term-highlight pass">COMPILED &amp; VALIDATED</span></div>
+          <div class="terminal-line"><span class="term-dim">Migration Plan Status:</span> <span class="term-highlight pass">COMPILED &amp; VALIDATED (ER Diagram &amp; Destination Included)</span></div>
           <div class="terminal-line"><span class="term-dim">Evaluator Decision:</span> <span class="term-highlight pass">PASS (0 Hallucinations)</span></div>
-          <div class="terminal-line"><span class="term-dim">Target Platform:</span> <span class="term-highlight cyan">Microsoft Fabric OneLake</span></div>
           <div class="terminal-line separator">================================================================================</div>
           <div class="terminal-line"><span class="term-tag info">[INFO]</span> All assessment reports and pipeline contracts generated successfully. Access official Word deliverables below:</div>
         </div>

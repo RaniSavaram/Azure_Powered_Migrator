@@ -26,6 +26,12 @@ export class ResultsDialogComponent implements OnInit {
 
   sourceName = 'SQL Server';
   databaseName = 'MDR_T';
+  sourceEndpoint = '10.22.4.188:1433';
+  destinationPlatform = 'Microsoft Fabric (OneLake)';
+  destinationLakehouse = 'Lakehouse_MDR';
+  destinationWarehouse = 'Warehouse_MDR_Analytics';
+  destinationWorkspace = 'Fabric Production Workspace';
+  destinationStorage = 'Delta Parquet (V-Order)';
   erMetadataFile?: string;
 
   assessmentReportFile = '/output/Assesment%20Report.docx';
@@ -75,6 +81,30 @@ export class ResultsDialogComponent implements OnInit {
     }
     if (cfg?.database) {
       this.databaseName = cfg.database;
+    }
+    if (cfg?.server) {
+      this.sourceEndpoint = cfg.server + (cfg.port ? `:${cfg.port}` : '');
+    }
+
+    const fabricDest = this.scanner.getFabricDestination();
+    if (fabricDest) {
+      if (fabricDest.lakehouseName) this.destinationLakehouse = fabricDest.lakehouseName;
+      if (fabricDest.warehouseName) this.destinationWarehouse = fabricDest.warehouseName;
+      if (fabricDest.workspaceId) {
+        this.destinationWorkspace = `Fabric Workspace (${fabricDest.workspaceId.slice(0, 8)}...)`;
+      }
+    } else {
+      try {
+        const raw = localStorage.getItem('dbscanner.fabricConnection');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.lakehouseName) this.destinationLakehouse = parsed.lakehouseName;
+          if (parsed.warehouseName) this.destinationWarehouse = parsed.warehouseName;
+          if (parsed.workspaceId) this.destinationWorkspace = `Fabric Workspace (${parsed.workspaceId.slice(0, 8)}...)`;
+        }
+      } catch (e) {
+        // ignore
+      }
     }
 
     const activeScan = this.scanner.getCompletedScan();
@@ -151,5 +181,15 @@ export class ResultsDialogComponent implements OnInit {
       `  - Compliance Basis: Deterministic constraint rules & Fabric data type mapping`,
       `================================================================================`
     ];
+  }
+
+  getSourceIcon(): string {
+    const s = (this.sourceName || '').toLowerCase();
+    if (s.includes('snow')) return 'bi-snow';
+    if (s.includes('databricks')) return 'bi-fire';
+    if (s.includes('postgres')) return 'bi-database-fill-gear';
+    if (s.includes('oracle')) return 'bi-database-fill-lock';
+    if (s.includes('mysql')) return 'bi-database-fill-check';
+    return 'bi-database-fill';
   }
 }

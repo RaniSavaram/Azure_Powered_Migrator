@@ -29,11 +29,35 @@
 .hero-eyebrow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 13px;
   font-weight: 600;
   color: #64748b;
   margin-bottom: 10px;
+}
+
+.azure-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 6px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 999px;
+  color: #0284c7;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.azure-logo-eyebrow {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  display: inline-block;
+}
+
+.eyebrow-divider {
+  color: #cbd5e1;
 }
 
 .sparkle-icon {
@@ -99,6 +123,34 @@
 
 .stat-pill-box.coming-box .stat-label {
   color: #64748b;
+}
+
+.stat-pill-box.azure-box {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.stat-pill-box.azure-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+  border-color: #7dd3fc;
+}
+
+.azure-stat-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  margin-bottom: 2px;
+  filter: drop-shadow(0 2px 4px rgba(0, 120, 212, 0.2));
+}
+
+.azure-label {
+  color: #0369a1;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
 }
 
 .stat-number {

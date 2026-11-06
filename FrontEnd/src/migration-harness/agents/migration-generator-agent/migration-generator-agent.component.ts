@@ -207,12 +207,22 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
         wavesBullet += `- **Wave ${w.wave} (${w.name})**: ${w.tables.slice(0, 4).join(', ')}${w.tables.length > 4 ? '...' : ''}<br>`;
       });
 
+      const src = planRes.source_info?.platform || this.connectionConfig?.platform || 'SQL Server';
+      const srcDb = planRes.source_info?.database || this.connectionConfig?.database || 'MDR_T';
+      const destPlatform = planRes.destination_info?.platform || 'Microsoft Fabric OneLake';
+      const destLakehouse = planRes.destination_info?.lakehouse || 'Lakehouse_MDR';
+
       this.messages.push({
         id: 'bot-' + Date.now(),
         sender: 'agent',
         text: `### 🚀 Microsoft Fabric Migration Plan & Execution Roadmap Compiled
 
 Successfully compiled the complete 9-section migration roadmap and Fabric OneLake deployment contract.
+
+#### 📍 Selected Endpoints & Platform Topology:
+- **Source Selected**: **${src}** · Database: \`${srcDb}\`
+- **Destination Selected**: **${destPlatform}** · Lakehouse: \`${destLakehouse}\` (Delta Parquet with V-Order)
+- **Visual ER Diagram**: ✅ Embedded directly into **Section 2 (Dependency Analysis & ER Model)** of the official Migration Plan document.
 
 #### 🏛️ Medallion Architecture Blueprint:
 - **Bronze Ingestion Layer**: **${planRes.medallion_architecture.bronze.length} entities** (raw Parquet with V-Order compression)
@@ -223,13 +233,13 @@ Successfully compiled the complete 9-section migration roadmap and Fabric OneLak
 ${wavesBullet}
 
 #### 📄 Generated Migration Artifacts:
-- Document: \`${planRes.plan_file}\` (Comprehensive 9-section migration strategy Word doc)
+- Document: \`${planRes.plan_file}\` (Comprehensive 9-section migration strategy Word doc with embedded ER diagram)
 - JSON Contract: \`${planRes.json_plan_file}\` (Machine-readable schema ready for Fabric OneLake deployment)`,
         timestamp: new Date(),
         metrics: [
-          { label: 'Bronze Ingest', value: `${planRes.medallion_architecture.bronze.length} Tables` },
-          { label: 'Silver Cleanse', value: `${planRes.medallion_architecture.silver.length} Tables` },
-          { label: 'Gold Semantic', value: `${planRes.medallion_architecture.gold.length} Models` },
+          { label: 'Source', value: src },
+          { label: 'Destination', value: 'Fabric OneLake' },
+          { label: 'ER Diagram', value: 'INCLUDED' },
           { label: 'Execution Waves', value: `${waves.length} Waves` }
         ],
         actions: [

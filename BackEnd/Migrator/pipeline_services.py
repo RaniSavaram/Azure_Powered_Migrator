@@ -1294,6 +1294,16 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
     plan_filename = f"{slug}_Migration_Plan.docx"
     plan_path = OUTPUT_DIR / plan_filename
 
+    db_name = active_pipeline.get("database") or "MDR_T"
+    srv_endpoint = active_pipeline.get("server") or "10.22.4.188:1433"
+    dest_saved = get_saved_connection("Fabric") or {}
+    dest_extra = dest_saved.get("extra", {}) if isinstance(dest_saved, dict) else {}
+    dest_details = {
+        "lakehouse_name": dest_extra.get("lakehouse_name") or dest_saved.get("database") or "Lakehouse_MDR",
+        "workspace_name": dest_extra.get("workspace_name") or dest_extra.get("workspace_id") or "Fabric Production Workspace",
+        "warehouse_name": dest_extra.get("warehouse_name") or "Fabric SQL Analytics Warehouse",
+    }
+
     with _pipeline_lock:
         active_pipeline["agent_writeups"] = agent_writeups
 
@@ -1309,6 +1319,9 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
         functions_df=functions_df,
         volumes_df=volumes_df,
         source_hint=slug,
+        database_name=db_name,
+        server_endpoint=srv_endpoint,
+        destination_info=dest_details,
     )
 
     # Build migration_plan.json for Fabric automated deployment
@@ -1321,7 +1334,8 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
                 assessment_path=assessment_path,
                 migration_plan_path=plan_path,
                 source_system=slug,
-                database_name=active_pipeline.get("database") or f"{slug}_prod",
+                database_name=db_name,
+                destination_info=destination_info,
             )
             with open(OUTPUT_DIR / "migration_plan.json", "w", encoding="utf-8") as f:
                 json.dump(json_plan, f, indent=2, ensure_ascii=False)
@@ -1347,6 +1361,18 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
         "plan_url": f"/output/{plan_filename}?view=1",
         "download_url": f"/output/{plan_filename}",
         "json_plan_file": "migration_plan.json",
+        "source_info": {
+            "platform": source_display,
+            "database": db_name,
+            "server": srv_endpoint,
+        },
+        "destination_info": {
+            "platform": "Microsoft Fabric (OneLake)",
+            "lakehouse": dest_details["lakehouse_name"],
+            "workspace": dest_details["workspace_name"],
+            "warehouse": dest_details["warehouse_name"],
+        },
+        "has_er_diagram": True,
         "medallion_architecture": {
             "bronze": bronze_tables,
             "silver": silver_tables,

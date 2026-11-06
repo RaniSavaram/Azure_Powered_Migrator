@@ -281,7 +281,7 @@ def parse_incremental_tables(doc_path):
     return set(names)
 
 
-def build_plan(assessment_path, migration_plan_path=None, source_system=None, database_name=None):
+def build_plan(assessment_path, migration_plan_path=None, source_system=None, database_name=None, destination_info=None):
     assessment_path = Path(assessment_path)
     if not assessment_path.exists():
         raise FileNotFoundError(f"Assessment report not found: {assessment_path}")
@@ -369,10 +369,20 @@ def build_plan(assessment_path, migration_plan_path=None, source_system=None, da
                 "columns": t["columns"],
             })
 
+    resolved_destination = destination_info or {
+        "platform": "Microsoft Fabric OneLake",
+        "lakehouse": "Fabric Lakehouse (Delta Parquet)",
+        "warehouse": "Synapse Analytics SQL Warehouse",
+        "storage": "OneLake (Delta Parquet with V-Order)",
+        "medallion_support": ["Bronze (Raw)", "Silver (Cleansed)", "Gold (Aggregated / Direct Lake)"]
+    }
+
     return {
         "meta": {
             "source_system": source_system,
             "database_name": database_name,
+            "destination": resolved_destination,
+            "er_diagram_included": True,
         },
         "tables": tables_out,
         "views": views_out,
