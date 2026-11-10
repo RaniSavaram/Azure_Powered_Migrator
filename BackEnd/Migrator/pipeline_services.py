@@ -1303,6 +1303,14 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
         "workspace_name": dest_extra.get("workspace_name") or dest_extra.get("workspace_id") or "Fabric Production Workspace",
         "warehouse_name": dest_extra.get("warehouse_name") or "Fabric SQL Analytics Warehouse",
     }
+    dest_contract = {
+        "platform": "Microsoft Fabric OneLake",
+        "lakehouse": dest_details["lakehouse_name"],
+        "workspace": dest_details["workspace_name"],
+        "warehouse": dest_details["warehouse_name"],
+        "storage": "OneLake (Delta Parquet with V-Order)",
+        "medallion_support": ["Bronze (Raw)", "Silver (Cleansed)", "Gold (Aggregated / Direct Lake)"],
+    }
 
     with _pipeline_lock:
         active_pipeline["agent_writeups"] = agent_writeups
@@ -1335,7 +1343,7 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
                 migration_plan_path=plan_path,
                 source_system=slug,
                 database_name=db_name,
-                destination_info=destination_info,
+                destination_info=dest_contract,
             )
             with open(OUTPUT_DIR / "migration_plan.json", "w", encoding="utf-8") as f:
                 json.dump(json_plan, f, indent=2, ensure_ascii=False)
