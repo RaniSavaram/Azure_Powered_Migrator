@@ -1349,6 +1349,7 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
                 json.dump(json_plan, f, indent=2, ensure_ascii=False)
         except Exception as p_err:
             print(f"[WARN] Failed compiling migration_plan.json: {p_err}")
+            traceback.print_exc()
 
     waves = [
         {"wave": 1, "name": "Reference & Independent Lookup Tables", "tables": wave1_tables or ["dim_warehouse"]},
