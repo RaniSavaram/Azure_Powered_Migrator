@@ -1,7 +1,19 @@
 {
   "meta": {
     "source_system": "sqlserver",
-    "database_name": "ic4_metarepo"
+    "database_name": "ic4_metarepo",
+    "destination": {
+      "platform": "Microsoft Fabric OneLake",
+      "lakehouse": "Fabric Lakehouse (Delta Parquet)",
+      "warehouse": "Synapse Analytics SQL Warehouse",
+      "storage": "OneLake (Delta Parquet with V-Order)",
+      "medallion_support": [
+        "Bronze (Raw)",
+        "Silver (Cleansed)",
+        "Gold (Aggregated / Direct Lake)"
+      ]
+    },
+    "er_diagram_included": true
   },
   "tables": [
     {
