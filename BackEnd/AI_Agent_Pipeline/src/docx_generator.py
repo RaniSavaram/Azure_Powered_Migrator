@@ -629,11 +629,12 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
     ]
     table1 = doc.add_table(rows=len(metrics) + 1, cols=2)
     table1.style = 'Table Grid'
-    populate_and_style_cell(table1.cell(0, 0), "Metric", is_header=True)
-    populate_and_style_cell(table1.cell(0, 1), "Value", is_header=True)
+    t1_rows = table1.rows
+    populate_and_style_cell(t1_rows[0].cells[0], "Metric", is_header=True)
+    populate_and_style_cell(t1_rows[0].cells[1], "Value", is_header=True)
     for idx, (m, v) in enumerate(metrics, start=1):
-        populate_and_style_cell(table1.cell(idx, 0), m, is_first_col=True)
-        populate_and_style_cell(table1.cell(idx, 1), v)
+        populate_and_style_cell(t1_rows[idx].cells[0], m, is_first_col=True)
+        populate_and_style_cell(t1_rows[idx].cells[1], v)
 
     # Database Objects Inventory: lists views, stored procedures, functions,
     # and volumes by name with descriptive details (never empty cells).
@@ -661,15 +662,16 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
     if inventory_rows:
         table_inventory = doc.add_table(rows=len(inventory_rows) + 1, cols=4)
         table_inventory.style = 'Table Grid'
-        populate_and_style_cell(table_inventory.cell(0, 0), "Object Type", is_header=True)
-        populate_and_style_cell(table_inventory.cell(0, 1), "Schema", is_header=True)
-        populate_and_style_cell(table_inventory.cell(0, 2), "Name", is_header=True)
-        populate_and_style_cell(table_inventory.cell(0, 3), "Detail", is_header=True)
+        ti_rows = table_inventory.rows
+        populate_and_style_cell(ti_rows[0].cells[0], "Object Type", is_header=True)
+        populate_and_style_cell(ti_rows[0].cells[1], "Schema", is_header=True)
+        populate_and_style_cell(ti_rows[0].cells[2], "Name", is_header=True)
+        populate_and_style_cell(ti_rows[0].cells[3], "Detail", is_header=True)
         for idx, (obj_type, schema, name, detail) in enumerate(inventory_rows, start=1):
-            populate_and_style_cell(table_inventory.cell(idx, 0), obj_type, is_first_col=True)
-            populate_and_style_cell(table_inventory.cell(idx, 1), str(schema))
-            populate_and_style_cell(table_inventory.cell(idx, 2), str(name))
-            populate_and_style_cell(table_inventory.cell(idx, 3), str(detail))
+            populate_and_style_cell(ti_rows[idx].cells[0], obj_type, is_first_col=True)
+            populate_and_style_cell(ti_rows[idx].cells[1], str(schema))
+            populate_and_style_cell(ti_rows[idx].cells[2], str(name))
+            populate_and_style_cell(ti_rows[idx].cells[3], str(detail))
     else:
         add_custom_paragraph(doc, "No views, stored procedures, functions, or volumes were found in the scanned metadata.")
 
@@ -683,8 +685,9 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
     add_custom_heading(doc, "3. Source Database Summary", 1)
     table2 = doc.add_table(rows=7, cols=2)
     table2.style = 'Table Grid'
-    populate_and_style_cell(table2.cell(0, 0), "Parameter", is_header=True)
-    populate_and_style_cell(table2.cell(0, 1), "Value", is_header=True)
+    t2_rows = table2.rows
+    populate_and_style_cell(t2_rows[0].cells[0], "Parameter", is_header=True)
+    populate_and_style_cell(t2_rows[0].cells[1], "Value", is_header=True)
     
     db_details = [
         ("Source System", source_hint_name),
@@ -695,8 +698,8 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
         ("Assessment Engine", "AI Migrator Pipeline")
     ]
     for idx, (p, v) in enumerate(db_details, start=1):
-        populate_and_style_cell(table2.cell(idx, 0), p, is_first_col=True)
-        populate_and_style_cell(table2.cell(idx, 1), v)
+        populate_and_style_cell(t2_rows[idx].cells[0], p, is_first_col=True)
+        populate_and_style_cell(t2_rows[idx].cells[1], v)
 
     # Section 4: Overall Status & Key Findings
     add_custom_heading(doc, "4. Overall Status & Key Findings", 1)
@@ -704,8 +707,9 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
     add_custom_heading(doc, "Overall Status", 2, space_before=Pt(6))
     table3 = doc.add_table(rows=6, cols=2)
     table3.style = 'Table Grid'
-    populate_and_style_cell(table3.cell(0, 0), "Status Area", is_header=True)
-    populate_and_style_cell(table3.cell(0, 1), "Status", is_header=True)
+    t3_rows = table3.rows
+    populate_and_style_cell(t3_rows[0].cells[0], "Status Area", is_header=True)
+    populate_and_style_cell(t3_rows[0].cells[1], "Status", is_header=True)
     
     status_areas = [
         ("Metadata Extraction", "Completed"),
@@ -715,14 +719,15 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
         ("Migration Planning", "Ready")
     ]
     for idx, (a, s) in enumerate(status_areas, start=1):
-        populate_and_style_cell(table3.cell(idx, 0), a, is_first_col=True)
-        populate_and_style_cell(table3.cell(idx, 1), s)
+        populate_and_style_cell(t3_rows[idx].cells[0], a, is_first_col=True)
+        populate_and_style_cell(t3_rows[idx].cells[1], s)
     
     add_custom_heading(doc, "Key Findings", 2, space_before=Pt(6))
     table4 = doc.add_table(rows=5, cols=2)
     table4.style = 'Table Grid'
-    populate_and_style_cell(table4.cell(0, 0), "Assessment Area", is_header=True)
-    populate_and_style_cell(table4.cell(0, 1), "Finding Description", is_header=True)
+    t4_rows = table4.rows
+    populate_and_style_cell(t4_rows[0].cells[0], "Assessment Area", is_header=True)
+    populate_and_style_cell(t4_rows[0].cells[1], "Finding Description", is_header=True)
     
     findings = [
         ("Metadata Scan", "Successfully scanned tables, columns, and data types from the database."),
@@ -731,8 +736,8 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
         ("Execution Path", "Determined execution topology and batching sequence.")
     ]
     for idx, (a, f) in enumerate(findings, start=1):
-        populate_and_style_cell(table4.cell(idx, 0), a, is_first_col=True)
-        populate_and_style_cell(table4.cell(idx, 1), f)
+        populate_and_style_cell(t4_rows[idx].cells[0], a, is_first_col=True)
+        populate_and_style_cell(t4_rows[idx].cells[1], f)
 
     # Section 5: Object-Wise Assessment. Tables, views, functions, and
     # volumes all get a numbered 5.N sub-heading here - plan_to_json.py
@@ -761,27 +766,29 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
         col_list = t_data["columns"]
         col_table = doc.add_table(rows=len(col_list) + 1, cols=3)
         col_table.style = 'Table Grid'
+        ct_rows = col_table.rows
         
-        populate_and_style_cell(col_table.cell(0, 0), "Column", is_header=True)
-        populate_and_style_cell(col_table.cell(0, 1), "Data Type", is_header=True)
-        populate_and_style_cell(col_table.cell(0, 2), "Key", is_header=True)
+        populate_and_style_cell(ct_rows[0].cells[0], "Column", is_header=True)
+        populate_and_style_cell(ct_rows[0].cells[1], "Data Type", is_header=True)
+        populate_and_style_cell(ct_rows[0].cells[2], "Key", is_header=True)
         
         for c_idx, (col_name, col_type) in enumerate(col_list, start=1):
             is_pk = col_name.strip().lower() in [k.strip().lower() for k in t_data["primary_keys"].split(",") if k.strip()]
             is_fk = col_name.strip().lower() in [k.strip().lower() for k in t_data["foreign_keys"].split(",") if k.strip()]
             key_type = "Primary Key" if is_pk else ("Foreign Key" if is_fk else "None")
             
-            populate_and_style_cell(col_table.cell(c_idx, 0), col_name, is_first_col=True)
-            populate_and_style_cell(col_table.cell(c_idx, 1), col_type)
-            populate_and_style_cell(col_table.cell(c_idx, 2), key_type)
+            populate_and_style_cell(ct_rows[c_idx].cells[0], col_name, is_first_col=True)
+            populate_and_style_cell(ct_rows[c_idx].cells[1], col_type)
+            populate_and_style_cell(ct_rows[c_idx].cells[2], key_type)
         
         # Findings Table
         add_custom_paragraph(doc, "Findings Metadata:")
         findings_table = doc.add_table(rows=8, cols=2)
         findings_table.style = 'Table Grid'
+        ft_rows = findings_table.rows
         
-        populate_and_style_cell(findings_table.cell(0, 0), "Assessment Area", is_header=True)
-        populate_and_style_cell(findings_table.cell(0, 1), "Finding Details", is_header=True)
+        populate_and_style_cell(ft_rows[0].cells[0], "Assessment Area", is_header=True)
+        populate_and_style_cell(ft_rows[0].cells[1], "Finding Details", is_header=True)
         
         pk_val = str(t_data.get('primary_keys', '')).strip()
         fk_val = str(t_data.get('foreign_keys', '')).strip()
@@ -823,8 +830,8 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
             ("Dependent Tables", dep_val if dep_val and dep_val.lower() != "none" else "None")
         ]
         for f_idx, (a, fd) in enumerate(table_findings, start=1):
-            populate_and_style_cell(findings_table.cell(f_idx, 0), a, is_first_col=True)
-            populate_and_style_cell(findings_table.cell(f_idx, 1), fd)
+            populate_and_style_cell(ft_rows[f_idx].cells[0], a, is_first_col=True)
+            populate_and_style_cell(ft_rows[f_idx].cells[1], fd)
 
     def _add_object_details_table(doc, detail_rows):
         """
@@ -836,11 +843,12 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
         """
         details_table = doc.add_table(rows=len(detail_rows) + 1, cols=2)
         details_table.style = 'Table Grid'
-        populate_and_style_cell(details_table.cell(0, 0), "Property", is_header=True)
-        populate_and_style_cell(details_table.cell(0, 1), "Value", is_header=True)
+        dt_rows = details_table.rows
+        populate_and_style_cell(dt_rows[0].cells[0], "Property", is_header=True)
+        populate_and_style_cell(dt_rows[0].cells[1], "Value", is_header=True)
         for d_idx, (prop, val) in enumerate(detail_rows, start=1):
-            populate_and_style_cell(details_table.cell(d_idx, 0), prop, is_first_col=True)
-            populate_and_style_cell(details_table.cell(d_idx, 1), val)
+            populate_and_style_cell(dt_rows[d_idx].cells[0], prop, is_first_col=True)
+            populate_and_style_cell(dt_rows[d_idx].cells[1], val)
 
     def _is_materialized_view(schema_name, view_name):
         if views_df is None or views_df.empty or "is_materialized" not in views_df.columns:
@@ -873,13 +881,14 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
         col_list = v_data["columns"]
         col_table = doc.add_table(rows=len(col_list) + 1, cols=3)
         col_table.style = 'Table Grid'
-        populate_and_style_cell(col_table.cell(0, 0), "Column", is_header=True)
-        populate_and_style_cell(col_table.cell(0, 1), "Data Type", is_header=True)
-        populate_and_style_cell(col_table.cell(0, 2), "Key", is_header=True)
+        ct_rows = col_table.rows
+        populate_and_style_cell(ct_rows[0].cells[0], "Column", is_header=True)
+        populate_and_style_cell(ct_rows[0].cells[1], "Data Type", is_header=True)
+        populate_and_style_cell(ct_rows[0].cells[2], "Key", is_header=True)
         for c_idx, (col_name, col_type) in enumerate(col_list, start=1):
-            populate_and_style_cell(col_table.cell(c_idx, 0), col_name, is_first_col=True)
-            populate_and_style_cell(col_table.cell(c_idx, 1), col_type)
-            populate_and_style_cell(col_table.cell(c_idx, 2), "None")
+            populate_and_style_cell(ct_rows[c_idx].cells[0], col_name, is_first_col=True)
+            populate_and_style_cell(ct_rows[c_idx].cells[1], col_type)
+            populate_and_style_cell(ct_rows[c_idx].cells[2], "None")
 
         add_custom_paragraph(doc, "Object Details:")
         _add_object_details_table(doc, [
@@ -1215,11 +1224,12 @@ def create_migration_plan_document(
     ]
     table_details = doc.add_table(rows=len(scope_details) + 1, cols=2)
     table_details.style = 'Table Grid'
-    populate_and_style_cell(table_details.cell(0, 0), "Architecture & Scope Parameter", is_header=True)
-    populate_and_style_cell(table_details.cell(0, 1), "Selected Migration Details", is_header=True)
+    td_rows = table_details.rows
+    populate_and_style_cell(td_rows[0].cells[0], "Architecture & Scope Parameter", is_header=True)
+    populate_and_style_cell(td_rows[0].cells[1], "Selected Migration Details", is_header=True)
     for idx, (category, detail) in enumerate(scope_details, start=1):
-        populate_and_style_cell(table_details.cell(idx, 0), category, is_first_col=True)
-        populate_and_style_cell(table_details.cell(idx, 1), detail)
+        populate_and_style_cell(td_rows[idx].cells[0], category, is_first_col=True)
+        populate_and_style_cell(td_rows[idx].cells[1], detail)
         
     add_bold_label_paragraph(doc, "1. Table Summary Table:")
     
@@ -1227,15 +1237,16 @@ def create_migration_plan_document(
     t1_rows = stats_df.copy() if stats_df is not None else []
     table1 = doc.add_table(rows=len(t1_rows) + 1, cols=2)
     table1.style = 'Table Grid'
-    populate_and_style_cell(table1.cell(0, 0), "Table Name", is_header=True)
-    populate_and_style_cell(table1.cell(0, 1), "Size Category", is_header=True)
+    t1_table_rows = table1.rows
+    populate_and_style_cell(t1_table_rows[0].cells[0], "Table Name", is_header=True)
+    populate_and_style_cell(t1_table_rows[0].cells[1], "Size Category", is_header=True)
     
     if len(t1_rows) > 0:
         for idx, row in t1_rows.iterrows():
             t_name = str(row["table_name"])
             sz_cat = get_size_category(row["size_mb"], row["row_count"])
-            populate_and_style_cell(table1.cell(idx + 1, 0), t_name, is_first_col=True)
-            populate_and_style_cell(table1.cell(idx + 1, 1), sz_cat)
+            populate_and_style_cell(t1_table_rows[idx + 1].cells[0], t_name, is_first_col=True)
+            populate_and_style_cell(t1_table_rows[idx + 1].cells[1], sz_cat)
     else:
         row_c = table1.add_row()
         populate_and_style_cell(row_c.cells[0], "SampleTable", is_first_col=True)
@@ -1245,16 +1256,22 @@ def create_migration_plan_document(
     
     # Table 2: Keys
     key_cols = []
-    if columns_df is not None:
+    if columns_df is not None and not columns_df.empty:
+        fk_set = set()
+        if dep_df is not None and not dep_df.empty:
+            for _, d_row in dep_df.iterrows():
+                fk_n = str(d_row.get("fk_name", "")).strip().lower()
+                if fk_n:
+                    fk_set.add(fk_n)
+                p_t = str(d_row.get("parent_table", "")).strip().lower()
+                if p_t:
+                    fk_set.add(p_t)
         for _, row in columns_df.iterrows():
-            t_name = row["TableName"]
-            c_name = row["ColumnName"]
-            is_pk = "id" in c_name.lower() or "key" in c_name.lower()
-            is_fk = False
-            if dep_df is not None and not dep_df.empty:
-                is_fk = c_name in dep_df["parent_table"].values or any(
-                    (dep_df["parent_table"] == t_name) & (dep_df["fk_name"].str.contains(c_name, case=False, na=False))
-                )
+            t_name = str(row.get("TableName", ""))
+            c_name = str(row.get("ColumnName", ""))
+            c_lower = c_name.lower()
+            is_pk = "id" in c_lower or "key" in c_lower
+            is_fk = any(c_lower in fk for fk in fk_set) if fk_set else False
             
             if is_pk or is_fk:
                 key_type = "Primary" if is_pk else "Possible Foreign Key"
@@ -1262,15 +1279,16 @@ def create_migration_plan_document(
                 
     table2 = doc.add_table(rows=len(key_cols) + 1, cols=3)
     table2.style = 'Table Grid'
-    populate_and_style_cell(table2.cell(0, 0), "Table Name", is_header=True)
-    populate_and_style_cell(table2.cell(0, 1), "Column Name", is_header=True)
-    populate_and_style_cell(table2.cell(0, 2), "Key Type", is_header=True)
+    t2_rows = table2.rows
+    populate_and_style_cell(t2_rows[0].cells[0], "Table Name", is_header=True)
+    populate_and_style_cell(t2_rows[0].cells[1], "Column Name", is_header=True)
+    populate_and_style_cell(t2_rows[0].cells[2], "Key Type", is_header=True)
     
     if len(key_cols) > 0:
         for idx, (t, col, kt) in enumerate(key_cols):
-            populate_and_style_cell(table2.cell(idx + 1, 0), t, is_first_col=True)
-            populate_and_style_cell(table2.cell(idx + 1, 1), col)
-            populate_and_style_cell(table2.cell(idx + 1, 2), kt)
+            populate_and_style_cell(t2_rows[idx + 1].cells[0], t, is_first_col=True)
+            populate_and_style_cell(t2_rows[idx + 1].cells[1], col)
+            populate_and_style_cell(t2_rows[idx + 1].cells[2], kt)
     else:
         row_c = table2.add_row()
         populate_and_style_cell(row_c.cells[0], "SampleTable", is_first_col=True)
@@ -1325,12 +1343,13 @@ def create_migration_plan_document(
     if rel_data:
         er_tbl = doc.add_table(rows=len(rel_data) + 1, cols=6)
         er_tbl.style = 'Table Grid'
+        er_rows = er_tbl.rows
         headers = ["Source Entity", "Key Column", "Target Entity", "Target Key", "Cardinality", "Fabric Target"]
         for c_idx, h in enumerate(headers):
-            populate_and_style_cell(er_tbl.cell(0, c_idx), h, is_header=True)
+            populate_and_style_cell(er_rows[0].cells[c_idx], h, is_header=True)
         for r_idx, r_vals in enumerate(rel_data, start=1):
             for c_idx, val in enumerate(r_vals):
-                populate_and_style_cell(er_tbl.cell(r_idx, c_idx), val, is_first_col=(c_idx == 0))
+                populate_and_style_cell(er_rows[r_idx].cells[c_idx], val, is_first_col=(c_idx == 0))
 
     add_bold_label_paragraph(doc, "3. Database Parameter & Metrics Summary:")
         
@@ -1356,18 +1375,19 @@ def create_migration_plan_document(
                 
     table3 = doc.add_table(rows=len(dep_rows) + 1, cols=5)
     table3.style = 'Table Grid'
-    populate_and_style_cell(table3.cell(0, 0), "Object Name", is_header=True)
-    populate_and_style_cell(table3.cell(0, 1), "Depends On", is_header=True)
-    populate_and_style_cell(table3.cell(0, 2), "Object Type", is_header=True)
-    populate_and_style_cell(table3.cell(0, 3), "Dependency Type", is_header=True)
-    populate_and_style_cell(table3.cell(0, 4), "Connection Table", is_header=True)
+    t3_rows = table3.rows
+    populate_and_style_cell(t3_rows[0].cells[0], "Object Name", is_header=True)
+    populate_and_style_cell(t3_rows[0].cells[1], "Depends On", is_header=True)
+    populate_and_style_cell(t3_rows[0].cells[2], "Object Type", is_header=True)
+    populate_and_style_cell(t3_rows[0].cells[3], "Dependency Type", is_header=True)
+    populate_and_style_cell(t3_rows[0].cells[4], "Connection Table", is_header=True)
     
     for idx, (obj, dep_on, obj_t, dep_t, conn_tbl) in enumerate(dep_rows):
-        populate_and_style_cell(table3.cell(idx + 1, 0), obj, is_first_col=True)
-        populate_and_style_cell(table3.cell(idx + 1, 1), dep_on)
-        populate_and_style_cell(table3.cell(idx + 1, 2), obj_t)
-        populate_and_style_cell(table3.cell(idx + 1, 3), dep_t)
-        populate_and_style_cell(table3.cell(idx + 1, 4), conn_tbl)
+        populate_and_style_cell(t3_rows[idx + 1].cells[0], obj, is_first_col=True)
+        populate_and_style_cell(t3_rows[idx + 1].cells[1], dep_on)
+        populate_and_style_cell(t3_rows[idx + 1].cells[2], obj_t)
+        populate_and_style_cell(t3_rows[idx + 1].cells[3], dep_t)
+        populate_and_style_cell(t3_rows[idx + 1].cells[4], conn_tbl)
         
     add_bold_label_paragraph(doc, "Circular Dependencies:")
     add_custom_paragraph(doc, "None detected.", is_bullet=True)
@@ -1425,16 +1445,17 @@ def create_migration_plan_document(
             
     table4 = doc.add_table(rows=len(seq_list) + 1, cols=4)
     table4.style = 'Table Grid'
-    populate_and_style_cell(table4.cell(0, 0), "Execution Order", is_header=True)
-    populate_and_style_cell(table4.cell(0, 1), "Object Name", is_header=True)
-    populate_and_style_cell(table4.cell(0, 2), "Object Type", is_header=True)
-    populate_and_style_cell(table4.cell(0, 3), "Reason", is_header=True)
+    t4_rows = table4.rows
+    populate_and_style_cell(t4_rows[0].cells[0], "Execution Order", is_header=True)
+    populate_and_style_cell(t4_rows[0].cells[1], "Object Name", is_header=True)
+    populate_and_style_cell(t4_rows[0].cells[2], "Object Type", is_header=True)
+    populate_and_style_cell(t4_rows[0].cells[3], "Reason", is_header=True)
     
     for idx, (ord_val, obj, obj_t, rsn) in enumerate(seq_list):
-        populate_and_style_cell(table4.cell(idx + 1, 0), ord_val, is_first_col=True)
-        populate_and_style_cell(table4.cell(idx + 1, 1), obj)
-        populate_and_style_cell(table4.cell(idx + 1, 2), obj_t)
-        populate_and_style_cell(table4.cell(idx + 1, 3), rsn)
+        populate_and_style_cell(t4_rows[idx + 1].cells[0], ord_val, is_first_col=True)
+        populate_and_style_cell(t4_rows[idx + 1].cells[1], obj)
+        populate_and_style_cell(t4_rows[idx + 1].cells[2], obj_t)
+        populate_and_style_cell(t4_rows[idx + 1].cells[3], rsn)
 
     # ------------------ SECTION 4: BATCH MIGRATION PLAN ------------------
     add_custom_heading(doc, "SECTION 4: BATCH MIGRATION PLAN", 1)
@@ -1491,8 +1512,9 @@ def create_migration_plan_document(
     # Target Environment Layout Table (replacing text)
     table_fabric = doc.add_table(rows=6, cols=2)
     table_fabric.style = 'Table Grid'
-    populate_and_style_cell(table_fabric.cell(0, 0), "Fabric Component", is_header=True)
-    populate_and_style_cell(table_fabric.cell(0, 1), "Target Design & Role", is_header=True)
+    tf_rows = table_fabric.rows
+    populate_and_style_cell(tf_rows[0].cells[0], "Fabric Component", is_header=True)
+    populate_and_style_cell(tf_rows[0].cells[1], "Target Design & Role", is_header=True)
     fabric_details = [
         ("Fabric Lakehouses", "Central storage repository for raw and cleansed Delta tables."),
         ("Fabric Pipelines", "Orchestrates schema copying, pipeline runs, and historical loads."),
@@ -1501,8 +1523,8 @@ def create_migration_plan_document(
         ("Power BI Reports", "Consumes conformed semantic tables for business intelligence dashboards.")
     ]
     for idx, (comp, role) in enumerate(fabric_details, start=1):
-        populate_and_style_cell(table_fabric.cell(idx, 0), comp, is_first_col=True)
-        populate_and_style_cell(table_fabric.cell(idx, 1), role)
+        populate_and_style_cell(tf_rows[idx].cells[0], comp, is_first_col=True)
+        populate_and_style_cell(tf_rows[idx].cells[1], role)
 
     # ------------------ SECTION 6: EXECUTION PLAN (ACTIONABLE) ------------------
     add_custom_heading(doc, "SECTION 6: EXECUTION PLAN (ACTIONABLE)", 1)
@@ -1528,15 +1550,16 @@ def create_migration_plan_document(
     ]
     table_batches = doc.add_table(rows=len(batch_rows) + 1, cols=4)
     table_batches.style = 'Table Grid'
-    populate_and_style_cell(table_batches.cell(0, 0), "Batch Name", is_header=True)
-    populate_and_style_cell(table_batches.cell(0, 1), "Scope Objects", is_header=True)
-    populate_and_style_cell(table_batches.cell(0, 2), "Inbound Load Strategy", is_header=True)
-    populate_and_style_cell(table_batches.cell(0, 3), "Execution Dependencies", is_header=True)
+    tb_rows = table_batches.rows
+    populate_and_style_cell(tb_rows[0].cells[0], "Batch Name", is_header=True)
+    populate_and_style_cell(tb_rows[0].cells[1], "Scope Objects", is_header=True)
+    populate_and_style_cell(tb_rows[0].cells[2], "Inbound Load Strategy", is_header=True)
+    populate_and_style_cell(tb_rows[0].cells[3], "Execution Dependencies", is_header=True)
     for idx, (b_name, b_scope, b_strategy, b_deps) in enumerate(batch_rows, start=1):
-        populate_and_style_cell(table_batches.cell(idx, 0), b_name, is_first_col=True)
-        populate_and_style_cell(table_batches.cell(idx, 1), b_scope)
-        populate_and_style_cell(table_batches.cell(idx, 2), b_strategy)
-        populate_and_style_cell(table_batches.cell(idx, 3), b_deps)
+        populate_and_style_cell(tb_rows[idx].cells[0], b_name, is_first_col=True)
+        populate_and_style_cell(tb_rows[idx].cells[1], b_scope)
+        populate_and_style_cell(tb_rows[idx].cells[2], b_strategy)
+        populate_and_style_cell(tb_rows[idx].cells[3], b_deps)
         
     add_bold_label_paragraph(doc, "Step-by-Step Execution Plan:")
     add_custom_paragraph(doc, "1. Execute Batch 1: Independent Tables")
@@ -1598,8 +1621,9 @@ def create_migration_plan_document(
         if tokens_used:
             table_costs = doc.add_table(rows=4, cols=2)
             table_costs.style = 'Table Grid'
-            populate_and_style_cell(table_costs.cell(0, 0), "Cost Metric", is_header=True)
-            populate_and_style_cell(table_costs.cell(0, 1), "Value", is_header=True)
+            tc_rows = table_costs.rows
+            populate_and_style_cell(tc_rows[0].cells[0], "Cost Metric", is_header=True)
+            populate_and_style_cell(tc_rows[0].cells[1], "Value", is_header=True)
             
             prompt_cost = (tokens_used.get("prompt", 0) / 1000000.0) * 0.15
             comp_cost = (tokens_used.get("completion", 0) / 1000000.0) * 0.60
@@ -1611,8 +1635,8 @@ def create_migration_plan_document(
                 ("Estimated Cost (USD)", f"${total_cost:.5f}")
             ]
             for idx, (m, v) in enumerate(cost_details, start=1):
-                populate_and_style_cell(table_costs.cell(idx, 0), m, is_first_col=True)
-                populate_and_style_cell(table_costs.cell(idx, 1), v)
+                populate_and_style_cell(tc_rows[idx].cells[0], m, is_first_col=True)
+                populate_and_style_cell(tc_rows[idx].cells[1], v)
                 
             
     doc.save(output_path)

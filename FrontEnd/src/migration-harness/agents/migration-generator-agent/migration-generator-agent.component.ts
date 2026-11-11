@@ -216,9 +216,45 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
       },
       error: (err: HttpErrorResponse) => {
         console.warn('Backend migration plan error:', err);
-        const detail = err?.error?.message || err?.message || 'Unknown error';
-        const status = err?.status ? `HTTP ${err.status}` : 'Network error';
-        this.handleFailure(liveId, detail, status);
+        // Fallback recovery: check if backend already finished producing the plan
+        this.scanner.getPipelineState().subscribe({
+          next: (state: any) => {
+            if (state && state.has_migration_plan && state.migration_plan_file) {
+              this.scanner.generateMigrationPlan().subscribe({
+                next: (cachedRes: any) => {
+                  if (cachedRes?.status === 'success') {
+                    this.runPhase.set('done');
+                    this.lastPlanData.set(cachedRes);
+                    this.harnessDataService.setMigrationPlanResult(cachedRes);
+                    this.messages.update(prev => {
+                      const filtered = prev.filter(m => m.id !== liveId);
+                      return [...filtered, this.buildPlanCompiledMessage(cachedRes)];
+                    });
+                    this.shouldScroll = true;
+                    return;
+                  }
+                  const detail = err?.error?.message || err?.message || 'Unknown error';
+                  const status = err?.status ? `HTTP ${err.status}` : 'Network error';
+                  this.handleFailure(liveId, detail, status);
+                },
+                error: () => {
+                  const detail = err?.error?.message || err?.message || 'Unknown error';
+                  const status = err?.status ? `HTTP ${err.status}` : 'Network error';
+                  this.handleFailure(liveId, detail, status);
+                }
+              });
+            } else {
+              const detail = err?.error?.message || err?.message || 'Unknown error';
+              const status = err?.status ? `HTTP ${err.status}` : 'Network error';
+              this.handleFailure(liveId, detail, status);
+            }
+          },
+          error: () => {
+            const detail = err?.error?.message || err?.message || 'Unknown error';
+            const status = err?.status ? `HTTP ${err.status}` : 'Network error';
+            this.handleFailure(liveId, detail, status);
+          }
+        });
       }
     });
   }

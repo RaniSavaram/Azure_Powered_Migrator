@@ -693,7 +693,8 @@ def generate_migration_plan_view(request):
     execution waves DAG, risk mitigations, Migration Plan document (.docx), and migration_plan.json.
     """
     try:
-        result = generate_migration_plan_service()
+        data = request.data if request.method == "POST" else {}
+        result = generate_migration_plan_service(data)
         return Response(result, status=200)
     except Exception as exc:
         traceback.print_exc()

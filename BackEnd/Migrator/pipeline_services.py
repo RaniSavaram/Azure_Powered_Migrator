@@ -1204,13 +1204,28 @@ Metadata Refresh Date: {refresh_date}
 
     return _sanitize_for_json(result_payload)
 
-def generate_migration_plan_service() -> dict:
+def generate_migration_plan_service(data: dict = None) -> dict:
+    data = data or {}
+    force_refresh = bool(data.get("force") or data.get("refresh"))
+
+    with _pipeline_lock:
+        cached_plan = active_pipeline.get("migration_plan")
+        slug = active_pipeline.get("platform_slug") or "sqlserver"
+
+    plan_filename = f"{slug}_Migration_Plan.docx"
+    plan_path = OUTPUT_DIR / plan_filename
+    json_plan_path = OUTPUT_DIR / "migration_plan.json"
+
+    if not force_refresh and cached_plan and isinstance(cached_plan, dict) and cached_plan.get("status") == "success":
+        if plan_path.exists() and json_plan_path.exists():
+            return _sanitize_for_json(cached_plan)
+
     with _pipeline_lock:
         meta = active_pipeline.get("metadata")
         dfs = active_pipeline.get("dataframes")
 
     if not meta or not dfs:
-        extract_metadata_service()
+        extract_metadata_service(data)
         with _pipeline_lock:
             meta = active_pipeline.get("metadata")
             dfs = active_pipeline.get("dataframes")

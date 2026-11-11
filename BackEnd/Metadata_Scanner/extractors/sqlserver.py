@@ -39,7 +39,8 @@ class SQLServerExtractor(BaseExtractor):
             database=self.database,
             user=self.username,
             password=self.password,
-            timeout=600,
+            login_timeout=5,
+            timeout=30,
             as_dict=True
         )
 
