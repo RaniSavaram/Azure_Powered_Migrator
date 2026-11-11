@@ -552,7 +552,23 @@ def add_agent_writeup_section(doc, sections, section_num):
         add_custom_paragraph(doc, line_stripped, is_bullet=is_bullet)
 
 
-def create_table_summary_document(overall_summary, table_summaries, output_path, source_hint="database", tables_df=None, columns_df=None, stats_df=None, views_df=None, procedures_df=None, functions_df=None, volumes_df=None, view_summaries=None, function_summaries=None, procedure_summaries=None, volume_summaries=None):
+def _format_doc_timestamp(generated_at=None):
+    if generated_at:
+        return str(generated_at).strip()
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _add_document_timestamp_footer(doc, timestamp_str):
+    """Adds a clean 'Generated on' timestamp to every page footer."""
+    for section in doc.sections:
+        footer = section.footer
+        p = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        run = p.add_run(f"Generated on: {timestamp_str}")
+        set_run_font(run, name="Aptos", size_pt=9, italic=True, color_hex="64748B")
+
+
+def create_table_summary_document(overall_summary, table_summaries, output_path, source_hint="database", tables_df=None, columns_df=None, stats_df=None, views_df=None, procedures_df=None, functions_df=None, volumes_df=None, view_summaries=None, function_summaries=None, procedure_summaries=None, volume_summaries=None, generated_at=None):
     """
     Compiles the redesigned Assessment Report into a Microsoft Word document (.docx)
     following the visual style tokens and content layout sections specified in the approved plan.
@@ -561,13 +577,22 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
     doc = docx.Document()
     source_hint_name = get_source_display_name(source_hint)
     
+    report_generated_at = _format_doc_timestamp(generated_at)
+
     # Title
     title_p = doc.add_paragraph()
     title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title_p.paragraph_format.space_before = Pt(24)
-    title_p.paragraph_format.space_after = Pt(24)
+    title_p.paragraph_format.space_after = Pt(6)
     run = title_p.add_run(f"{source_hint_name.upper()} ASSESSMENT REPORT")
     set_run_font(run, name="Aptos", size_pt=28, bold=True, color_hex="0F4761")
+
+    ts_p = doc.add_paragraph()
+    ts_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    ts_p.paragraph_format.space_before = Pt(0)
+    ts_p.paragraph_format.space_after = Pt(18)
+    run_ts = ts_p.add_run(f"Generated on: {report_generated_at}")
+    set_run_font(run_ts, name="Aptos", size_pt=11, italic=True, color_hex="666666")
     
     # Calculate metadata summary metrics
     total_tables = len(tables_df) if tables_df is not None else 0
@@ -625,7 +650,8 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
         ("Total Functions", str(total_functions)),
         ("Total Volumes", str(total_volumes)),
         ("Distinct Schemas", str(distinct_schemas) if distinct_schemas else "dbo"),
-        ("Metadata Refresh Date", refresh_date)
+        ("Metadata Refresh Date", refresh_date),
+        ("Report Generated At", report_generated_at)
     ]
     table1 = doc.add_table(rows=len(metrics) + 1, cols=2)
     table1.style = 'Table Grid'
@@ -982,6 +1008,7 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
     add_custom_heading(doc, "6. Assessment Conclusion", 1)
     add_custom_paragraph(doc, "Based on the database assessment, the schema is well-defined and compatible with Microsoft Fabric lakehouse tables. The tables have been cataloged with clear constraints and load parameters. Sizing categories range from small to large, requiring appropriate ingestion batches.")
     
+    _add_document_timestamp_footer(doc, report_generated_at)
     doc.save(output_path)
     print(f"[INFO] Successfully saved Assessment Report.")
 
@@ -1144,6 +1171,7 @@ def create_migration_plan_document(
     database_name=None,
     server_endpoint=None,
     destination_info=None,
+    generated_at=None,
 ):
     """
     Compiles the redesigned, visual, scan-friendly 9-section Migration Plan into a Microsoft Word document (.docx)
@@ -1196,11 +1224,20 @@ def create_migration_plan_document(
     run = title_p.add_run(f"{source_hint_name} Migration Plan")
     set_run_font(run, name="Aptos", size_pt=26, bold=True, color_hex="0F4761")
     
+    plan_generated_at = _format_doc_timestamp(generated_at)
+
     subtitle_p = doc.add_paragraph(style='Normal')
     subtitle_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    subtitle_p.paragraph_format.space_after = Pt(24)
+    subtitle_p.paragraph_format.space_after = Pt(6)
     run_sub = subtitle_p.add_run(f"AI Generated {source_hint_name} to Microsoft Fabric OneLake Migration Blueprint")
     set_run_font(run_sub, name="Aptos", size_pt=12, italic=True, color_hex="666666")
+
+    ts_p = doc.add_paragraph(style='Normal')
+    ts_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    ts_p.paragraph_format.space_before = Pt(0)
+    ts_p.paragraph_format.space_after = Pt(20)
+    run_ts = ts_p.add_run(f"Generated on: {plan_generated_at}")
+    set_run_font(run_ts, name="Aptos", size_pt=11, italic=True, color_hex="666666")
 
     # ------------------ SECTION 1: METADATA INTERPRETATION & SOURCE/DESTINATION SCOPE ------------------
     add_custom_heading(doc, "SECTION 1: METADATA INTERPRETATION & SCOPE", 1)
@@ -1220,7 +1257,8 @@ def create_migration_plan_document(
         ("Target Ingestion Architecture", "Medallion Lakehouse Architecture (Bronze Ingest -> Silver Conformed -> Gold Semantic Direct Lake)"),
         ("Target Storage Format", "Delta Lake Parquet (ACID Transactions, V-Order Optimized)"),
         ("Power BI Integration Mode", "Direct Lake Mode (Sub-second query performance without data duplication)"),
-        ("Migration Scope Objects", "Ingest all scanned base tables, primary constraints, and relationships into Fabric OneLake.")
+        ("Migration Scope Objects", "Ingest all scanned base tables, primary constraints, and relationships into Fabric OneLake."),
+        ("Report Generated At", plan_generated_at)
     ]
     table_details = doc.add_table(rows=len(scope_details) + 1, cols=2)
     table_details.style = 'Table Grid'
@@ -1639,5 +1677,6 @@ def create_migration_plan_document(
                 populate_and_style_cell(tc_rows[idx].cells[1], v)
                 
             
+    _add_document_timestamp_footer(doc, plan_generated_at)
     doc.save(output_path)
     print(f"[INFO] Successfully saved Migration Plan.")

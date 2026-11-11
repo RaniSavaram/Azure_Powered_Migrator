@@ -1475,7 +1475,7 @@ SCAN STATUS + ACTION BUTTONS
                             </div>
                             <div class="term-doc-info">
                                 <span class="term-doc-title">{{ getFormatSourceForFilename(lastScanSource || source) }} Assessment Report</span>
-                                <span class="term-doc-meta">Microsoft Word (.docx) &bull; Architectural Assessment &amp; Schema Feasibility</span>
+                                <span class="term-doc-meta">Microsoft Word (.docx) &bull; Architectural Assessment &amp; Schema Feasibility<ng-container *ngIf="assessmentGeneratedAt"> &bull; Generated: {{ assessmentGeneratedAt | date:'medium' }}</ng-container></span>
                             </div>
                             <div class="term-doc-actions">
                                 <button type="button" class="btn-term-doc preview" (click)="viewDocument(metadataFile)" title="View assessment report" aria-label="View assessment report">
@@ -1495,7 +1495,7 @@ SCAN STATUS + ACTION BUTTONS
                             </div>
                             <div class="term-doc-info">
                                 <span class="term-doc-title">{{ getFormatSourceForFilename(lastScanSource || source) }} Migration Plan</span>
-                                <span class="term-doc-meta">Microsoft Word (.docx) &bull; Fabric Lakehouse Migration Blueprint</span>
+                                <span class="term-doc-meta">Microsoft Word (.docx) &bull; Fabric Lakehouse Migration Blueprint<ng-container *ngIf="migrationPlanGeneratedAt"> &bull; Generated: {{ migrationPlanGeneratedAt | date:'medium' }}</ng-container></span>
                             </div>
                             <div class="term-doc-actions">
                                 <button type="button" class="btn-term-doc preview" (click)="viewDocument(migrationFile)" title="View migration plan" aria-label="View migration plan">
@@ -1667,7 +1667,7 @@ SCAN STATUS + ACTION BUTTONS
                     <div class="meta-card">
                         <span class="meta-label"><i class="bi bi-file-earmark-text-fill"></i> Assessment Report</span>
                         <span class="meta-val">{{ getActiveReportDocName() }}</span>
-                        <span class="meta-sub">Source Schema Extraction</span>
+                        <span class="meta-sub">Source Schema Extraction<ng-container *ngIf="assessmentGeneratedAt"> &bull; Generated: {{ assessmentGeneratedAt | date:'medium' }}</ng-container></span>
                     </div>
                     <div class="meta-card">
                         <span class="meta-label"><i class="bi bi-database-check"></i> Storage Format</span>
@@ -1765,7 +1765,10 @@ SCAN STATUS + ACTION BUTTONS
 
                         <i class="bi bi-file-earmark-word-fill word-icon"></i>
 
-                        {{ getFormatSourceForFilename(lastScanSource || source) }} Assessment Report
+                        <div class="doc-link-info">
+                            <span>{{ getFormatSourceForFilename(lastScanSource || source) }} Assessment Report</span>
+                            <span class="doc-link-ts" *ngIf="assessmentGeneratedAt"><i class="bi bi-clock"></i> Generated: {{ assessmentGeneratedAt | date:'medium' }}</span>
+                        </div>
 
                         <span class="doc-actions">
                             <button type="button" class="doc-action" (click)="viewDocument(metadataFile)" title="View assessment report" aria-label="View assessment report">
@@ -1782,7 +1785,10 @@ SCAN STATUS + ACTION BUTTONS
 
                         <i class="bi bi-file-earmark-word-fill word-icon"></i>
 
-                        {{ getFormatSourceForFilename(lastScanSource || source) }} Migration Plan
+                        <div class="doc-link-info">
+                            <span>{{ getFormatSourceForFilename(lastScanSource || source) }} Migration Plan</span>
+                            <span class="doc-link-ts" *ngIf="migrationPlanGeneratedAt"><i class="bi bi-clock"></i> Generated: {{ migrationPlanGeneratedAt | date:'medium' }}</span>
+                        </div>
 
                         <span class="doc-actions">
                             <button type="button" class="doc-action" (click)="viewDocument(migrationFile)" title="View migration plan" aria-label="View migration plan">

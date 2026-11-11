@@ -38,6 +38,8 @@ export class ResultsDialogComponent implements OnInit {
   migrationPlanFile = '/output/AI_Migration_Plan.docx';
   assessmentReportDownloadName = 'SQL Server Assessment Report.docx';
   migrationPlanDownloadName = 'SQL Server Migration Plan.docx';
+  assessmentGeneratedAt: string | null = null;
+  migrationPlanGeneratedAt: string | null = null;
 
   tokenInfo = {
     total: 48250,
@@ -129,6 +131,16 @@ export class ResultsDialogComponent implements OnInit {
         this.assessmentReportFile = `/output/${encodeURIComponent(assessmentRes.report_file)}?t=${Date.now()}`;
         this.assessmentReportDownloadName = assessmentRes.report_file;
       }
+      if (assessmentRes.generated_at) this.assessmentGeneratedAt = assessmentRes.generated_at;
+    }
+
+    const migrationRes = this.harnessDataService.getMigrationPlanResult();
+    if (migrationRes) {
+      if (migrationRes.plan_file) {
+        this.migrationPlanFile = `/output/${encodeURIComponent(migrationRes.plan_file)}?t=${Date.now()}`;
+        this.migrationPlanDownloadName = migrationRes.plan_file;
+      }
+      if (migrationRes.generated_at) this.migrationPlanGeneratedAt = migrationRes.generated_at;
     }
 
     this.backendLogs = [

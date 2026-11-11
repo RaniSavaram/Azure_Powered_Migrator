@@ -127,6 +127,9 @@
                     <div class="dropdown-header">
                       <span class="dropdown-header-title">Assessment Report (.docx)</span>
                       <span class="dropdown-header-badge" [title]="getReportFilename()">{{ getReportFilename() }}</span>
+                      @if (report()?.generated_at) {
+                        <span class="dropdown-header-ts"><i class="bi bi-clock"></i> Generated: {{ report()?.generated_at | date:'medium' }}</span>
+                      }
                     </div>
                     <div class="dropdown-divider"></div>
                     <button type="button" class="dropdown-item-btn" (click)="viewReport()">
@@ -487,5 +490,31 @@
         </div>
       </div>
     </div>
+
+    @if (report(); as rep) {
+      @if (rep.report_file) {
+        <div class="doc-timestamp-footer">
+          <div class="doc-ts-left">
+            <i class="bi bi-file-earmark-word-fill text-success"></i>
+            <span><strong>Assessment Report:</strong></span>
+            <code class="doc-ts-file">{{ rep.report_file }}</code>
+            @if (rep.generated_at || rep.document_generated_at) {
+              <span class="doc-ts-badge">
+                <i class="bi bi-clock"></i>
+                <span>Generated: <strong>{{ rep.generated_at ? (rep.generated_at | date:'medium') : rep.document_generated_at }}</strong></span>
+              </span>
+            }
+          </div>
+          <div class="doc-ts-right">
+            <button type="button" class="btn-doc-ts-link" (click)="viewReport()">
+              <i class="bi bi-eye"></i> <span>View</span>
+            </button>
+            <button type="button" class="btn-doc-ts-link" (click)="downloadReport()">
+              <i class="bi bi-download"></i> <span>Download</span>
+            </button>
+          </div>
+        </div>
+      }
+    }
   }
 </div>

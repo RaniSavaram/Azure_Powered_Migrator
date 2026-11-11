@@ -307,8 +307,9 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
     const originNote = origin === 'catalog_fallback'
       ? '\n\n**Note:** live extraction failed, so this assessment used the built-in sample catalog, not your database.'
       : origin === 'demo' ? '\n\n**Note:** Demo Simulation Mode data, not a live database.' : '';
+    const genTs = this.formatGeneratedTime(r.generated_at, r.document_generated_at);
     const docNote = r.report_file
-      ? `\n- Assessment Report: \`${r.report_file}\``
+      ? `\n- Assessment Report: \`${r.report_file}\`${genTs ? ` (Generated: **${genTs}**)` : ''}`
       : r.document_error ? `\n- Assessment Report (.docx) failed: ${r.document_error}` : '';
 
     this.agentSays(
@@ -696,6 +697,14 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
       { ...msg, id: `msg-${++this.msgSeq}`, timestamp: new Date() }
     ]);
     this.shouldScroll = true;
+  }
+
+  formatGeneratedTime(iso?: string | null, fallback?: string | null): string {
+    if (iso) {
+      const d = new Date(iso);
+      if (!isNaN(d.getTime())) return d.toLocaleString();
+    }
+    return fallback || '';
   }
 
   formatMessageText(rawText: string): string {

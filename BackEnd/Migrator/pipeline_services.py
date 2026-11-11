@@ -1125,6 +1125,8 @@ Metadata Refresh Date: {refresh_date}
 
     report_filename = f"{slug}_Assessment_Report.docx"
     report_path = OUTPUT_DIR / report_filename
+    doc_now = datetime.now().astimezone()
+    doc_generated_str = doc_now.strftime("%Y-%m-%d %H:%M:%S")
 
     document_error = None
     if data.get("generate_document", True):
@@ -1138,6 +1140,8 @@ Metadata Refresh Date: {refresh_date}
             ]
             with _pipeline_lock:
                 active_pipeline["table_summaries"] = table_summaries
+            doc_now = datetime.now().astimezone()
+            doc_generated_str = doc_now.strftime("%Y-%m-%d %H:%M:%S")
             create_table_summary_document(
                 overall_summary=overall_summary,
                 table_summaries=table_summaries,
@@ -1150,6 +1154,7 @@ Metadata Refresh Date: {refresh_date}
                 procedures_df=procedures_df,
                 functions_df=functions_df,
                 volumes_df=volumes_df,
+                generated_at=doc_generated_str,
             )
         except Exception as doc_exc:
             # The analysis is still valid without the Word file; report why it's missing.
@@ -1170,7 +1175,8 @@ Metadata Refresh Date: {refresh_date}
     tables = analysis["tables"]
     result_payload = {
         "status": "success",
-        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "generated_at": doc_now.isoformat(timespec="seconds"),
+        "document_generated_at": doc_generated_str if has_document else None,
         "duration_ms": duration_ms,
         "source": source,
         "verdict": analysis["verdict"],
@@ -1341,6 +1347,8 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
     with _pipeline_lock:
         active_pipeline["agent_writeups"] = agent_writeups
 
+    plan_now = datetime.now().astimezone()
+    plan_generated_str = plan_now.strftime("%Y-%m-%d %H:%M:%S")
     create_migration_plan_document(
         tables_df=tables_df,
         columns_df=columns_df,
@@ -1356,6 +1364,7 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
         database_name=db_name,
         server_endpoint=srv_endpoint,
         destination_info=dest_details,
+        generated_at=plan_generated_str,
     )
 
     # Build migration_plan.json for Fabric automated deployment
@@ -1392,6 +1401,8 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
 
     result_payload = {
         "status": "success",
+        "generated_at": plan_now.isoformat(timespec="seconds"),
+        "document_generated_at": plan_generated_str,
         "plan_file": plan_filename,
         "plan_url": f"/output/{plan_filename}?view=1",
         "download_url": f"/output/{plan_filename}",
@@ -1741,8 +1752,10 @@ def get_pipeline_state_service() -> dict:
             "has_constraints": active_pipeline["constraints_report"] is not None,
             "has_assessment": active_pipeline["assessment_report"] is not None,
             "assessment_report_file": active_pipeline["assessment_report"]["report_file"] if active_pipeline["assessment_report"] else None,
+            "assessment_generated_at": active_pipeline["assessment_report"].get("generated_at") if active_pipeline.get("assessment_report") else None,
             "has_migration_plan": active_pipeline["migration_plan"] is not None,
             "migration_plan_file": active_pipeline["migration_plan"]["plan_file"] if active_pipeline["migration_plan"] else None,
+            "migration_plan_generated_at": active_pipeline["migration_plan"].get("generated_at") if active_pipeline.get("migration_plan") else None,
             "has_evaluation": active_pipeline.get("evaluation_report") is not None,
             "evaluation_decision": active_pipeline["evaluation_report"]["decision"] if active_pipeline.get("evaluation_report") else None,
         })

@@ -290,6 +290,9 @@
               <div class="doc-meta-tags">
                 <span class="doc-tag"><i class="bi bi-filetype-docx"></i> Microsoft Word (.docx)</span>
                 <span class="doc-tag"><i class="bi bi-check2-circle text-success"></i> Formatted &amp; Styled</span>
+                @if (assessmentGeneratedAt) {
+                  <span class="doc-tag"><i class="bi bi-clock"></i> Generated: {{ assessmentGeneratedAt | date:'medium' }}</span>
+                }
               </div>
             </div>
             <div class="doc-actions">
@@ -315,6 +318,9 @@
               <div class="doc-meta-tags">
                 <span class="doc-tag"><i class="bi bi-filetype-docx"></i> Microsoft Word (.docx)</span>
                 <span class="doc-tag"><i class="bi bi-check2-circle text-success"></i> Contract Validated</span>
+                @if (migrationPlanGeneratedAt) {
+                  <span class="doc-tag"><i class="bi bi-clock"></i> Generated: {{ migrationPlanGeneratedAt | date:'medium' }}</span>
+                }
               </div>
             </div>
             <div class="doc-actions">

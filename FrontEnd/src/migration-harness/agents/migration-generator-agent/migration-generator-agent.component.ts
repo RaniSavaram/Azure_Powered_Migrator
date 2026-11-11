@@ -314,7 +314,7 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
       `- **Destination**: **${destPlatform}** · Lakehouse: \`${destLakehouse}\` (Delta Parquet with V-Order)\n` +
       `- **Medallion Layers**: **${bronzeCount}** Bronze ingestion · **${silverCount}** Silver cleansed · **${goldCount}** Gold semantic\n` +
       `- **ER Diagram**: Embedded in **Section 2 (Dependency Analysis & ER Model)**\n` +
-      `- **Artifacts**: \`${planRes.plan_file}\` and \`${planRes.json_plan_file || 'migration_plan.json'}\`\n\n` +
+      `- **Artifacts**: \`${planRes.plan_file}\`${this.formatGeneratedTime(planRes.generated_at, planRes.document_generated_at) ? ` (Generated: **${this.formatGeneratedTime(planRes.generated_at, planRes.document_generated_at)}**)` : ''} and \`${planRes.json_plan_file || 'migration_plan.json'}\`\n\n` +
       (wavesLines ? `**Execution Sequence Waves (${waves.length})**\n${wavesLines}` : '');
 
     const metrics: ChatMetricItem[] = [
@@ -577,6 +577,14 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
       this.addAgentGreeting();
     }
     this.shouldScroll = true;
+  }
+
+  formatGeneratedTime(iso?: string | null, fallback?: string | null): string {
+    if (iso) {
+      const d = new Date(iso);
+      if (!isNaN(d.getTime())) return d.toLocaleString();
+    }
+    return fallback || '';
   }
 
   formatMessageText(rawText: string): string {

@@ -471,6 +471,8 @@ Columns Sample:
     _update_progress(scan_id, progress=89, current_message="Compiling documents", log_entry=section_artifacts, log_type="Harness Layer2")
     _update_progress(scan_id, log_entry=section_artifacts, log_type="Scan Info")
 
+    assessment_now = datetime.now().astimezone()
+    assessment_doc_ts = assessment_now.strftime("%Y-%m-%d %H:%M:%S")
     create_table_summary_document(
         overall_summary=overall_summary,
         table_summaries=table_summaries,
@@ -486,7 +488,8 @@ Columns Sample:
         view_summaries=view_summaries,
         function_summaries=function_summaries,
         procedure_summaries=procedure_summaries,
-        volume_summaries=volume_summaries
+        volume_summaries=volume_summaries,
+        generated_at=assessment_doc_ts
     )
     msg_rep = f"        * [SUCCESS]: Generated Assessment Report: {table_summary_filename}"
     _update_progress(scan_id, log_entry=msg_rep, log_type="Harness Layer2")
@@ -495,6 +498,8 @@ Columns Sample:
     migration_plan_docx_path = os.path.join(output_dir, migration_plan_filename)
     time.sleep(1.0)
     
+    plan_now = datetime.now().astimezone()
+    plan_doc_ts = plan_now.strftime("%Y-%m-%d %H:%M:%S")
     create_migration_plan_document(
         tables_df=tables_df,
         columns_df=columns_df,
@@ -507,7 +512,8 @@ Columns Sample:
         tokens_used=orchestrator.tokens_used if orchestrator.client_type else None,
         source_hint=source_hint,
         functions_df=functions_df,
-        volumes_df=volumes_df
+        volumes_df=volumes_df,
+        generated_at=plan_doc_ts
     )
     msg_plan = f"        * [SUCCESS]: Generated Migration Assessment Plan: {migration_plan_filename}"
     _update_progress(scan_id, log_entry=msg_plan, log_type="Harness Layer2")
@@ -621,7 +627,9 @@ Columns Sample:
 
     return {
         "assessment_report": table_summary_filename,
+        "assessment_generated_at": assessment_now.isoformat(timespec="seconds"),
         "migration_plan": migration_plan_filename,
+        "migration_plan_generated_at": plan_now.isoformat(timespec="seconds"),
         "fabric_migration_metadata": fabric_json_filename,
     }
 

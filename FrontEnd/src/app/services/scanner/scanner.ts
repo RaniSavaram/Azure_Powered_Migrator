@@ -235,6 +235,7 @@ export interface AssessmentReport {
   report_url: string | null;
   download_url: string | null;
   document_error: string | null;
+  document_generated_at?: string | null;
   summary: {
     total_tables: number;
     total_views: number;
@@ -773,8 +774,10 @@ export class Scanner {
       has_constraints: boolean;
       has_assessment: boolean;
       assessment_report_file?: string;
+      assessment_generated_at?: string | null;
       has_migration_plan: boolean;
       migration_plan_file?: string;
+      migration_plan_generated_at?: string | null;
     }>(`${this.api.baseUrl}/pipeline-state/`);
   }
 }

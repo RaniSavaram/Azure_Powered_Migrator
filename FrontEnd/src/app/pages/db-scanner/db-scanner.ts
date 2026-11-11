@@ -168,6 +168,8 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
   metadataReportDownloadName = 'Metadata Report.docx';
 
   migrationPlanDownloadName = 'Migration Plan.docx';
+  assessmentGeneratedAt: string | Date | null = null;
+  migrationPlanGeneratedAt: string | Date | null = null;
 
   /** Fabric metadata JSON of the completed scan - the ER Diagrams tab is built from it. */
   erMetadataFile?: string;
@@ -1338,9 +1340,11 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
       if (outputFiles?.assessment_report) {
         this.metadataFile = `/output/${encodeURIComponent(outputFiles.assessment_report)}?t=${Date.now()}`;
       }
+      this.assessmentGeneratedAt = outputFiles?.assessment_generated_at || this.connectionPayload.completedTime || new Date();
       if (outputFiles?.migration_plan) {
         this.migrationFile = `/output/${encodeURIComponent(outputFiles.migration_plan)}?t=${Date.now()}`;
       }
+      this.migrationPlanGeneratedAt = outputFiles?.migration_plan_generated_at || this.connectionPayload.completedTime || new Date();
       this.erMetadataFile = outputFiles?.fabric_migration_metadata;
 
       const selectedSource = this.lastScanSource || this.source || 'Database';
