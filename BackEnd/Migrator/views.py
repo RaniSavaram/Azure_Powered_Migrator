@@ -1,4 +1,5 @@
 import json
+import contextvars
 import os
 import time
 import traceback
@@ -27,6 +28,7 @@ from AI_Agent_Pipeline.Agents_PipeLine import Agents_PipeLine
 from HarnessLayers.layer1.Layer import layer1_Harness
 from HarnessLayers.Harness_Json_Log_Formatter import format_harness_report
 from Logs import Logs,reset_Logs
+from AI_Agent_Pipeline.src.timezone_utils import set_client_timezone_context
 from Migrator.pipeline_services import (
     connect_source_service,
     extract_metadata_service,
@@ -904,7 +906,10 @@ def Db_Scanner(request):
             "token_info": []
         }
 
-    Thread(target=_run_scan_in_background, args=(scan_id, destination), daemon=True).start()
+    if request.data.get("client_timezone") or request.data.get("client_tz_offset") is not None:
+        set_client_timezone_context(request.data.get("client_timezone"), request.data.get("client_tz_offset"))
+    ctx = contextvars.copy_context()
+    Thread(target=ctx.run, args=(_run_scan_in_background, scan_id, destination), daemon=True).start()
     return Response({
         "status": "started",
         "message": "Database scan started.",

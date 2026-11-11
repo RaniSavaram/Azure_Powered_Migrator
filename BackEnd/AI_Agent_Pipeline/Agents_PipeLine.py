@@ -16,7 +16,9 @@ from AI_Agent_Pipeline.src import (
     count_table_columns,
     metadata_to_dataframes,
     create_table_summary_document,
-    create_migration_plan_document
+    create_migration_plan_document,
+    now_in_client_tz,
+    format_doc_timestamp,
 )
 from Logs import Logs
 
@@ -162,7 +164,7 @@ def _run_pipeline(orchestrator, tables_df, columns_df, stats_df, views_df, proce
     # Create agents using Microsoft AI Foundry SDK
     init_msg = (
         "HARNESS LAYER 2 - EVALUATOR-GENERATOR FEEDBACK HARNESS:\n"
-        f"Generated At: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"Generated At: {format_doc_timestamp(now_in_client_tz())}\n"
         "------------------------------\n"
         "[CHECKED]: agent_orchestration_validation\n"
         "    - Harness Steps:\n"
@@ -198,7 +200,7 @@ def _run_pipeline(orchestrator, tables_df, columns_df, stats_df, views_df, proce
     total_size = round(max(0.06 * total_tables, float(raw_size)), 2)
     total_rows = stats_df["row_count"].sum()
     distinct_schemas = ", ".join(tables_df["schema_name"].unique())
-    refresh_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    refresh_date = format_doc_timestamp(now_in_client_tz())
     
     # Top 5 largest by size
     top5_size_df = stats_df.sort_values(by="size_mb", ascending=False).head(5)
@@ -471,8 +473,8 @@ Columns Sample:
     _update_progress(scan_id, progress=89, current_message="Compiling documents", log_entry=section_artifacts, log_type="Harness Layer2")
     _update_progress(scan_id, log_entry=section_artifacts, log_type="Scan Info")
 
-    assessment_now = datetime.now().astimezone()
-    assessment_doc_ts = assessment_now.strftime("%Y-%m-%d %H:%M:%S")
+    assessment_now = now_in_client_tz()
+    assessment_doc_ts = format_doc_timestamp(assessment_now)
     create_table_summary_document(
         overall_summary=overall_summary,
         table_summaries=table_summaries,
@@ -498,8 +500,8 @@ Columns Sample:
     migration_plan_docx_path = os.path.join(output_dir, migration_plan_filename)
     time.sleep(1.0)
     
-    plan_now = datetime.now().astimezone()
-    plan_doc_ts = plan_now.strftime("%Y-%m-%d %H:%M:%S")
+    plan_now = now_in_client_tz()
+    plan_doc_ts = format_doc_timestamp(plan_now)
     create_migration_plan_document(
         tables_df=tables_df,
         columns_df=columns_df,

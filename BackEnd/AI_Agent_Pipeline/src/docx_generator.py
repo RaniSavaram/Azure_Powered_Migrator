@@ -7,6 +7,10 @@ from docx.oxml.ns import qn
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from tools.database_tools import get_size_category
 from metadataProcessor import count_table_columns
+try:
+    from AI_Agent_Pipeline.src.timezone_utils import format_doc_timestamp, now_in_client_tz
+except ImportError:
+    from timezone_utils import format_doc_timestamp, now_in_client_tz
 
 
 def _xml_safe_text(value):
@@ -553,9 +557,7 @@ def add_agent_writeup_section(doc, sections, section_num):
 
 
 def _format_doc_timestamp(generated_at=None):
-    if generated_at:
-        return str(generated_at).strip()
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return format_doc_timestamp(generated_at)
 
 
 def _add_document_timestamp_footer(doc, timestamp_str):
@@ -601,7 +603,7 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
     raw_size = stats_df["size_mb"].sum() if stats_df is not None and "size_mb" in stats_df.columns else 0.0
     total_size = round(max(0.06 * max(total_tables, 1), float(raw_size)), 2)
     distinct_schemas = ", ".join(tables_df["schema_name"].unique()) if tables_df is not None and "schema_name" in tables_df.columns else "dbo"
-    refresh_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    refresh_date = format_doc_timestamp(now_in_client_tz())
     
     if tables_df is None and overall_summary:
         # Parse from string

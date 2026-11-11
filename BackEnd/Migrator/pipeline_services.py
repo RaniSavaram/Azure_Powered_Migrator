@@ -24,6 +24,7 @@ from HarnessLayers.layer2.Layer import (
 from Logs import Logs
 
 from AI_Agent_Pipeline.src.metadataProcessor import metadata_to_dataframes, build_dataframes, count_table_columns
+from AI_Agent_Pipeline.src.timezone_utils import now_in_client_tz, format_doc_timestamp
 from AI_Agent_Pipeline.src.docx_generator import (
     create_table_summary_document,
     create_migration_plan_document,
@@ -496,7 +497,7 @@ def connect_source_service(data: dict) -> dict:
             active_pipeline["server"] = server or "demo-catalog.enterprise.net"
             active_pipeline["database"] = database or f"{slug}_production"
             active_pipeline["catalog"] = data.get("catalog") or database or "main"
-            active_pipeline["connected_at"] = datetime.now().isoformat()
+            active_pipeline["connected_at"] = now_in_client_tz().isoformat()
             active_pipeline["connection_config"] = {
                 "platform": display_name,
                 "slug": slug,
@@ -579,7 +580,7 @@ def connect_source_service(data: dict) -> dict:
         active_pipeline["server"] = server
         active_pipeline["database"] = database
         active_pipeline["catalog"] = data.get("catalog") or database or "main"
-        active_pipeline["connected_at"] = datetime.now().isoformat()
+        active_pipeline["connected_at"] = now_in_client_tz().isoformat()
         active_pipeline["connection_config"] = {
             "platform": display_name,
             "slug": slug,
@@ -858,7 +859,7 @@ def extract_metadata_service(data: dict = None) -> dict:
         active_pipeline["metadata_summary"] = summary
         active_pipeline["dataframes"] = dfs
         active_pipeline["metadata_origin"] = metadata_origin
-        active_pipeline["metadata_extracted_at"] = datetime.now().isoformat(timespec="seconds")
+        active_pipeline["metadata_extracted_at"] = now_in_client_tz().isoformat(timespec="seconds")
         # New metadata invalidates the previous constraint run.
         active_pipeline["constraints_report"] = None
 
@@ -1097,7 +1098,7 @@ def generate_assessment_report_service(data: dict = None) -> dict:
     total_size = s["total_size_mb"]
     total_rows = s["total_rows"]
     distinct_schemas = ", ".join(tables_df["schema_name"].unique()) if not tables_df.empty and "schema_name" in tables_df.columns else "dbo"
-    refresh_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    refresh_date = format_doc_timestamp(now_in_client_tz(data.get("client_timezone"), data.get("client_tz_offset")))
 
     top5_size_df = stats_df.sort_values(by="size_mb", ascending=False).head(5) if not stats_df.empty else None
     top5_size_list = []
@@ -1125,8 +1126,8 @@ Metadata Refresh Date: {refresh_date}
 
     report_filename = f"{slug}_Assessment_Report.docx"
     report_path = OUTPUT_DIR / report_filename
-    doc_now = datetime.now().astimezone()
-    doc_generated_str = doc_now.strftime("%Y-%m-%d %H:%M:%S")
+    doc_now = now_in_client_tz(data.get("client_timezone"), data.get("client_tz_offset"))
+    doc_generated_str = format_doc_timestamp(doc_now)
 
     document_error = None
     if data.get("generate_document", True):
@@ -1140,8 +1141,8 @@ Metadata Refresh Date: {refresh_date}
             ]
             with _pipeline_lock:
                 active_pipeline["table_summaries"] = table_summaries
-            doc_now = datetime.now().astimezone()
-            doc_generated_str = doc_now.strftime("%Y-%m-%d %H:%M:%S")
+            doc_now = now_in_client_tz(data.get("client_timezone"), data.get("client_tz_offset"))
+            doc_generated_str = format_doc_timestamp(doc_now)
             create_table_summary_document(
                 overall_summary=overall_summary,
                 table_summaries=table_summaries,
@@ -1164,7 +1165,7 @@ Metadata Refresh Date: {refresh_date}
 
     duration_ms = int((time.perf_counter() - started) * 1000)
     logs = analysis["logs"]
-    now = datetime.now().strftime("%H:%M:%S")
+    now = doc_now.strftime("%H:%M:%S")
     if connection_logs:
         logs = [{"time": now, "level": _log_level(l), "step": "connect", "text": l} for l in connection_logs] + logs
     if document_error:
@@ -1347,8 +1348,8 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
     with _pipeline_lock:
         active_pipeline["agent_writeups"] = agent_writeups
 
-    plan_now = datetime.now().astimezone()
-    plan_generated_str = plan_now.strftime("%Y-%m-%d %H:%M:%S")
+    plan_now = now_in_client_tz(data.get("client_timezone"), data.get("client_tz_offset"))
+    plan_generated_str = format_doc_timestamp(plan_now)
     create_migration_plan_document(
         tables_df=tables_df,
         columns_df=columns_df,
@@ -1700,7 +1701,7 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
 
     result_payload = {
         "status": "success",
-        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "generated_at": now_in_client_tz().isoformat(timespec="seconds"),
         "duration_ms": duration_ms,
         "decision": decision,
         "ai_output_quality": quality,

@@ -59,9 +59,16 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "Migrator.timezone_middleware.ClientTimezoneMiddleware",
 ]
 
+from corsheaders.defaults import default_headers
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = [
+    *default_headers,
+    "x-client-timezone",
+    "x-client-tz-offset",
+]
 CORS_ALLOWED_ORIGINS = [
     "https://azure-powered-migrator.onrender.com",
     "https://apexon-ai-innovationhub-new.onrender.com",

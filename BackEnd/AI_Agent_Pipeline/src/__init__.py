@@ -19,6 +19,12 @@ from .docx_generator import (
     create_table_summary_document,
     create_migration_plan_document
 )
+from .timezone_utils import (
+    now_in_client_tz,
+    format_doc_timestamp,
+    set_client_timezone_context,
+    reset_client_timezone_context,
+)
 
 __all__ = [
     "collect_metadata",
