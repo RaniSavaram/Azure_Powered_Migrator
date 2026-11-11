@@ -13,6 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 from AI_Agent_Pipeline.src import (
     AzureAIOrchestrator,
     collect_metadata,
+    count_table_columns,
     metadata_to_dataframes,
     create_table_summary_document,
     create_migration_plan_document
@@ -192,7 +193,7 @@ def _run_pipeline(orchestrator, tables_df, columns_df, stats_df, views_df, proce
     
     # Programmatically calculate overall summary metrics
     total_tables = len(tables_df)
-    total_columns = len(columns_df)
+    total_columns = count_table_columns(columns_df, tables_df)
     raw_size = stats_df["size_mb"].sum() if "size_mb" in stats_df.columns else 0.0
     total_size = round(max(0.06 * total_tables, float(raw_size)), 2)
     total_rows = stats_df["row_count"].sum()

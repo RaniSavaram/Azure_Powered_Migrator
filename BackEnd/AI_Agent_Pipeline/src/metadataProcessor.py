@@ -344,6 +344,28 @@ def metadata_to_dataframes(metadata: dict, label: str = "live_scan"):
     return build_dataframes(tables_list, columns_list, stats_list, views_list, procedures_list, functions_list, volumes_list)
 
 
+def count_table_columns(columns_df, tables_df):
+    """Number of columns belonging to base tables only.
+
+    parse_schema_dict() records columns for views as well as tables, so
+    len(columns_df) counts view columns too and disagrees with the table
+    catalog every report is keyed on. Restrict the count to the
+    (schema, table) pairs actually present in tables_df so Discovery,
+    Assessment, the Word reports and the Fabric contract all agree.
+    """
+    if columns_df is None or getattr(columns_df, "empty", True):
+        return 0
+    if tables_df is None or getattr(tables_df, "empty", True):
+        return len(columns_df)
+    if not {"SchemaName", "TableName"}.issubset(columns_df.columns):
+        return len(columns_df)
+    if not {"schema_name", "table_name"}.issubset(tables_df.columns):
+        return len(columns_df)
+    base = set(zip(tables_df["schema_name"].astype(str), tables_df["table_name"].astype(str)))
+    pairs = zip(columns_df["SchemaName"].astype(str), columns_df["TableName"].astype(str))
+    return int(sum(1 for pair in pairs if pair in base))
+
+
 def collect_metadata(data_dir):
     """
     Scans the given data directory and parses metadata for all CSV and JSON files,

@@ -6,6 +6,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from tools.database_tools import get_size_category
+from metadataProcessor import count_table_columns
 
 
 def _xml_safe_text(value):
@@ -570,7 +571,7 @@ def create_table_summary_document(overall_summary, table_summaries, output_path,
     
     # Calculate metadata summary metrics
     total_tables = len(tables_df) if tables_df is not None else 0
-    total_columns = len(columns_df) if columns_df is not None else 0
+    total_columns = count_table_columns(columns_df, tables_df)
     total_rows = stats_df["row_count"].sum() if stats_df is not None and "row_count" in stats_df.columns else 0
     raw_size = stats_df["size_mb"].sum() if stats_df is not None and "size_mb" in stats_df.columns else 0.0
     total_size = round(max(0.06 * max(total_tables, 1), float(raw_size)), 2)
@@ -1147,7 +1148,7 @@ def create_migration_plan_document(
     
     # Calculate basic parameters upfront
     total_tables = len(tables_df) if tables_df is not None else 0
-    total_columns = len(columns_df) if columns_df is not None else 0
+    total_columns = count_table_columns(columns_df, tables_df)
     total_rows = stats_df["row_count"].sum() if stats_df is not None else 0
     total_size = round(stats_df["size_mb"].sum(), 4) if stats_df is not None else 0.0
     distinct_schemas = ", ".join(tables_df["schema_name"].unique()) if tables_df is not None else "dbo"

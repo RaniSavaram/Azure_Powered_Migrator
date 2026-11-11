@@ -4,6 +4,8 @@ import re
 from datetime import datetime
 import pandas as pd
 
+from metadataProcessor import count_table_columns
+
 def map_to_fabric_datatype(source_type: str) -> str:
     if not source_type:
         return "STRING"
@@ -45,7 +47,7 @@ def generate_fabric_json_metadata(
     root_tables = []
     
     total_tables = len(tables_df) if tables_df is not None else 0
-    total_columns = len(columns_df) if columns_df is not None else 0
+    total_columns = count_table_columns(columns_df, tables_df)
     total_views = len(views_df) if views_df is not None else 0
     total_procedures = len(procedures_df) if procedures_df is not None else 0
     total_functions = len(functions_df) if functions_df is not None else 0

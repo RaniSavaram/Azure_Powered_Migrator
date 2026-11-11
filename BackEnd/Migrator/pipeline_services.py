@@ -23,7 +23,7 @@ from HarnessLayers.layer2.Layer import (
 )
 from Logs import Logs
 
-from AI_Agent_Pipeline.src.metadataProcessor import metadata_to_dataframes, build_dataframes
+from AI_Agent_Pipeline.src.metadataProcessor import metadata_to_dataframes, build_dataframes, count_table_columns
 from AI_Agent_Pipeline.src.docx_generator import (
     create_table_summary_document,
     create_migration_plan_document,
@@ -730,7 +730,7 @@ def extract_metadata_service(data: dict = None) -> dict:
         volumes_df = dfs[6] if len(dfs) > 7 else None
 
     total_tables = len(tables_df)
-    total_columns = len(columns_df)
+    total_columns = count_table_columns(columns_df, tables_df)
     total_views = len(views_df) if views_df is not None else 0
     total_procs = len(procedures_df) if procedures_df is not None else 0
     total_funcs = len(functions_df) if functions_df is not None else 0
