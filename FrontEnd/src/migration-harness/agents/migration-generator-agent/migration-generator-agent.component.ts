@@ -158,7 +158,28 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
       },
       error: (err) => {
         console.warn('Backend migration plan error:', err);
-        this.generateAgentResponse(textToSend, null);
+        const detail = err?.error?.message || err?.message || 'Unknown error';
+        const status = err?.status ? `HTTP ${err.status}` : 'Network error';
+        this.messages.push({
+          id: 'bot-' + Date.now(),
+          sender: 'agent',
+          text: `### ⚠️ Migration Plan Generation Failed
+
+The backend could not build the migration plan, so no document or Fabric contract was produced.
+
+- **Status**: ${status}
+- **Reason**: \`${detail}\`
+
+Re-run the earlier agents in this session so the pipeline has extracted metadata, then try again. The server log holds the full traceback.`,
+          timestamp: new Date(),
+          metrics: [
+            { label: 'Plan Document', value: 'NOT GENERATED' },
+            { label: 'Fabric Contract', value: 'NOT GENERATED' }
+          ],
+          actions: [
+            { label: 'Retry Generate Migration Plan', action: 'generate', icon: 'bi-arrow-clockwise', primary: true }
+          ]
+        });
         this.isTyping = false;
         this.shouldScroll = true;
         this.cdr.detectChanges();
