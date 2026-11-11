@@ -23,7 +23,7 @@
       </div>
     </div>
     <div class="header-right-actions">
-      @if (canProceed) {
+      @if (canProceed()) {
         <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Evaluator Agent">
           <span>Proceed to Evaluator Agent</span>
           <i class="bi bi-arrow-right"></i>
@@ -36,6 +36,28 @@
       }
     </div>
   </div>
+
+  @if (isSourceConnected && lastPlanData(); as plan) {
+    <div class="next-step-prompt-banner plan-ready">
+      <div class="prompt-banner-left">
+        <div class="prompt-badge-icon">
+          <i class="bi bi-diagram-3-fill"></i>
+        </div>
+        <div class="prompt-banner-text">
+          <div class="prompt-banner-tag">
+            <span class="badge-dot"></span>
+            {{ plan.execution_waves?.length || 4 }} wave(s) · Medallion blueprint · ER diagram embedded
+          </div>
+          <div class="prompt-banner-title">
+            Microsoft Fabric Migration Plan Compiled
+          </div>
+          <div class="prompt-banner-sub">
+            Compiled <strong>{{ plan.plan_file }}</strong> for <strong>{{ plan.source_info?.platform || 'SQL Server' }} ({{ plan.source_info?.database || 'Source' }})</strong> targeting <strong>{{ plan.destination_info?.lakehouse || 'Fabric Lakehouse' }}</strong>. Continue to the <strong>Evaluator Agent</strong>.
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 
   @if (!isSourceConnected) {
     <!-- Blank / Waiting State -->
@@ -57,25 +79,83 @@
       </div>
     </div>
   } @else {
-    <!-- Main Conversational Workspace -->
-    <div class="agent-chat-layout" style="--agent-accent-color: #8b5cf6; --agent-focus-shadow: rgba(139, 92, 246, 0.15);">
-      <!-- Chat Main Card -->
+    <!-- Main Conversational Workspace (full-width chat matching Assessment, Constraint & Evaluation Agents) -->
+    <div class="agent-chat-layout chat-only" style="--agent-accent-color: #8b5cf6; --agent-focus-shadow: rgba(139, 92, 246, 0.15);">
       <div class="chat-main-card">
         <!-- Toolbar -->
         <div class="chat-header-toolbar">
           <div class="chat-status-indicator">
             <span class="status-dot-pulse" style="background-color: #8b5cf6;"></span>
             <span class="status-title">Migration Roadmap & Medallion Engine</span>
-            <span class="status-tag" style="background-color: rgba(139, 92, 246, 0.1); color: #8b5cf6;">Active Telemetry</span>
+            <span class="status-tag" style="background-color: rgba(139, 92, 246, 0.1); color: #7c3aed;">
+              @if (isBusy()) {
+                synthesizing…
+              } @else if (lastPlanData(); as plan) {
+                {{ plan.execution_waves?.length || 4 }} waves · plan ready
+              } @else {
+                ready
+              }
+            </span>
           </div>
           <div class="chat-toolbar-actions">
-            @if (latestPlanFile) {
-              <a [href]="'/output/' + latestPlanFile + '?view=1'" target="_blank" class="btn-toolbar-ghost" title="View Document in Word Online">
-                <i class="bi bi-file-earmark-word text-primary"></i>
-                <span>View Plan</span>
-              </a>
+            @if (latestPlanFile()) {
+              <div class="report-dropdown-wrapper">
+                <button type="button"
+                        class="btn-toolbar-ghost report-dropdown-toggle"
+                        (click)="toggleReportDropdown($event)"
+                        [class.active]="isReportDropdownOpen()"
+                        title="View or download Migration Plan">
+                  <i class="bi bi-file-earmark-word" style="color: #7c3aed;"></i>
+                  <span>View / Download</span>
+                  <i class="bi bi-chevron-down dropdown-chevron" [class.rotated]="isReportDropdownOpen()"></i>
+                </button>
+
+                @if (isReportDropdownOpen()) {
+                  <div class="report-dropdown-menu" (click)="$event.stopPropagation()">
+                    <div class="dropdown-header">
+                      <span class="dropdown-header-title">Migration Plan (.docx)</span>
+                      <span class="dropdown-header-badge" [title]="getPlanFilename()">{{ getPlanFilename() }}</span>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <button type="button" class="dropdown-item-btn" (click)="viewPlan()">
+                      <div class="dropdown-item-icon view-icon">
+                        <i class="bi bi-eye"></i>
+                      </div>
+                      <div class="dropdown-item-details">
+                        <span class="dropdown-item-title">View Plan</span>
+                        <span class="dropdown-item-subtitle">Preview in browser / Word Online</span>
+                      </div>
+                      <i class="bi bi-box-arrow-up-right dropdown-item-arrow"></i>
+                    </button>
+
+                    <button type="button" class="dropdown-item-btn" (click)="downloadPlan()">
+                      <div class="dropdown-item-icon download-icon">
+                        <i class="bi bi-download"></i>
+                      </div>
+                      <div class="dropdown-item-details">
+                        <span class="dropdown-item-title">Download Plan</span>
+                        <span class="dropdown-item-subtitle">Save .docx document to your device</span>
+                      </div>
+                      <i class="bi bi-file-earmark-arrow-down dropdown-item-arrow"></i>
+                    </button>
+                  </div>
+                }
+              </div>
             }
-            <button type="button" class="btn-toolbar-ghost" (click)="clearChat()" title="Restart Conversation">
+
+            <button type="button"
+                    class="btn-toolbar-ghost"
+                    (click)="runMigrationPlan()"
+                    [disabled]="isBusy()"
+                    title="Re-generate Migration Plan and Fabric contract">
+              <i class="bi bi-arrow-clockwise"></i>
+              <span>{{ latestPlanFile() ? 'Re-run' : 'Generate Plan' }}</span>
+            </button>
+            <button type="button"
+                    class="btn-toolbar-ghost"
+                    (click)="clearChat()"
+                    [disabled]="isBusy()"
+                    title="Reset Conversation">
               <i class="bi bi-arrow-counterclockwise"></i>
               <span>Reset</span>
             </button>
@@ -84,7 +164,7 @@
 
         <!-- Scrollable Message History -->
         <div class="chat-scroll-area" #chatScroll>
-          @for (msg of messages; track msg.id) {
+          @for (msg of messages(); track msg.id) {
             <div class="chat-msg-row" [ngClass]="msg.sender === 'user' ? 'user-msg' : 'bot-msg'">
               <div class="msg-avatar" [ngClass]="msg.sender === 'user' ? 'user-avatar' : 'agent-icon-box purple-box'">
                 @if (msg.sender === 'user') {
@@ -94,40 +174,76 @@
                 }
               </div>
 
-              <div class="msg-bubble">
+              <div class="msg-bubble" [class.msg-error]="msg.tone === 'error'">
                 <div class="msg-header">
                   <span class="msg-sender-name">{{ msg.sender === 'user' ? 'You' : 'Migration Generator Agent' }}</span>
                   <span class="msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
                 </div>
 
                 <!-- Message Text -->
-                <div class="msg-content">
-                  <p [innerHTML]="msg.text"></p>
-                </div>
+                <div class="msg-content" [innerHTML]="formatMessageText(msg.text)"></div>
 
-                <!-- Metric Pills -->
+                <!-- Live Generation Indicator -->
+                @if (msg.live) {
+                  <div class="live-pulse-indicator">
+                    <span class="spinner-grow spinner-grow-sm" role="status" style="color: #8b5cf6;"></span>
+                    <span>Synthesizing Medallion blueprint, embedding Dependency ER Diagram &amp; compiling Migration Plan (.docx)…</span>
+                  </div>
+                }
+
+                <!-- Metric Pills (Horizontal Row) -->
                 @if (msg.metrics && msg.metrics.length > 0) {
                   <div class="msg-metrics-grid">
                     @for (m of msg.metrics; track m.label) {
                       <div class="msg-metric-pill">
-                        <div class="metric-pill-val" style="color: #8b5cf6;">{{ m.value }}</div>
+                        <div class="metric-pill-val" [style.color]="m.color || '#8b5cf6'">{{ m.value }}</div>
                         <div class="metric-pill-lbl">{{ m.label }}</div>
                       </div>
                     }
                   </div>
                 }
 
-                <!-- Code Block -->
-                @if (msg.codeBlock) {
-                  <pre class="msg-code-block"><code>{{ msg.codeBlock }}</code></pre>
+                <!-- Structured Rows (Medallion, Waves, Risk Mitigations) -->
+                @if (msg.rows && msg.rows.length > 0) {
+                  <div class="msg-rules-list">
+                    @for (row of msg.rows; track $index) {
+                      <div class="msg-rule-item">
+                        <div class="rule-info">
+                          <span class="rule-id">{{ row.id }}</span>
+                          <span class="rule-desc">{{ row.desc }}</span>
+                        </div>
+                        <span class="rule-badge" [ngClass]="row.status">{{ row.status }}</span>
+                      </div>
+                    }
+                  </div>
                 }
 
-                <!-- Action buttons -->
+                <!-- JSON / Code Contract Block -->
+                @if (msg.codeBlock) {
+                  <div class="terminal-console-card">
+                    <div class="terminal-console-header">
+                      <div class="terminal-dots">
+                        <span class="dot-red"></span>
+                        <span class="dot-yellow"></span>
+                        <span class="dot-green"></span>
+                      </div>
+                      <span class="terminal-title">
+                        <i class="bi bi-filetype-json" style="color: #8b5cf6;"></i>
+                        <span>migration_plan.json summary</span>
+                      </span>
+                    </div>
+                    <div class="terminal-body log-console">
+                      <pre class="terminal-text-block">{{ msg.codeBlock }}</pre>
+                    </div>
+                  </div>
+                }
+
+                <!-- Action Buttons -->
                 @if (msg.actions && msg.actions.length > 0) {
                   <div class="msg-actions-row">
                     @for (act of msg.actions; track act.label) {
-                      <button type="button" 
-                              class="btn-msg-action" 
+                      <button type="button"
+                              class="btn-msg-action"
                               [class.primary-action]="act.primary"
                               (click)="handleActionClick(act.action)">
                         <i class="bi" [ngClass]="act.icon"></i>
@@ -139,99 +255,32 @@
               </div>
             </div>
           }
-
-          <!-- Typing Indicator -->
-          @if (isTyping) {
-            <div class="chat-msg-row bot-msg">
-              <div class="msg-avatar agent-icon-box purple-box">
-                <i class="bi bi-diagram-3"></i>
-              </div>
-              <div class="typing-row">
-                <div class="typing-indicator">
-                  <span class="typing-dot" style="background-color: #8b5cf6;"></span>
-                  <span class="typing-dot" style="background-color: #8b5cf6;"></span>
-                  <span class="typing-dot" style="background-color: #8b5cf6;"></span>
-                </div>
-                <span>Synthesizing Medallion architecture, execution sequence waves & compiling Migration Plan...</span>
-              </div>
-            </div>
-          }
         </div>
 
         <!-- Quick Prompts Tray -->
-        <div class="chat-quick-prompts-tray">
-          @for (prompt of quickPrompts; track prompt.label) {
-            <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)">
-              <i class="bi" [ngClass]="prompt.icon"></i>
-              <span>{{ prompt.label }}</span>
-            </button>
-          }
-        </div>
-
-        <!-- Input Bar -->
-        <div class="chat-input-bar">
-          <input type="text" 
-                 class="chat-input-field" 
-                 placeholder="Ask Migration Generator Agent about Medallion layers, execution DAG waves..." 
-                 [(ngModel)]="userInput" 
-                 (keydown.enter)="sendMessage()" 
-                 [disabled]="isTyping">
-          <button type="button" 
-                  class="btn-chat-send" 
-                  (click)="sendMessage()" 
-                  [disabled]="!userInput.trim() || isTyping"
-                  title="Send Message"
-                  style="background-color: #8b5cf6;">
-            <i class="bi bi-send-fill"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Right Telemetry Panel -->
-      <div class="telemetry-sidebar-card">
-        <h4 class="telemetry-card-title">
-          <i class="bi bi-diagram-3 text-primary"></i>
-          <span>Migration Architecture</span>
-        </h4>
-
-        <div class="telemetry-stat-list">
-          <div class="telemetry-stat-row">
-            <span class="telemetry-stat-label">Source Platform</span>
-            <span class="telemetry-stat-value text-dark fw-bold">{{ connectionConfig?.platform || 'SQL Server' }}</span>
-          </div>
-          <div class="telemetry-stat-row">
-            <span class="telemetry-stat-label">Pattern</span>
-            <span class="telemetry-stat-value">Medallion (Bronze/Silver/Gold)</span>
-          </div>
-          <div class="telemetry-stat-row">
-            <span class="telemetry-stat-label">Execution Strategy</span>
-            <span class="badge bg-primary text-white px-2 py-1">Wave-Based DAG</span>
-          </div>
-          <div class="telemetry-stat-row">
-            <span class="telemetry-stat-label">Fabric Contract</span>
-            <span class="telemetry-stat-value">migration_plan.json</span>
-          </div>
-        </div>
-
-        @if (lastPlanData) {
-          <div class="p-3 bg-light rounded mt-3 border">
-            <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-file-earmark-check text-primary me-1"></i> Migration Plan</h6>
-            <div class="small text-muted mb-2">{{ lastPlanData.plan_file }}</div>
-            <div class="d-flex gap-2">
-              <a [href]="'/output/' + lastPlanData.plan_file + '?view=1'" target="_blank" class="btn btn-sm btn-outline-primary flex-fill">
-                <i class="bi bi-eye"></i> View
-              </a>
-              <a [href]="'/output/' + lastPlanData.plan_file" target="_blank" class="btn btn-sm btn-primary flex-fill text-white">
-                <i class="bi bi-download"></i> Download
-              </a>
-            </div>
+        @if (quickPrompts.length > 0) {
+          <div class="chat-quick-prompts-tray">
+            @for (prompt of quickPrompts; track prompt.label) {
+              <button type="button" class="prompt-chip" (click)="handlePromptClick(prompt)" [disabled]="isBusy()">
+                <i class="bi" [ngClass]="prompt.icon"></i>
+                <span>{{ prompt.label }}</span>
+              </button>
+            }
           </div>
         }
 
-        <div class="telemetry-action-box mt-3">
-          <button type="button" class="btn-run-audit-action" (click)="sendMessage('Generate comprehensive Migration Plan Word document (.docx)')" style="background-color: #8b5cf6;">
-            <i class="bi bi-play-fill me-1"></i>
-            <span>Generate Migration Plan</span>
+        <!-- Input Bar (disabled – matching Discovery, Constraint, Assessment & Evaluation Agents) -->
+        <div class="chat-input-bar chat-input-bar--disabled">
+          <input type="text"
+                 class="chat-input-field"
+                 placeholder="Chat coming soon — use the quick actions above"
+                 [disabled]="true"
+                 aria-label="Migration generator agent chat input">
+          <button type="button"
+                  class="btn-chat-send"
+                  [disabled]="true"
+                  title="Chat coming soon">
+            <i class="bi bi-send-fill"></i>
           </button>
         </div>
       </div>

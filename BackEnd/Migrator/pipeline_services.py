@@ -1624,7 +1624,6 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
         {"label": "Hallucinations", "value": f"{hallucination_count} DETECTED", "color": "#10b981" if hallucination_count == 0 else "#ef4444"},
         {"label": "Verified Tables", "value": f"{table_count} Tables", "color": "#0ea5e9"},
 
-        {"label": "Artifact Completeness", "value": f"{sum([assessment_doc_ok, migration_doc_ok, fabric_json_ok])}/3 Ready", "color": "#ec4899"},
     ]
 
     rules = [

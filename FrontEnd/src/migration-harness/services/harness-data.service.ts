@@ -51,6 +51,8 @@ export class HarnessDataService {
   constraintResultObservable$: Observable<any | null> = this.constraintResult$.asObservable();
 
   private assessmentResult$ = new BehaviorSubject<any | null>(null);
+  private migrationPlanResult$ = new BehaviorSubject<any | null>(null);
+  migrationPlanResultObservable$: Observable<any | null> = this.migrationPlanResult$.asObservable();
   private evaluationResult$ = new BehaviorSubject<any | null>(null);
   evaluationResultObservable$: Observable<any | null> = this.evaluationResult$.asObservable();
 
@@ -76,6 +78,14 @@ export class HarnessDataService {
   setAssessmentResult(result: any | null): void {
     this.assessmentResult$.next(result);
 
+  }
+
+  getMigrationPlanResult(): any | null {
+    return this.migrationPlanResult$.value;
+  }
+
+  setMigrationPlanResult(result: any | null): void {
+    this.migrationPlanResult$.next(result);
   }
 
   getEvaluationResult(): any | null {
@@ -156,6 +166,7 @@ export class HarnessDataService {
     this.constraintLogs$.next(null);
     this.constraintResult$.next(null);
     this.assessmentResult$.next(null);
+    this.migrationPlanResult$.next(null);
     this.evaluationResult$.next(null);
     this.evaluationLogs$.next(null);
     this.setDiscoveryConversationDone(false);

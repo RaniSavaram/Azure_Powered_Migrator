@@ -12,288 +12,249 @@
   <div class="workspace-header purple-accent">
     <div class="header-left">
       <div class="agent-icon-box purple-box">
-        <i class="bi bi-cpu"></i>
+        <i class="bi bi-shield-check"></i>
       </div>
       <div>
         <div class="phase-tag purple-tag">{{ phase }}</div>
         <h1 class="workspace-title">{{ agentName }}</h1>
         <p class="workspace-subtitle">
-          Closed-loop AI evaluator that audits assessment summaries and migration plans against source schema ground
-          truth — eliminating hallucinations and ensuring architectural precision.
+          Closed-loop AI evaluator that audits assessment summaries and migration plans against source schema ground truth — eliminating hallucinations and ensuring architectural precision.
         </p>
       </div>
     </div>
     <div class="header-right-actions">
       @if (canProceed()) {
-      <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Artifacts Generator">
-        <span>Proceed to Artifacts Generator</span>
-        <i class="bi bi-arrow-right"></i>
-      </a>
+        <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Artifacts Generator Agent">
+          <span>Proceed to Artifacts Generator</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
       } @else {
-      <button type="button" class="btn-next-phase btn-next-phase-locked" disabled [title]="getLockReason()">
-        <i class="bi bi-lock-fill me-1"></i>
-        <span>Proceed to Artifacts Generator</span>
-      </button>
+        <button type="button" class="btn-next-phase btn-next-phase-locked" disabled [title]="getLockReason()">
+          <i class="bi bi-lock-fill me-1"></i>
+          <span>Proceed to Artifacts Generator</span>
+        </button>
       }
     </div>
   </div>
 
   @if (isSourceConnected && report(); as r) {
-  <!-- Gate banner: reflects Layer 2 Evaluator Decision -->
-  <div class="next-step-prompt-banner" [class.gate-fail]="r.decision === 'FAIL'">
-    <div class="prompt-banner-left">
-      <div class="prompt-badge-icon" [class.gate-fail-icon]="r.decision === 'FAIL'">
-        <i class="bi" [ngClass]="r.decision === 'PASS' ? 'bi-shield-check' : 'bi-shield-exclamation'"></i>
-      </div>
-      <div class="prompt-banner-text">
-        <div class="prompt-banner-tag">
-          <span class="badge-dot"></span>
-          Layer 2 Feedback Gate: {{ r.decision }} · Quality: {{ r.ai_output_quality }} · {{ r.hallucinations_detected }}
-          Hallucination(s)
+    <div class="next-step-prompt-banner" [ngClass]="r.decision === 'PASS' ? 'gate-pass' : 'gate-fail'">
+      <div class="prompt-banner-left">
+        <div class="prompt-badge-icon">
+          <i class="bi" [ngClass]="r.decision === 'PASS' ? 'bi-shield-fill-check' : 'bi-shield-fill-x'"></i>
         </div>
-        <div class="prompt-banner-title">
-          {{ r.decision === 'PASS' ? 'Evaluator-Generator Feedback Audit Passed' : 'Evaluator-Generator Feedback Audit
-          Found Discrepancies' }}
-        </div>
-        <div class="prompt-banner-sub">
-          @if (r.decision === 'PASS') {
-          All AI outputs for <strong>{{ r.source.platform }} ({{ r.source.database }})</strong> conform to catalog
-          ground truth. Ready for <strong>Artifacts Generator (Phase 5)</strong>.
-          } @else {
-          One or more hallucinations or schema mismatches were detected. Review findings below before provisioning.
-          }
+        <div class="prompt-banner-text">
+          <div class="prompt-banner-tag">
+            <span class="badge-dot"></span>
+            Layer 2 Feedback Gate: {{ r.decision }} · Quality: {{ r.ai_output_quality }} · {{ r.hallucinations_detected }} Hallucination(s)
+          </div>
+          <div class="prompt-banner-title">
+            {{ r.decision === 'PASS' ? 'Evaluator-Generator Feedback Audit Passed' : 'Evaluator-Generator Feedback Audit Issues Detected' }}
+          </div>
+          <div class="prompt-banner-sub">
+            @if (r.decision === 'PASS') {
+              All AI outputs for <strong>{{ r.source.platform }} ({{ r.source.database }})</strong> conform to catalog ground truth. Ready for <strong>Artifacts Generator (Phase 5)</strong>.
+            } @else {
+              One or more hallucinations or schema mismatches were detected. Review findings below before provisioning.
+            }
+          </div>
         </div>
       </div>
     </div>
-    @if (r.decision === 'FAIL') {
-    <div class="prompt-banner-actions">
-      <button type="button" class="btn-proceed-agent gate-fail-btn" (click)="setTab('rules')" [disabled]="isBusy()">
-        <span>Show Findings</span>
-        <i class="bi bi-bug-fill"></i>
-      </button>
-    </div>
-    }
-  </div>
   }
 
   @if (!isSourceConnected) {
-  <!-- Blank / Waiting State -->
-  <div class="agent-blank-state-container">
-    <div class="agent-blank-state-card">
-      <div class="blank-state-icon-box">
-        <i class="bi bi-cpu"></i>
+    <!-- Blank / Waiting State -->
+    <div class="agent-blank-state-container">
+      <div class="agent-blank-state-card">
+        <div class="blank-state-icon-box">
+          <i class="bi bi-cpu"></i>
+        </div>
+        <div class="blank-state-badge">Awaiting Phase 1 Connection</div>
+        <h2>No Source Database Connected</h2>
+        <p>
+          Evaluation Agent requires source ground-truth schemas and migration plans to run audit loops and hallucination verification. Connect in <strong>Discovery Agent (Phase 1)</strong> to begin.
+        </p>
+        <a routerLink="/agents/discovery" class="btn-connect-source-cta">
+          <i class="bi bi-plug-fill"></i>
+          <span>Connect Database in Discovery Agent</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
       </div>
-      <div class="blank-state-badge">Awaiting Phase 1 Connection</div>
-      <h2>No Source Database Connected</h2>
-      <p>
-        Evaluation Agent requires source ground-truth schemas and migration plans to run audit loops and hallucination
-        verification. Connect in <strong>Discovery Agent (Phase 1)</strong> to begin.
-      </p>
-      <a routerLink="/agents/discovery" class="btn-connect-source-cta">
-        <i class="bi bi-plug-fill"></i>
-        <span>Connect Database in Discovery Agent</span>
-        <i class="bi bi-arrow-right"></i>
-      </a>
     </div>
-  </div>
   } @else {
-  <!-- Main Dual-Column Conversational Workspace -->
-  <div class="eval-layout" style="--agent-accent-color: #8b5cf6; --agent-focus-shadow: rgba(139, 92, 246, 0.15);">
-
-    <!-- Left Column: Conversational Audit Assistant -->
-    <div class="chat-main-card">
-      <!-- Toolbar -->
-      <div class="chat-header-toolbar">
-        <div class="chat-status-indicator">
-          <span class="status-dot-pulse"></span>
-          <span class="status-title">Evaluator Engine</span>
-          <span class="status-tag">
-            @if (isBusy()) {
-            Harness Layer 2 · running…
-            } @else if (report()?.decision) {
-            Harness Layer 2 · {{ report()?.decision }}
-            } @else {
-            Harness Layer 2 · ready
-            }
-          </span>
-        </div>
-        <div class="chat-toolbar-actions">
-          <button type="button" class="btn-toolbar-ghost" (click)="runEvaluationAudit()" [disabled]="isBusy()"
-            title="Re-run the Layer 2 Evaluator Audit">
-            <i class="bi bi-arrow-clockwise"></i>
-            <span>Re-run Audit</span>
-          </button>
-          <button type="button" class="btn-toolbar-ghost" (click)="clearChat()" [disabled]="isBusy()"
-            title="Reset Conversation">
-            <i class="bi bi-arrow-counterclockwise"></i>
-            <span>Reset</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Scrollable Message History -->
-      <div class="chat-scroll-area" #chatScroll>
-        @for (msg of messages(); track msg.id) {
-        <div class="chat-msg-row" [ngClass]="msg.sender === 'user' ? 'user-msg' : 'bot-msg'">
-          <div class="msg-avatar" [ngClass]="msg.sender === 'user' ? 'user-avatar' : 'agent-icon-box purple-box'">
-            @if (msg.sender === 'user') {
-            <i class="bi bi-person-fill"></i>
-            } @else {
-            <i class="bi bi-cpu"></i>
-            }
+    <!-- Main Conversational Workspace (matching Assessment Agent full-width card) -->
+    <div class="agent-chat-layout chat-only" style="--agent-accent-color: #8b5cf6; --agent-focus-shadow: rgba(139, 92, 246, 0.15);">
+      <div class="chat-main-card">
+        <!-- Toolbar -->
+        <div class="chat-header-toolbar">
+          <div class="chat-status-indicator">
+            <span class="status-dot-pulse" style="background-color: #8b5cf6;"></span>
+            <span class="status-title">Evaluator-Generator Feedback Intelligence Engine</span>
+            <span class="status-tag" style="background-color: rgba(139, 92, 246, 0.1); color: #7c3aed;">
+              @if (isBusy()) {
+                evaluating…
+              } @else if (report()?.decision) {
+                Harness Layer 2 · {{ report()?.decision }}
+              } @else {
+                ready
+              }
+            </span>
           </div>
-          <div class="msg-bubble" [ngClass]="{'msg-error': msg.tone === 'error', 'msg-live': msg.live}">
-            <div class="msg-text-content" [innerHTML]="msg.text | slice:0"></div>
+          <div class="chat-toolbar-actions">
+            <button type="button" class="btn-toolbar-ghost" (click)="runEvaluationAudit(true)" [disabled]="isBusy()"
+              title="Re-run the Layer 2 Evaluator Audit">
+              <i class="bi bi-arrow-clockwise"></i>
+              <span>Re-run Audit</span>
+            </button>
+            <button type="button" class="btn-toolbar-ghost" (click)="clearChat()" [disabled]="isBusy()"
+              title="Reset Conversation">
+              <i class="bi bi-arrow-counterclockwise"></i>
+              <span>Reset</span>
+            </button>
+          </div>
+        </div>
 
-            @if (msg.live) {
-            <div class="live-pulse-indicator">
-              <span class="spinner-grow spinner-grow-sm text-primary" role="status"></span>
-              <span>Auditing schema ground truth, detecting hallucinations, diffing column lists...</span>
-            </div>
-            }
-
-            @if (msg.metrics && msg.metrics.length > 0) {
-            <div class="msg-metrics-grid">
-              @for (m of msg.metrics; track m.label) {
-              <div class="msg-metric-pill" [style.border-left-color]="m.color || '#8b5cf6'">
-                <span class="m-label">{{ m.label }}</span>
-                <span class="m-val" [style.color]="m.color || '#0f172a'">{{ m.value }}</span>
+        <!-- Scrollable Message History -->
+        <div class="chat-scroll-area" #chatScroll>
+          @for (msg of messages(); track msg.id) {
+            <div class="chat-msg-row" [ngClass]="msg.sender === 'user' ? 'user-msg' : 'bot-msg'">
+              <div class="msg-avatar" [ngClass]="msg.sender === 'user' ? 'user-avatar' : 'agent-icon-box purple-box'">
+                @if (msg.sender === 'user') {
+                  <i class="bi bi-person-fill"></i>
+                } @else {
+                  <i class="bi bi-shield-check"></i>
+                }
               </div>
-              }
-            </div>
-            }
 
-            @if (msg.actions && msg.actions.length > 0) {
-            <div class="msg-actions-row">
-              @for (act of msg.actions; track act.label) {
-              <button type="button" class="btn-msg-action" [class.btn-primary-action]="act.primary"
-                (click)="handleActionClick(act.action)">
-                <i class="bi" [ngClass]="act.icon"></i>
-                <span>{{ act.label }}</span>
+              <div class="msg-bubble" [class.msg-error]="msg.tone === 'error'">
+                <div class="msg-header">
+                  <span class="msg-sender-name">{{ msg.sender === 'user' ? 'You' : 'Evaluation Agent' }}</span>
+                  <span class="msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
+                </div>
+
+                <!-- Message Content -->
+                <div class="msg-content" [innerHTML]="formatMessageText(msg.text)"></div>
+
+                <!-- Live Pulse Indicator -->
+                @if (msg.live) {
+                  <div class="live-pulse-indicator">
+                    <span class="spinner-grow spinner-grow-sm" role="status" style="color: #8b5cf6;"></span>
+                    <span>Auditing schema ground truth, detecting hallucinations, diffing column lists...</span>
+                  </div>
+                }
+
+                <!-- Metric Stat Cards (Horizontal Row) -->
+                @if (msg.metrics && msg.metrics.length > 0) {
+                  <div class="msg-metrics-grid">
+                    @for (m of msg.metrics; track m.label) {
+                      @if (m.label !== 'Artifact Completeness') {
+                        <div class="msg-metric-pill">
+                          <div class="metric-pill-val" [style.color]="m.color || '#8b5cf6'">{{ m.value }}</div>
+                          <div class="metric-pill-lbl">{{ m.label }}</div>
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+
+                <!-- Inline Evaluation Rules / Findings -->
+                @if (msg.rules && msg.rules.length > 0) {
+                  <div class="msg-rules-list">
+                    @for (rule of msg.rules; track rule.id) {
+                      <div class="msg-rule-item flex-column align-items-stretch" style="gap: 5px;">
+                        <div class="d-flex align-items-center justify-content-between">
+                          <div class="rule-info">
+                            <span class="rule-id">{{ rule.id }}</span>
+                            <span class="rule-desc"><strong>{{ rule.name }}</strong></span>
+                          </div>
+                          <span class="rule-badge" [ngClass]="rule.status">{{ rule.status }}</span>
+                        </div>
+                        <div style="font-size: 11.5px; color: #64748b; padding-left: 2px;">
+                          {{ rule.desc }}
+                        </div>
+                        <div style="font-size: 11px; color: #475569; background: #ffffff; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0; margin-top: 2px;">
+                          <i class="bi bi-info-circle me-1" style="color: #8b5cf6;"></i>
+                          <span>{{ rule.details }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Inline Terminal Console Card -->
+                @if (msg.showConsole && report()?.report_text) {
+                  <div class="terminal-console-card">
+                    <div class="terminal-console-header">
+                      <div class="terminal-dots">
+                        <span class="dot-red"></span>
+                        <span class="dot-yellow"></span>
+                        <span class="dot-green"></span>
+                      </div>
+                      <span class="terminal-title">
+                        <i class="bi bi-terminal-fill" style="color: #8b5cf6;"></i>
+                        <span>Harness Layer 2 Feedback Console</span>
+                        <span class="log-counts">{{ consoleLines().length }} log lines</span>
+                      </span>
+                      <div class="terminal-actions">
+                        <button type="button" class="btn-terminal-copy" (click)="copyConsole()" title="Copy logs">
+                          <i class="bi" [ngClass]="copySuccess ? 'bi-check2' : 'bi-clipboard'"></i>
+                          <span>{{ copySuccess ? 'Copied' : 'Copy' }}</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="terminal-body log-console">
+                      <pre class="terminal-text-block">{{ report()?.report_text }}</pre>
+                    </div>
+                  </div>
+                }
+
+                <!-- Action Buttons Row -->
+                @if (msg.actions && msg.actions.length > 0) {
+                  <div class="msg-actions-row">
+                    @for (act of msg.actions; track act.label) {
+                      <button type="button" 
+                              class="btn-msg-action" 
+                              [class.primary-action]="act.primary"
+                              (click)="handleActionClick(act.action)">
+                        <i class="bi" [ngClass]="act.icon"></i>
+                        <span>{{ act.label }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Quick Prompts Tray -->
+        @if (quickPrompts.length > 0) {
+          <div class="chat-quick-prompts-tray">
+            @for (prompt of quickPrompts; track prompt.label) {
+              <button type="button" class="prompt-chip" (click)="handleQuickPrompt(prompt)" [disabled]="isBusy()">
+                <i class="bi" [ngClass]="prompt.icon"></i>
+                <span>{{ prompt.label }}</span>
               </button>
-              }
-            </div>
             }
-
-            <div class="msg-timestamp">{{ msg.timestamp | date:'shortTime' }}</div>
           </div>
-        </div>
         }
-      </div>
 
-      <!-- Quick Prompts Ribbon matching ab1004a -->
-      <div class="quick-prompts-ribbon">
-        <span class="quick-prompts-label">Quick Actions:</span>
-        <div class="quick-prompts-scroll">
-          @for (qp of quickPrompts; track qp.label) {
-          <button type="button" class="prompt-chip" [disabled]="isBusy()" (click)="handleQuickPrompt(qp)">
-            <i class="bi" [ngClass]="qp.icon"></i>
-            <span>{{ qp.label }}</span>
-          </button>
-          }
-        </div>
-      </div>
-
-      <!-- Input Box (Disabled with informative placeholder matching ab1004a) -->
-      <div class="chat-input-bar">
-        <input type="text" class="chat-text-input"
-          placeholder="Quick action buttons available above · freeform chat coming soon" [disabled]="true"
-          aria-label="Evaluation agent chat input" />
-        <button type="button" class="btn-send-message" disabled title="Use quick action buttons above">
-          <i class="bi bi-send-fill"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- Right Column: Interactive Audit Workspace -->
-    <div class="eval-workspace-panel">
-
-      <!-- Top Executive Metrics Strip -->
-      @if (report(); as r) {
-      <div class="eval-metrics-strip">
-        <div class="eval-stat-card">
-          <span class="stat-lbl">Decision</span>
-          <span class="stat-val" [style.color]="r.decision === 'PASS' ? '#10b981' : '#ef4444'">
-            <i class="bi" [ngClass]="r.decision === 'PASS' ? 'bi-check-circle-fill' : 'bi-x-circle-fill'"></i>
-            {{ r.decision }}
-          </span>
-        </div>
-        <div class="eval-stat-card">
-          <span class="stat-lbl">AI Quality</span>
-          <span class="stat-val" style="color: #06b6d4;">{{ r.ai_output_quality }}</span>
-        </div>
-        <div class="eval-stat-card">
-          <span class="stat-lbl">Hallucinations</span>
-          <span class="stat-val" [style.color]="r.hallucinations_detected === 0 ? '#10b981' : '#ef4444'">
-            {{ r.hallucinations_detected }} Detected
-          </span>
-        </div>
-        <div class="eval-stat-card">
-          <span class="stat-lbl">Verified Tables</span>
-          <span class="stat-val" style="color: #0ea5e9;">{{ r.summary.total_tables }} Tables</span>
-        </div>
-      </div>
-      }
-
-      <!-- Workspace Navigation Tabs (2 Tabs) -->
-      <div class="eval-tab-bar">
-        <button type="button" class="eval-tab-btn" [class.active]="activeTab() === 'rules'" (click)="setTab('rules')">
-          <i class="bi bi-shield-check me-1"></i>
-          <span>Evaluation Rules ({{ report()?.rules?.length || 4 }})</span>
-        </button>
-        <button type="button" class="eval-tab-btn" [class.active]="activeTab() === 'console'"
-          (click)="setTab('console')">
-          <i class="bi bi-terminal me-1"></i>
-          <span>Generator-Evaluator Console</span>
-        </button>
-      </div>
-
-      <!-- TAB 1: Evaluation Rules & Guardrails -->
-      @if (activeTab() === 'rules') {
-      <div class="eval-tab-content">
-        <div class="rules-grid">
-          @for (rule of report()?.rules; track rule.id) {
-          <div class="rule-card" [ngClass]="'status-' + rule.status">
-            <div class="rule-card-header">
-              <span class="rule-id">{{ rule.id }}</span>
-              <span class="rule-badge" [ngClass]="'badge-' + rule.status">
-                <i class="bi"
-                  [ngClass]="rule.status === 'pass' ? 'bi-check-lg' : (rule.status === 'warn' ? 'bi-exclamation-triangle' : 'bi-x-lg')"></i>
-                {{ rule.status | uppercase }}
-              </span>
-            </div>
-            <h4 class="rule-name">{{ rule.name }}</h4>
-            <p class="rule-desc">{{ rule.desc }}</p>
-            <div class="rule-details-box">
-              <i class="bi bi-info-circle me-1"></i>
-              <span>{{ rule.details }}</span>
-            </div>
-          </div>
-          }
-        </div>
-      </div>
-      }
-
-      <!-- TAB 2: Live Terminal Console -->
-      @if (activeTab() === 'console') {
-      <div class="eval-tab-content console-tab">
-        <div class="terminal-bar">
-          <div class="terminal-title">
-            <span class="terminal-dot"></span>
-            <span>HARNESS LAYER 2 - GENERATOR-EVALUATOR FEEDBACK CONSOLE</span>
-          </div>
-          <button type="button" class="btn-copy-console" (click)="copyConsole()" [disabled]="!report()?.report_text">
-            <i class="bi" [ngClass]="copySuccess ? 'bi-check-lg' : 'bi-clipboard'"></i>
-            <span>{{ copySuccess ? 'Copied!' : 'Copy Logs' }}</span>
+        <!-- Input Bar (disabled – matching Assessment & Constraint Agent) -->
+        <div class="chat-input-bar chat-input-bar--disabled">
+          <input type="text"
+                 class="chat-input-field"
+                 placeholder="Chat coming soon — use the quick actions above"
+                 [disabled]="true"
+                 aria-label="Evaluation agent chat input">
+          <button type="button"
+                  class="btn-chat-send"
+                  [disabled]="true"
+                  title="Chat coming soon">
+            <i class="bi bi-send-fill"></i>
           </button>
         </div>
-
-        <div class="output-terminal-window">
-          <pre class="terminal-text-block">{{ report()?.report_text || 'Awaiting Evaluator execution...' }}</pre>
-        </div>
       </div>
-      }
     </div>
-  </div>
   }
 </div>
