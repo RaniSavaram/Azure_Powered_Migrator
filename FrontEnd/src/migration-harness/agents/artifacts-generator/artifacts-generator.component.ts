@@ -5,10 +5,15 @@ import { Router, RouterModule } from '@angular/router';
 import { HarnessDataService } from '../../services/harness-data.service';
 import { Scanner, FabricConnectionDetails } from '../../../app/services/scanner/scanner';
 
-const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import {
+  emptyFabricDestinationForm,
+  validateFabricDestination,
+  trimFabricDestination,
+  buildFabricSummaryRows
+} from '../../utils/fabric-destination.util';
 
 type DestinationType = 'Microsoft Fabric';
-type ArtifactsAction = 'use-saved' | 'new-destination' | 'change-destination' | 'go-scan' | 'generate';
+type ArtifactsAction = 'use-saved' | 'new-destination' | 'change-destination' | 'go-scan' | 'go-discovery' | 'generate';
 
 export interface ArtifactsChatAction {
   label: string;
@@ -101,10 +106,10 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   readonly availableDestinations: DestinationType[] = ['Microsoft Fabric'];
 
   readonly quickPrompts: QuickPrompt[] = [
-    { label: 'Change destination', icon: 'bi-arrow-left-right', query: 'Change destination' },
+    { label: 'Generate artifacts', icon: 'bi-box-seam', query: 'Generate the artifacts now' },
     { label: 'Current destination', icon: 'bi-geo-alt', query: 'Show my current destination' },
-    { label: 'What gets deployed?', icon: 'bi-box-seam', query: 'What gets deployed?' },
-    { label: 'Generate artifacts', icon: 'bi-box-seam', query: 'Generate the artifacts now' }
+    { label: 'What gets deployed?', icon: 'bi-info-circle', query: 'What gets deployed?' },
+    { label: 'Change destination', icon: 'bi-arrow-left-right', query: 'Change destination' }
   ];
 
   messages = signal<ArtifactsChatMessage[]>([]);
@@ -115,7 +120,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   destination = this.scanner.fabricDestination;
 
   selectedDestination: DestinationType | '' = '';
-  form: FabricConnectionDetails = this.emptyForm();
+  form: FabricConnectionDetails = emptyFabricDestinationForm();
   rememberMe = true;
   showAdvanced = false;
   showSecret = false;
@@ -213,22 +218,35 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
     this.messages.set([]);
     this.connectionError.set(null);
     this.fieldErrors.set({});
-    this.agentSays(
-      "Hi, I'm the Artifacts Generator. I deploy your migration output (Delta tables, Data Factory pipelines, " +
-      'views and stored procedures) into the destination you choose.'
-    );
+    this.showDestinationCard.set(false);
 
-    const saved = this.scanner.getFabricDestination();
-    if (saved) {
-      this.showDestinationCard.set(false);
-      this.agentSays(`You last deployed to Microsoft Fabric workspace ${saved.workspaceId}. Do you want to keep using it?`, {
-        actions: [
-          { label: 'Use saved destination', icon: 'bi-check2-circle', action: 'use-saved', primary: true },
-          { label: 'Enter new details', icon: 'bi-pencil', action: 'new-destination' }
-        ]
-      });
+    const configured = this.scanner.getFabricDestination();
+    const wsName = this.harnessDataService.getDestinationWorkspaceName() || undefined;
+    if (configured) {
+      this.agentSays(
+        "Hi, I'm the Artifacts Generator. Using the migration destination configured in Discovery Agent, I am ready to deploy your Delta tables, Data Factory pipelines, views, and stored procedures.",
+        { details: this.summaryRows(configured, wsName) }
+      );
+      this.agentSays(
+        'Click Generate artifacts now to provision items into this Microsoft Fabric workspace.',
+        {
+          actions: [
+            { label: 'Generate artifacts now', icon: 'bi-box-seam', action: 'generate', primary: true },
+            { label: 'Open scanner page', icon: 'bi-database', action: 'go-scan' },
+            { label: 'Change destination', icon: 'bi-pencil', action: 'change-destination' }
+          ]
+        }
+      );
     } else {
-      this.openDestinationCard();
+      this.agentSays(
+        "Hi, I'm the Artifacts Generator. No destination has been configured in Discovery Agent (Phase 1) yet. Return to Discovery Agent to set your target workspace, or configure it below.",
+        {
+          actions: [
+            { label: 'Open Discovery Agent', icon: 'bi-search', action: 'go-discovery', primary: true },
+            { label: 'Configure destination here', icon: 'bi-cloud-upload', action: 'new-destination' }
+          ]
+        }
+      );
     }
   }
 
@@ -252,6 +270,9 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
         break;
       case 'go-scan':
         this.router.navigate(['/dbscanner']);
+        break;
+      case 'go-discovery':
+        this.router.navigate(['/agents/discovery']);
         break;
     }
   }
@@ -408,7 +429,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   openDestinationCard(): void {
     const saved = this.scanner.getFabricDestination();
     this.selectedDestination = '';
-    this.form = saved ? { ...saved } : this.emptyForm();
+    this.form = saved ? { ...saved } : emptyFabricDestinationForm();
     this.showAdvanced = !!(this.form.lakehouseName || this.form.warehouseName || this.form.warehouseHost);
     this.connectionError.set(null);
     this.fieldErrors.set({});
@@ -440,9 +461,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
       return;
     }
 
-    const details = Object.fromEntries(
-      Object.entries(this.form).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])
-    ) as unknown as FabricConnectionDetails;
+    const details = trimFabricDestination(this.form);
 
     this.connectionError.set(null);
     this.isTyping.set(true);
@@ -457,6 +476,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
           warehouseName: details.warehouseName || res.details?.warehouse_name || ''
         };
         this.scanner.setFabricDestination(destination, this.rememberMe);
+        this.harnessDataService.setDestinationConfirmed(true, res.details?.workspace_name || destination.workspaceId);
         this.showDestinationCard.set(false);
         this.userSays(`Connect to Microsoft Fabric workspace ${destination.workspaceId}`);
         this.confirmDestination(res.message || 'Connected to Microsoft Fabric.', destination, res.details?.workspace_name);
@@ -486,22 +506,9 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   }
 
   private validate(): string | null {
-    const f = this.form;
-    const errors: Record<string, boolean> = {};
-    if (!f.workspaceId?.trim()) errors['workspaceId'] = true;
-    if (this.isServicePrincipal) {
-      if (!f.tenantId?.trim()) errors['tenantId'] = true;
-      if (!f.clientId?.trim()) errors['clientId'] = true;
-      if (!f.clientSecret?.trim()) errors['clientSecret'] = true;
-    }
-    for (const key of ['workspaceId', 'tenantId', 'lakehouseId', 'warehouseId'] as const) {
-      const value = (f[key] || '').trim();
-      if (value && !GUID_PATTERN.test(value)) errors[key] = true;
-    }
+    const { errors, message } = validateFabricDestination(this.form);
     this.fieldErrors.set(errors);
-    return Object.keys(errors).length
-      ? 'Please fix the highlighted fields. IDs must be GUIDs like 00000000-0000-0000-0000-000000000000.'
-      : null;
+    return message;
   }
 
   // ---------------------------------------------------------------------------
@@ -509,13 +516,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   // ---------------------------------------------------------------------------
 
   summaryRows(d: FabricConnectionDetails, workspaceName?: string): Array<{ label: string; value: string }> {
-    return [
-      { label: 'Destination', value: 'Microsoft Fabric' },
-      { label: 'Workspace', value: workspaceName ? `${workspaceName} (${d.workspaceId})` : d.workspaceId },
-      { label: 'Tenant', value: d.tenantId || 'Default Azure credential' },
-      { label: 'Lakehouse', value: d.lakehouseName || d.lakehouseId || 'Auto-created per source' },
-      { label: 'Warehouse', value: d.warehouseName || d.warehouseId || d.warehouseHost || 'Not configured' }
-    ];
+    return buildFabricSummaryRows(d, workspaceName);
   }
 
   private agentSays(text: string, extra?: Pick<ArtifactsChatMessage, 'details' | 'actions' | 'deployment'>): void {
@@ -531,18 +532,5 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
     this.shouldScroll = true;
   }
 
-  private emptyForm(): FabricConnectionDetails {
-    return {
-      workspaceId: '',
-      tenantId: '',
-      clientId: '',
-      clientSecret: '',
-      lakehouseId: '',
-      lakehouseName: '',
-      warehouseId: '',
-      warehouseName: '',
-      warehouseHost: '',
-      authMode: 'servicePrincipal'
-    };
-  }
+
 }

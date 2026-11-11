@@ -5,7 +5,13 @@ import { RouterModule, Router } from '@angular/router';
 import { timeout, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { HarnessDataService, SourceConnectionConfig } from '../../services/harness-data.service';
-import { Scanner } from '../../../app/services/scanner/scanner';
+import { Scanner, FabricConnectionDetails } from '../../../app/services/scanner/scanner';
+import {
+  emptyFabricDestinationForm,
+  validateFabricDestination,
+  trimFabricDestination,
+  buildFabricSummaryRows
+} from '../../utils/fabric-destination.util';
 
 export interface ChatRuleItem {
   id: string;
@@ -36,6 +42,7 @@ export interface ChatMessage {
   codeBlock?: string;
   actions?: ChatActionItem[];
   metadataSummary?: any;
+  details?: Array<{ label: string; value: string }>;
 }
 
 export interface QuickPrompt {
@@ -89,6 +96,19 @@ export class DiscoveryAgentComponent implements OnInit {
   public tableSearchQuery: string = '';
   public isTablesExpanded: boolean = false;
   public collapsedTerminals: Record<string, boolean> = {};
+
+  // Destination configuration state (asked after source credentials)
+  public showDestinationCard: boolean = false;
+  public isConnectingDestination: boolean = false;
+  public destinationError: string = '';
+  public destFieldErrors: Record<string, boolean> = {};
+  public readonly availableDestinations = ['Microsoft Fabric'] as const;
+  public selectedDestination: 'Microsoft Fabric' | '' = 'Microsoft Fabric';
+  public destForm: FabricConnectionDetails = emptyFabricDestinationForm();
+  public destRememberMe: boolean = true;
+  public showDestAdvanced: boolean = false;
+  public savedFabricProfiles: Array<{ key: string; label: string; details: FabricConnectionDetails }> = [];
+  public selectedSavedFabricKey: string = '__new__';
 
   toggleShowPassword(key: string, value?: string): void {
     if (value !== undefined && (!value || !value.toString().trim())) {
@@ -175,6 +195,7 @@ export class DiscoveryAgentComponent implements OnInit {
     { label: 'How many tables?', query: 'How many tables were discovered in the source?', icon: 'bi-grid-3x3' },
     { label: 'Storage & volume', query: 'Show me the storage volume and row count profile', icon: 'bi-bar-chart-fill' },
     { label: 'Largest tables', query: 'What are the largest tables by row count?', icon: 'bi-sort-down' },
+    { label: 'Configure Destination', query: 'Configure target migration destination', icon: 'bi-cloud-upload' },
     { label: 'Proceed to Phase 2', query: 'Proceed to Constraint Agent Phase 2', icon: 'bi-arrow-right-circle' }
   ];
 
@@ -188,9 +209,28 @@ export class DiscoveryAgentComponent implements OnInit {
     return this.harnessDataService.getConnectionConfig();
   }
 
+  get isDestinationConfirmed(): boolean {
+    return this.harnessDataService.isDestinationConfirmed();
+  }
+
+  get isDestServicePrincipal(): boolean {
+    return (this.destForm.authMode || 'servicePrincipal') === 'servicePrincipal';
+  }
+
+  get canProceedToPhase2(): boolean {
+    return this.isSourceConnected && this.isDestinationConfirmed;
+  }
+
+  getLockReason(): string {
+    if (!this.isSourceConnected) return 'Connect a source database first';
+    if (!this.isDestinationConfirmed) return 'Configure migration destination in the card below before proceeding';
+    return '';
+  }
+
   ngOnInit(): void {
     this.loadUserSavedConnections();
     this.fetchBackendSavedProfiles();
+    this.fetchBackendSavedFabricProfiles();
     this.lastExtractedMetadata = this.harnessDataService.getSourceMetadata();
     this.initWelcomeMessage();
   }
@@ -246,6 +286,54 @@ export class DiscoveryAgentComponent implements OnInit {
         error: () => {}
       });
     }
+  }
+
+  fetchBackendSavedFabricProfiles(): void {
+    const list: Array<{ key: string; label: string; details: FabricConnectionDetails }> = [];
+    const localSaved = this.scanner.getFabricDestination();
+    if (localSaved?.workspaceId) {
+      list.push({
+        key: 'local-fabric',
+        label: `Microsoft Fabric · ${localSaved.lakehouseName || localSaved.workspaceId}`,
+        details: { ...localSaved }
+      });
+    }
+    this.savedFabricProfiles = list;
+
+    this.scanner.getSavedConnections('Fabric').subscribe({
+      next: (res) => {
+        if (res?.connections && res.connections.length > 0) {
+          const merged = [...list];
+          res.connections.forEach((p, idx) => {
+            const extra = p.extra || {};
+            const wsId = extra['workspace_id'] || p.server || '';
+            if (!wsId) return;
+            const details: FabricConnectionDetails = {
+              workspaceId: wsId,
+              tenantId: extra['tenant_id'] || '',
+              clientId: extra['client_id'] || p.username || '',
+              clientSecret: extra['client_secret'] || p.password || '',
+              lakehouseId: extra['lakehouse_id'] || '',
+              lakehouseName: extra['lakehouse_name'] || p.database || '',
+              warehouseId: extra['warehouse_id'] || '',
+              warehouseName: extra['warehouse_name'] || '',
+              warehouseHost: extra['warehouse_connection_string'] || '',
+              authMode: extra['auth_mode'] === 'default' ? 'default' : 'servicePrincipal'
+            };
+            if (!merged.some(m => m.details.workspaceId === details.workspaceId)) {
+              merged.push({
+                key: `backend-fabric-${idx}`,
+                label: `Microsoft Fabric · ${details.lakehouseName || details.workspaceId}`,
+                details
+              });
+            }
+          });
+          this.savedFabricProfiles = merged;
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {}
+    });
   }
 
   openInlineConnectCard(platform?: string): void {
@@ -388,7 +476,14 @@ export class DiscoveryAgentComponent implements OnInit {
       const cached = this.lastExtractedMetadata || this.harnessDataService.getSourceMetadata();
       if (cached) {
         this.messages = [];
-        this.renderConnectedMetadataSummary(cached);
+        this.renderConnectedMetadataSummary(cached, !this.isDestinationConfirmed);
+        const confirmedDest = this.scanner.getFabricDestination();
+        if (this.isDestinationConfirmed && confirmedDest) {
+          this.renderDestinationConfirmation(
+            confirmedDest,
+            this.harnessDataService.getDestinationWorkspaceName()
+          );
+        }
       } else {
         this.messages = [
           {
@@ -777,7 +872,7 @@ ${detailBullets}
         const res = isValid ? metaRes : this.getSafeMetadata();
         this.lastExtractedMetadata = res;
         this.harnessDataService.setSourceMetadata(res);
-        this.renderConnectedMetadataSummary(res);
+        this.renderConnectedMetadataSummary(res, !this.isDestinationConfirmed);
         this.cdr.detectChanges();
         this.scrollToBottom();
       },
@@ -787,14 +882,14 @@ ${detailBullets}
         const fallback = this.getSafeMetadata();
         this.lastExtractedMetadata = fallback;
         this.harnessDataService.setSourceMetadata(fallback);
-        this.renderConnectedMetadataSummary(fallback);
+        this.renderConnectedMetadataSummary(fallback, !this.isDestinationConfirmed);
         this.cdr.detectChanges();
         this.scrollToBottom();
       }
     });
   }
 
-  private renderConnectedMetadataSummary(metaRes: any): void {
+  private renderConnectedMetadataSummary(metaRes: any, promptDestination: boolean = false): void {
     if (!metaRes) return;
 
     const platform = metaRes.platform || this.connectionConfig?.platform || this.connectionForm.platform || 'SQL Server';
@@ -902,7 +997,9 @@ Review the connected metadata inventory below, including table volumes, indexed 
         { label: 'Est. Fabric Delta', value: this.formatVolume(estFabricMb), color: '#0d9488' }
       ],
       actions: [
-        { label: 'Proceed to Constraint Agent', action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true },
+        ...(this.isDestinationConfirmed
+          ? [{ label: 'Proceed to Constraint Agent', action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true }]
+          : [{ label: 'Configure Destination', action: 'open-destination', icon: 'bi-cloud-upload-fill', primary: true }]),
         { label: 'Download Metadata (.json)', action: 'download-meta', icon: 'bi-download' },
         { label: 'Change Connection', action: 'connect', icon: 'bi-arrow-repeat' }
       ]
@@ -910,8 +1007,199 @@ Review the connected metadata inventory below, including table volumes, indexed 
 
     this.isTyping = false;
     this.isExtractingMetadata = false;
+    if (promptDestination && !this.isDestinationConfirmed) {
+      this.promptForDestinationAfterSource();
+    }
     this.cdr.detectChanges();
     this.scrollToBottom();
+  }
+
+  private getPreferredSavedFabricDestination(): FabricConnectionDetails | null {
+    const local = this.scanner.getFabricDestination();
+    if (local?.workspaceId) return local;
+    return this.savedFabricProfiles[0]?.details ?? null;
+  }
+
+  promptForDestinationAfterSource(): void {
+    if (this.showDestinationCard) return;
+    const saved = this.getPreferredSavedFabricDestination();
+    if (saved) {
+      this.messages.push({
+        id: 'bot-dest-prompt-' + Date.now(),
+        sender: 'agent',
+        text: `### Step 2 · Configure Migration Destination\n\n` +
+          `Source credentials verified and catalog metadata extracted. Next, confirm the target destination where generated artifacts and Delta tables will be deployed.\n\n` +
+          `Found a saved **Microsoft Fabric** destination (Workspace: \`${saved.workspaceId}\`${saved.lakehouseName ? ` · Lakehouse: \`${saved.lakehouseName}\`` : ''}). Would you like to use this destination or enter new details?`,
+        timestamp: new Date(),
+        actions: [
+          { label: 'Use Saved Destination', action: 'use-saved-destination', icon: 'bi-check2-circle', primary: true },
+          { label: 'Enter New Destination', action: 'open-destination', icon: 'bi-pencil' }
+        ]
+      });
+      this.scrollToBottom();
+    } else {
+      this.messages.push({
+        id: 'bot-dest-prompt-' + Date.now(),
+        sender: 'agent',
+        text: `### Step 2 · Configure Migration Destination\n\n` +
+          `Source credentials verified and catalog metadata extracted. Next, select and connect your target migration destination (**Microsoft Fabric**) below.`,
+        timestamp: new Date()
+      });
+      this.openDestinationCard(true);
+    }
+  }
+
+  openDestinationCard(skipMsg: boolean = false): void {
+    const saved = this.getPreferredSavedFabricDestination();
+    this.selectedDestination = 'Microsoft Fabric';
+    this.destForm = saved ? { ...saved } : emptyFabricDestinationForm();
+    this.selectedSavedFabricKey = saved ? (this.savedFabricProfiles[0]?.key || '__new__') : '__new__';
+    this.showDestAdvanced = !!(this.destForm.lakehouseName || this.destForm.warehouseName || this.destForm.warehouseHost);
+    this.destinationError = '';
+    this.destFieldErrors = {};
+    if (!skipMsg) {
+      this.messages.push({
+        id: 'bot-dest-open-' + Date.now(),
+        sender: 'agent',
+        text: 'Please enter or update your **Microsoft Fabric** destination connection details below.',
+        timestamp: new Date()
+      });
+    }
+    this.showDestinationCard = true;
+    this.cdr.detectChanges();
+    this.scrollToBottom();
+  }
+
+  closeDestinationCard(): void {
+    if (this.isConnectingDestination) return;
+    this.showDestinationCard = false;
+    this.destinationError = '';
+    this.destFieldErrors = {};
+  }
+
+  onSavedFabricChange(key: string): void {
+    this.selectedSavedFabricKey = key || '__new__';
+    this.destinationError = '';
+    this.destFieldErrors = {};
+    if (this.selectedSavedFabricKey === '__new__') {
+      this.destForm = emptyFabricDestinationForm();
+      this.showDestAdvanced = false;
+      return;
+    }
+    const found = this.savedFabricProfiles.find(p => p.key === this.selectedSavedFabricKey);
+    if (found) {
+      this.destForm = { ...found.details };
+      this.showDestAdvanced = !!(this.destForm.lakehouseName || this.destForm.warehouseName || this.destForm.warehouseHost);
+    }
+  }
+
+  useSavedDestination(): void {
+    const saved = this.getPreferredSavedFabricDestination();
+    if (!saved) {
+      this.openDestinationCard();
+      return;
+    }
+    this.messages.push({
+      id: 'usr-dest-' + Date.now(),
+      sender: 'user',
+      text: `Use saved Microsoft Fabric workspace ${saved.workspaceId}`,
+      timestamp: new Date()
+    });
+    this.connectAndSaveFabric(saved, true, true);
+  }
+
+  submitDestination(): void {
+    if (!this.selectedDestination) {
+      this.destinationError = 'Please select your destination platform.';
+      return;
+    }
+    const { errors, message } = validateFabricDestination(this.destForm);
+    this.destFieldErrors = errors;
+    if (message) {
+      this.destinationError = message;
+      this.scrollToBottom();
+      return;
+    }
+    const trimmed = trimFabricDestination(this.destForm);
+    this.messages.push({
+      id: 'usr-dest-' + Date.now(),
+      sender: 'user',
+      text: `Connect destination Microsoft Fabric workspace ${trimmed.workspaceId}`,
+      timestamp: new Date()
+    });
+    this.connectAndSaveFabric(trimmed, this.destRememberMe, false);
+  }
+
+  private connectAndSaveFabric(
+    details: FabricConnectionDetails,
+    rememberMe: boolean,
+    isUsingSaved: boolean
+  ): void {
+    if (this.isConnectingDestination) return;
+    this.destinationError = '';
+    this.isConnectingDestination = true;
+    this.isTyping = true;
+    this.typingText = 'Validating Microsoft Fabric workspace & destination credentials...';
+    this.cdr.detectChanges();
+    this.scrollToBottom();
+
+    this.scanner.connectFabric(details, rememberMe).subscribe({
+      next: (res) => {
+        this.isConnectingDestination = false;
+        this.isTyping = false;
+        const destination: FabricConnectionDetails = {
+          ...details,
+          lakehouseName: details.lakehouseName || res.details?.lakehouse_name || '',
+          warehouseName: details.warehouseName || res.details?.warehouse_name || ''
+        };
+        const workspaceName = res.details?.workspace_name || destination.workspaceId;
+        this.scanner.setFabricDestination(destination, rememberMe);
+        this.harnessDataService.setDestinationConfirmed(true, workspaceName);
+        this.showDestinationCard = false;
+        this.fetchBackendSavedFabricProfiles();
+        this.renderDestinationConfirmation(destination, workspaceName, res.message);
+        this.cdr.detectChanges();
+        this.scrollToBottom();
+      },
+      error: (err) => {
+        this.isConnectingDestination = false;
+        this.isTyping = false;
+        const msg = err.error?.message || err.message || 'Could not connect to Microsoft Fabric. Check the IDs and credentials, then try again.';
+        this.destinationError = msg;
+        if (isUsingSaved) {
+          this.destForm = { ...details };
+          this.showDestAdvanced = !!(details.lakehouseName || details.warehouseName || details.warehouseHost);
+          this.showDestinationCard = true;
+        }
+        this.cdr.detectChanges();
+        this.scrollToBottom();
+      }
+    });
+  }
+
+  private renderDestinationConfirmation(
+    d: FabricConnectionDetails,
+    workspaceName?: string | null,
+    statusMsg?: string
+  ): void {
+    this.messages.push({
+      id: 'bot-dest-ok-' + Date.now(),
+      sender: 'agent',
+      text: `### Destination Connected: Microsoft Fabric\n\n` +
+        `${statusMsg || 'Microsoft Fabric destination verified and saved.'} Source and destination configuration for Phase 1 Discovery are ready.\n\n` +
+        `Proceed to **Constraint Agent (Phase 2)** to validate schema constraints.`,
+      timestamp: new Date(),
+      details: buildFabricSummaryRows(d, workspaceName),
+      metrics: [
+        { label: 'Destination', value: 'Fabric OneLake', color: '#0ea5e9' },
+        { label: 'Workspace', value: 'Verified', color: '#10b981' },
+        { label: 'Phase 1 Gate', value: 'READY', color: '#6366f1' }
+      ],
+      actions: [
+        { label: 'Proceed to Constraint Agent', action: 'next', icon: 'bi-arrow-right-circle-fill', primary: true },
+        { label: 'Change Destination', action: 'open-destination', icon: 'bi-pencil' }
+      ]
+    });
   }
 
   public getSafeMetadata(): any {
@@ -1145,6 +1433,9 @@ Please review your credentials and endpoint details above, then click **Connect*
     this.connectionErrorMessage = '';
     this.fieldErrors = {};
     this.lastExtractedMetadata = null;
+    this.showDestinationCard = false;
+    this.destinationError = '';
+    this.destFieldErrors = {};
     this.harnessDataService.disconnectSource();
     this.showInlineConnectCard = true;
     this.messages.push({
@@ -1199,7 +1490,15 @@ Please review your credentials and endpoint details above, then click **Connect*
 
   handleActionClick(action: string): void {
     if (action === 'next') {
+      if (!this.canProceedToPhase2) {
+        this.promptForDestinationAfterSource();
+        return;
+      }
       this.router.navigate([this.nextPhaseRoute]);
+    } else if (action === 'open-destination') {
+      this.openDestinationCard();
+    } else if (action === 'use-saved-destination') {
+      this.useSavedDestination();
     } else if (action === 'connect' || action === 'retry') {
       this.openInlineConnectCard();
     } else if (action === 'demo') {
@@ -1359,6 +1658,19 @@ Please review your credentials and endpoint details above, then click **Connect*
       return;
     }
 
+    // Destination queries
+    if (q.includes('destination') || q.includes('target workspace') || q.includes('fabric target')) {
+      if (this.isDestinationConfirmed) {
+        const d = this.scanner.getFabricDestination();
+        if (d) {
+          this.renderDestinationConfirmation(d, this.harnessDataService.getDestinationWorkspaceName());
+          return;
+        }
+      }
+      this.openDestinationCard();
+      return;
+    }
+
     // Explicit connect / credential request
     if ((q.includes('connect') && !q.includes('connected')) || q.includes('login') || q.includes('credential')) {
       this.openInlineConnectCard();
@@ -1373,6 +1685,10 @@ Please review your credentials and endpoint details above, then click **Connect*
 
     // Proceed to Phase 2
     if (q.includes('next') || q.includes('proceed') || q.includes('continue') || q.includes('constraint') || q.includes('phase 2') || q.includes('phase2') || q.includes('what next')) {
+      if (!this.isDestinationConfirmed) {
+        this.promptForDestinationAfterSource();
+        return;
+      }
       this.messages.push({
         id: 'bot-' + Date.now(),
         sender: 'agent',

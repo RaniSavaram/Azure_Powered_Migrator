@@ -35,6 +35,7 @@ from Migrator.pipeline_services import (
     generate_migration_plan_service,
     evaluate_agent_service,
     get_pipeline_state_service,
+    set_active_fabric_destination,
     active_pipeline
 )
 
@@ -820,25 +821,28 @@ def connect_fabric(request):
             lakehouse_name = lakehouse_name or details.get("lakehouse_name") or ""
             warehouse_name = warehouse_name or details.get("warehouse_name") or ""
 
+        fabric_profile = {
+            "server": workspace_id.strip(),
+            "database": lakehouse_name.strip(),
+            "username": client_id.strip(),
+            "password": client_secret.strip(),
+            "extra": {
+                "workspace_id": workspace_id.strip(),
+                "workspace_name": details.get("workspace_name", workspace_id.strip()),
+                "tenant_id": tenant_id.strip(),
+                "client_id": client_id.strip(),
+                "client_secret": client_secret.strip(),
+                "lakehouse_name": lakehouse_name.strip(),
+                "lakehouse_id": lakehouse_id.strip(),
+                "warehouse_name": warehouse_name.strip(),
+                "warehouse_id": warehouse_id.strip(),
+                "warehouse_connection_string": warehouse_host.strip(),
+                "auth_mode": auth_mode,
+            }
+        }
+        set_active_fabric_destination(fabric_profile)
         if remember_me:
-            save_connection("Fabric", {
-                "server": workspace_id.strip(),
-                "database": lakehouse_name.strip(),
-                "username": client_id.strip(),
-                "password": client_secret.strip(),
-                "extra": {
-                    "workspace_id": workspace_id.strip(),
-                    "tenant_id": tenant_id.strip(),
-                    "client_id": client_id.strip(),
-                    "client_secret": client_secret.strip(),
-                    "lakehouse_name": lakehouse_name.strip(),
-                    "lakehouse_id": lakehouse_id.strip(),
-                    "warehouse_name": warehouse_name.strip(),
-                    "warehouse_id": warehouse_id.strip(),
-                    "warehouse_connection_string": warehouse_host.strip(),
-                    "auth_mode": auth_mode,
-                }
-            })
+            save_connection("Fabric", fabric_profile)
 
         return Response({
             "status": "success",

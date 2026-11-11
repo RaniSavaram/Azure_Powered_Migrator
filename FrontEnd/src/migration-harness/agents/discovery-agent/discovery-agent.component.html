@@ -23,11 +23,16 @@
       </div>
     </div>
     <div class="header-right-actions">
-      @if (isSourceConnected) {
+      @if (canProceedToPhase2) {
         <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Constraint Agent">
           <span>Proceed to Constraint Agent</span>
           <i class="bi bi-arrow-right"></i>
         </a>
+      } @else if (isSourceConnected) {
+        <button type="button" class="btn-next-phase btn-next-phase-locked" disabled [title]="getLockReason()">
+          <i class="bi bi-lock-fill me-1"></i>
+          <span>Proceed to Constraint Agent</span>
+        </button>
       } @else {
         <button type="button" class="btn-toolbar-connect" (click)="openInlineConnectCard()">
           <i class="bi bi-plug-fill"></i>
@@ -51,15 +56,28 @@
             <span class="status-tag status-tag-connected">
               <i class="bi bi-check-circle-fill"></i> Connected: {{ connectionConfig?.platform }} ({{ connectionConfig?.server }})
             </span>
+            @if (isDestinationConfirmed) {
+              <span class="status-tag status-tag-dest">
+                <i class="bi bi-cloud-check-fill"></i> Dest: Microsoft Fabric
+              </span>
+            } @else {
+              <span class="status-tag status-tag-dest-pending">
+                <i class="bi bi-geo-alt"></i> Step 2 · Destination Pending
+              </span>
+            }
           } @else {
             <span class="status-tag status-tag-idle">Phase 1 · Awaiting Connection</span>
           }
         </div>
         <div class="chat-toolbar-actions">
           @if (isSourceConnected) {
-            <button type="button" class="btn-toolbar-ghost" (click)="openInlineConnectCard()" title="Change connection">
+            <button type="button" class="btn-toolbar-ghost" (click)="openInlineConnectCard()" title="Change source connection">
               <i class="bi bi-arrow-repeat"></i>
-              <span>Change</span>
+              <span>Change Source</span>
+            </button>
+            <button type="button" class="btn-toolbar-ghost" (click)="openDestinationCard()" title="Configure or change target destination">
+              <i class="bi bi-cloud-upload"></i>
+              <span>{{ isDestinationConfirmed ? 'Change Destination' : 'Set Destination' }}</span>
             </button>
             <button type="button" class="btn-toolbar-ghost text-danger" (click)="disconnectSource()" title="Disconnect Database">
               <i class="bi bi-plug"></i>
@@ -298,6 +316,20 @@
                   </div>
                   @if (!isTerminalCollapsed(msg.id)) {
                     <div class="terminal-body">{{ msg.codeBlock }}</div>
+                  }
+                </div>
+              }
+
+              <!-- Destination / Detail Summary Rows -->
+              @if (msg.details && msg.details.length > 0) {
+                <div class="msg-rules-list">
+                  @for (row of msg.details; track row.label) {
+                    <div class="msg-rule-item">
+                      <div class="rule-info">
+                        <span class="rule-id">{{ row.label }}</span>
+                        <span class="rule-desc dest-value">{{ row.value }}</span>
+                      </div>
+                    </div>
                   }
                 </div>
               }
@@ -937,6 +969,245 @@
                           [disabled]="isConnecting">
                     <i class="bi" [ngClass]="isConnecting ? 'bi-hourglass-split' : 'bi-plug-fill'"></i>
                     <span>{{ isConnecting ? 'Connecting &amp; Scanning...' : 'Connect' }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Inline Destination Card (asked right after source credentials) -->
+        @if (isSourceConnected && showDestinationCard) {
+          <div class="chat-msg-row bot-msg">
+            <div class="msg-avatar agent-icon-box blue-box">
+              <i class="bi bi-cloud-upload-fill"></i>
+            </div>
+            <div class="msg-bubble conn-chat-bubble" id="discovery-destination-card">
+              <div class="conn-card-header">
+                <div class="conn-card-title">
+                  <i class="bi bi-cloud-upload-fill text-primary"></i>
+                  <span>{{ selectedDestination ? (selectedDestination + ' Destination') : 'Migration Destination' }}</span>
+                </div>
+                @if (isDestinationConfirmed) {
+                  <button type="button" class="btn-close-inline" (click)="closeDestinationCard()" title="Close details">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                } @else {
+                  <span class="conn-card-badge">Step 2 · Required</span>
+                }
+              </div>
+
+              <!-- Destination Platform Selection -->
+              <div class="conn-field-group conn-field-full" style="margin-bottom: 6px;">
+                <label class="conn-field-label" for="daDestination">
+                  <i class="bi bi-geo-alt-fill text-primary"></i>
+                  <span>Target Destination Platform</span>
+                </label>
+                <select id="daDestination"
+                        class="conn-field-select"
+                        [(ngModel)]="selectedDestination">
+                  <option value="" disabled>Select destination</option>
+                  @for (dest of availableDestinations; track dest) {
+                    <option [value]="dest">{{ dest }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="platform-selector-pills">
+                @for (dest of availableDestinations; track dest) {
+                  <button type="button"
+                          class="platform-pill-btn"
+                          [class.active]="selectedDestination === dest"
+                          (click)="selectedDestination = dest">
+                    <i class="bi bi-microsoft"></i>
+                    <span>{{ dest }}</span>
+                  </button>
+                }
+              </div>
+
+              <!-- Microsoft Fabric Connection Fields -->
+              @if (selectedDestination === 'Microsoft Fabric') {
+                <div class="conn-inputs-grid">
+                  <!-- Hidden trap for browser autofill -->
+                  <div style="opacity: 0; position: absolute; top: -9999px; left: -9999px; height: 0; width: 0; z-index: -1; pointer-events: none;" aria-hidden="true">
+                    <input type="text" name="chrome_fake_fabric_user" tabindex="-1" autocomplete="off" />
+                    <input type="password" name="chrome_fake_fabric_sec" tabindex="-1" autocomplete="off" />
+                  </div>
+
+                  @if (savedFabricProfiles.length > 0) {
+                    <div class="conn-field-group conn-field-full">
+                      <label class="conn-field-label" for="daSavedFabric">Saved destinations</label>
+                      <select id="daSavedFabric"
+                              class="conn-field-select"
+                              [ngModel]="selectedSavedFabricKey"
+                              (ngModelChange)="onSavedFabricChange($event)">
+                        <option value="__new__">+ Add new destination...</option>
+                        @for (opt of savedFabricProfiles; track opt.key) {
+                          <option [value]="opt.key">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                  }
+
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label" for="daWorkspace">Workspace ID <span class="req">*</span></label>
+                    <input id="daWorkspace" type="text" class="conn-field-input"
+                           [class.input-error]="destFieldErrors['workspaceId']"
+                           [(ngModel)]="destForm.workspaceId"
+                           placeholder="00000000-0000-0000-0000-000000000000" autocomplete="off" spellcheck="false">
+                    @if (destFieldErrors['workspaceId']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> A valid workspace GUID is required</div>
+                    }
+                  </div>
+
+                  <div class="conn-field-group conn-field-full">
+                    <label class="conn-field-label" for="daDestAuth">Authentication</label>
+                    <select id="daDestAuth" class="conn-field-select" [(ngModel)]="destForm.authMode">
+                      <option value="servicePrincipal">Service Principal (client secret)</option>
+                      <option value="default">Default Azure Credential (az login / managed identity)</option>
+                    </select>
+                  </div>
+
+                  <div class="conn-field-group" [class.conn-field-full]="!isDestServicePrincipal">
+                    <label class="conn-field-label" for="daDestTenant">
+                      Tenant ID
+                      @if (isDestServicePrincipal) {
+                        <span class="req">*</span>
+                      }
+                    </label>
+                    <input id="daDestTenant" type="text" class="conn-field-input"
+                           [class.input-error]="destFieldErrors['tenantId']"
+                           [(ngModel)]="destForm.tenantId"
+                           [placeholder]="isDestServicePrincipal ? 'Directory (tenant) ID' : 'Optional'" autocomplete="off" spellcheck="false">
+                    @if (destFieldErrors['tenantId']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> A valid tenant GUID is required</div>
+                    }
+                  </div>
+
+                  @if (isDestServicePrincipal) {
+                    <div class="conn-field-group">
+                      <label class="conn-field-label" for="daDestClient">Client ID <span class="req">*</span></label>
+                      <input id="daDestClient" type="text" class="conn-field-input"
+                             [class.input-error]="destFieldErrors['clientId']"
+                             [(ngModel)]="destForm.clientId"
+                             placeholder="App registration ID" autocomplete="off" spellcheck="false">
+                      @if (destFieldErrors['clientId']) {
+                        <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Client ID is required</div>
+                      }
+                    </div>
+                    <div class="conn-field-group conn-field-full">
+                      <label class="conn-field-label" for="daDestSecret">Client Secret <span class="req">*</span></label>
+                      <div class="conn-password-wrapper">
+                        <input id="daDestSecret" [type]="isPasswordVisible('dest_secret', destForm.clientSecret) ? 'text' : 'password'"
+                               class="conn-field-input"
+                               [class.input-error]="destFieldErrors['clientSecret']"
+                               [(ngModel)]="destForm.clientSecret"
+                               autocomplete="new-password"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false"
+                               data-lpignore="true"
+                               name="da_dest_secret_field"
+                               placeholder="••••••••••••">
+                        <button type="button"
+                                class="btn-toggle-pwd"
+                                (mousedown)="$event.preventDefault()"
+                                (click)="$event.preventDefault(); $event.stopPropagation(); toggleShowPassword('dest_secret', destForm.clientSecret)"
+                                [disabled]="!destForm.clientSecret"
+                                [title]="isPasswordVisible('dest_secret', destForm.clientSecret) ? 'Hide secret' : 'Show secret'"
+                                [attr.aria-label]="isPasswordVisible('dest_secret', destForm.clientSecret) ? 'Hide secret' : 'Show secret'">
+                          <i class="bi" [ngClass]="isPasswordVisible('dest_secret', destForm.clientSecret) ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                        </button>
+                      </div>
+                      @if (destFieldErrors['clientSecret']) {
+                        <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Client secret is required</div>
+                      }
+                    </div>
+                  }
+
+                  <div class="conn-field-group">
+                    <label class="conn-field-label" for="daLakehouse">Lakehouse ID</label>
+                    <input id="daLakehouse" type="text" class="conn-field-input"
+                           [class.input-error]="destFieldErrors['lakehouseId']"
+                           [(ngModel)]="destForm.lakehouseId"
+                           placeholder="Optional, auto-created if empty" autocomplete="off" spellcheck="false">
+                    @if (destFieldErrors['lakehouseId']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Must be a GUID</div>
+                    }
+                  </div>
+                  <div class="conn-field-group">
+                    <label class="conn-field-label" for="daWarehouse">Warehouse ID</label>
+                    <input id="daWarehouse" type="text" class="conn-field-input"
+                           [class.input-error]="destFieldErrors['warehouseId']"
+                           [(ngModel)]="destForm.warehouseId"
+                           placeholder="For views &amp; procedures" autocomplete="off" spellcheck="false">
+                    @if (destFieldErrors['warehouseId']) {
+                      <div class="field-error-text"><i class="bi bi-exclamation-circle"></i> Must be a GUID</div>
+                    }
+                  </div>
+
+                  <div class="conn-field-group conn-field-full">
+                    <button type="button" class="link-toggle" (click)="showDestAdvanced = !showDestAdvanced">
+                      <i class="bi" [class.bi-chevron-down]="!showDestAdvanced" [class.bi-chevron-up]="showDestAdvanced"></i>
+                      Names and SQL endpoint (optional)
+                    </button>
+                  </div>
+
+                  @if (showDestAdvanced) {
+                    <div class="conn-field-group">
+                      <label class="conn-field-label" for="daLhName">Lakehouse Name</label>
+                      <input id="daLhName" type="text" class="conn-field-input" [(ngModel)]="destForm.lakehouseName" placeholder="Get or create by name">
+                    </div>
+                    <div class="conn-field-group">
+                      <label class="conn-field-label" for="daWhName">Warehouse Name</label>
+                      <input id="daWhName" type="text" class="conn-field-input" [(ngModel)]="destForm.warehouseName" placeholder="Looked up by name">
+                    </div>
+                    <div class="conn-field-group conn-field-full">
+                      <label class="conn-field-label" for="daWhHost">Warehouse SQL Endpoint</label>
+                      <input id="daWhHost" type="text" class="conn-field-input" [(ngModel)]="destForm.warehouseHost"
+                             placeholder="xxxx.datawarehouse.fabric.microsoft.com" spellcheck="false">
+                    </div>
+                  }
+
+                  <label class="remember-me-checkbox-row">
+                    <input type="checkbox" [(ngModel)]="destRememberMe">
+                    <span>Remember destination on this device</span>
+                  </label>
+
+                  <div class="conn-demo-limit-note">
+                    <i class="bi bi-info-circle text-info"></i>
+                    <span>Destination credentials are validated against the Fabric REST API and used across Migration Plan generation and Artifacts deployment.</span>
+                  </div>
+                </div>
+              }
+
+              @if (destinationError) {
+                <div class="conn-failed-alert inline-error">
+                  <div class="conn-failed-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                  </div>
+                  <div class="conn-failed-body">
+                    <div class="conn-failed-title">Destination Error</div>
+                    <div class="conn-failed-msg">{{ destinationError }}</div>
+                  </div>
+                </div>
+              }
+
+              <div class="conn-actions-bar" style="justify-content: flex-end;">
+                <div class="conn-actions-right">
+                  @if (isDestinationConfirmed) {
+                    <button type="button" class="btn-conn-cancel" (click)="closeDestinationCard()" [disabled]="isConnectingDestination">
+                      <i class="bi bi-x"></i>
+                      <span>Cancel</span>
+                    </button>
+                  }
+                  <button type="button"
+                          id="btn-submit-dest"
+                          class="btn-conn-submit"
+                          (click)="submitDestination()"
+                          [disabled]="isConnectingDestination || !selectedDestination">
+                    <i class="bi" [ngClass]="isConnectingDestination ? 'bi-hourglass-split' : 'bi-cloud-check-fill'"></i>
+                    <span>{{ isConnectingDestination ? 'Validating Destination...' : 'Connect &amp; Save Destination' }}</span>
                   </button>
                 </div>
               </div>

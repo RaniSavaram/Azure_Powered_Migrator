@@ -554,3 +554,59 @@
   max-height: 160px;
   overflow-y: auto;
 }
+
+/* Destination badge & inline card helpers */
+.status-tag-dest {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-tag-dest-pending {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.req {
+  color: #e11d48;
+}
+
+.dest-value {
+  word-break: break-all;
+}
+
+.link-toggle {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: #0284c7;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-error-text {
+  font-size: 11px;
+  color: #dc2626;
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.input-error {
+  border-color: #ef4444 !important;
+}

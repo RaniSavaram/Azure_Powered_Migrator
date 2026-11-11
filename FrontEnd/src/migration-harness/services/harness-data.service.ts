@@ -63,12 +63,34 @@ export class HarnessDataService {
   private sourceMetadata$ = new BehaviorSubject<any | null>(null);
   sourceMetadataObservable$: Observable<any | null> = this.sourceMetadata$.asObservable();
 
+  private isDestinationConfirmed$ = new BehaviorSubject<boolean>(false);
+  destinationConfirmedObservable$: Observable<boolean> = this.isDestinationConfirmed$.asObservable();
+
+  private destinationWorkspaceName$ = new BehaviorSubject<string | null>(null);
+
   getSourceMetadata(): any | null {
     return this.sourceMetadata$.value;
   }
 
   setSourceMetadata(metadata: any | null): void {
     this.sourceMetadata$.next(metadata);
+  }
+
+  isDestinationConfirmed(): boolean {
+    return this.isDestinationConfirmed$.value;
+  }
+
+  setDestinationConfirmed(confirmed: boolean, workspaceName?: string | null): void {
+    this.isDestinationConfirmed$.next(confirmed);
+    if (workspaceName !== undefined) {
+      this.destinationWorkspaceName$.next(workspaceName);
+    } else if (!confirmed) {
+      this.destinationWorkspaceName$.next(null);
+    }
+  }
+
+  getDestinationWorkspaceName(): string | null {
+    return this.destinationWorkspaceName$.value;
   }
 
   getAssessmentResult(): any | null {
@@ -169,6 +191,8 @@ export class HarnessDataService {
     this.migrationPlanResult$.next(null);
     this.evaluationResult$.next(null);
     this.evaluationLogs$.next(null);
+    this.isDestinationConfirmed$.next(false);
+    this.destinationWorkspaceName$.next(null);
     this.setDiscoveryConversationDone(false);
   }
 

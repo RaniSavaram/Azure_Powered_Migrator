@@ -5,6 +5,7 @@ import { HarnessDataService } from '../../services/harness-data.service';
 import { AgentInfo } from '../../models/agent.model';
 import { ResultsDialogComponent } from '../../components/results-dialog/results-dialog.component';
 import { FabricDestinationDialogComponent } from '../../components/fabric-destination-dialog/fabric-destination-dialog.component';
+import { Scanner } from '../../../app/services/scanner/scanner';
 
 const ARTIFACTS_GENERATOR_ID = 'artifacts-generator';
 
@@ -18,6 +19,7 @@ const ARTIFACTS_GENERATOR_ID = 'artifacts-generator';
 export class HarnessHomeComponent {
   private harnessDataService = inject(HarnessDataService);
   private router = inject(Router);
+  private scanner = inject(Scanner);
 
   agents$ = this.harnessDataService.agentsObservable$;
   liveCount: number = this.harnessDataService.getLiveCount();
@@ -71,7 +73,7 @@ export class HarnessHomeComponent {
     if (agent.status === 'upcoming') return;
     // The Artifacts Generator needs to know which Fabric workspace /
     // Lakehouse / Warehouse to deploy into before it can start.
-    if (agent.id === ARTIFACTS_GENERATOR_ID) {
+    if (agent.id === ARTIFACTS_GENERATOR_ID && !this.scanner.getFabricDestination()) {
       this.pendingDestinationAgent.set(agent);
       return;
     }

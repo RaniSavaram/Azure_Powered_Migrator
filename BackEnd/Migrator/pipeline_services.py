@@ -65,6 +65,7 @@ active_pipeline = {
     "catalog": "",
     "connected_at": None,
     "connection_config": {},
+    "fabric_destination": None,
     "metadata": None,
     "metadata_summary": None,
     "metadata_origin": None,
@@ -77,6 +78,16 @@ active_pipeline = {
     "agent_writeups": None,
     "evaluation_report": None,
 }
+
+
+def set_active_fabric_destination(dest: dict | None) -> None:
+    with _pipeline_lock:
+        active_pipeline["fabric_destination"] = dest
+
+
+def get_active_fabric_destination() -> dict | None:
+    with _pipeline_lock:
+        return active_pipeline.get("fabric_destination")
 
 
 def normalize_platform_slug(platform_str: str) -> str:
@@ -1296,7 +1307,7 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
 
     db_name = active_pipeline.get("database") or "MDR_T"
     srv_endpoint = active_pipeline.get("server") or "10.22.4.188:1433"
-    dest_saved = get_saved_connection("Fabric") or {}
+    dest_saved = get_active_fabric_destination() or get_saved_connection("Fabric") or {}
     dest_extra = dest_saved.get("extra", {}) if isinstance(dest_saved, dict) else {}
     dest_details = {
         "lakehouse_name": dest_extra.get("lakehouse_name") or dest_saved.get("database") or "Lakehouse_MDR",
