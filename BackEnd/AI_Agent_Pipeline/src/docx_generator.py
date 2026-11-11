@@ -1228,16 +1228,42 @@ def create_migration_plan_document(
 
     subtitle_p = doc.add_paragraph(style='Normal')
     subtitle_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    subtitle_p.paragraph_format.space_after = Pt(6)
+    subtitle_p.paragraph_format.space_after = Pt(4)
     run_sub = subtitle_p.add_run(f"AI Generated {source_hint_name} to Microsoft Fabric OneLake Migration Blueprint")
     set_run_font(run_sub, name="Aptos", size_pt=12, italic=True, color_hex="666666")
 
     ts_p = doc.add_paragraph(style='Normal')
     ts_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     ts_p.paragraph_format.space_before = Pt(0)
-    ts_p.paragraph_format.space_after = Pt(20)
+    ts_p.paragraph_format.space_after = Pt(14)
     run_ts = ts_p.add_run(f"Generated on: {plan_generated_at}")
     set_run_font(run_ts, name="Aptos", size_pt=11, italic=True, color_hex="666666")
+
+    # Prominent Executive Source vs Target Destination Specification Box
+    exec_table = doc.add_table(rows=7, cols=4)
+    exec_table.style = 'Table Grid'
+    et_rows = exec_table.rows
+    populate_and_style_cell(et_rows[0].cells[0], "SOURCE SPECIFICATION", is_header=True)
+    populate_and_style_cell(et_rows[0].cells[1], "SOURCE DETAILS", is_header=True)
+    populate_and_style_cell(et_rows[0].cells[2], "TARGET DESTINATION (FABRIC)", is_header=True)
+    populate_and_style_cell(et_rows[0].cells[3], "DESTINATION DETAILS", is_header=True)
+
+    overview_specs = [
+        ("Source Platform / Engine", source_hint_name, "Destination Platform", "Microsoft Fabric (OneLake)"),
+        ("Source Database Name", db_name, "Target Fabric Workspace", dest_workspace),
+        ("Host / Server Endpoint", srv_endpoint, "Target Fabric Lakehouse", dest_lakehouse),
+        ("Scanned Schemas", distinct_schemas, "Target SQL Warehouse", dest_warehouse),
+        ("Source Database Objects", f"{total_tables} Tables, {total_columns} Columns", "Target Storage Format", "Delta Lake Parquet (V-Order)"),
+        ("Data Footprint & Rows", f"{total_size} MB ({total_rows:,} records)", "Reporting & BI Model", "Direct Lake Semantic Model")
+    ]
+    for idx, (s_label, s_val, d_label, d_val) in enumerate(overview_specs, start=1):
+        populate_and_style_cell(et_rows[idx].cells[0], s_label, is_first_col=True)
+        populate_and_style_cell(et_rows[idx].cells[1], s_val)
+        populate_and_style_cell(et_rows[idx].cells[2], d_label, is_first_col=True)
+        populate_and_style_cell(et_rows[idx].cells[3], d_val)
+
+    spacer_p = doc.add_paragraph()
+    spacer_p.paragraph_format.space_after = Pt(12)
 
     # ------------------ SECTION 1: METADATA INTERPRETATION & SOURCE/DESTINATION SCOPE ------------------
     add_custom_heading(doc, "SECTION 1: METADATA INTERPRETATION & SCOPE", 1)
@@ -1250,11 +1276,12 @@ def create_migration_plan_document(
         ("Source Database Name", db_name),
         ("Source Host / Server Endpoint", srv_endpoint),
         ("Source Scope & Footprint", f"{total_tables} Tables, {total_columns} Columns ({total_size} MB across {total_rows:,} records)"),
+        ("Source Schemas Evaluated", distinct_schemas),
         ("Destination Target Platform", "Microsoft Fabric (OneLake)"),
-        ("Destination Workspace", dest_workspace),
+        ("Destination Fabric Workspace", dest_workspace),
         ("Destination Target Lakehouse", dest_lakehouse),
         ("Destination SQL Warehouse", dest_warehouse),
-        ("Target Ingestion Architecture", "Medallion Lakehouse Architecture (Bronze Ingest -> Silver Conformed -> Gold Semantic Direct Lake)"),
+        ("Target Ingestion Architecture", "Fabric Lakehouse Ingestion & Conformed Model"),
         ("Target Storage Format", "Delta Lake Parquet (ACID Transactions, V-Order Optimized)"),
         ("Power BI Integration Mode", "Direct Lake Mode (Sub-second query performance without data duplication)"),
         ("Migration Scope Objects", "Ingest all scanned base tables, primary constraints, and relationships into Fabric OneLake."),

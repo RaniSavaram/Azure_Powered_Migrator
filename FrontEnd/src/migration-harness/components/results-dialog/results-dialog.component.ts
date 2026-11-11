@@ -152,7 +152,7 @@ export class ResultsDialogComponent implements OnInit {
       `[00:02.100] [PASS] Constraint Agent (Phase 2): Primary & Foreign Key integrity verified (Score: 98.4% · PASS)`,
       `[00:03.220] [PASS] Assessment Agent (Phase 3): 30 tables migration-ready, 38 with review notes, 0 blocked`,
       `[00:03.950] [INFO] Topological dependency sequencing: 3 execution waves planned`,
-      `[00:04.810] [PASS] Migration Generator Agent (Phase 4): Medallion Lakehouse blueprint compiled (Bronze, Silver, Gold)`,
+      `[00:04.810] [PASS] Migration Generator Agent (Phase 4): Execution roadmap and dependency waves compiled`,
       `[00:05.620] [PASS] Evaluator Feedback Agent: 0 hallucinations detected · Quality verdict: PASS`,
       `[00:06.400] [PASS] Artifacts Generator Agent (Phase 5): Delta Parquet schema, T-SQL DDL, and official Word documents compiled`,
       `[00:06.910] [INFO] Assessment Report Deliverable: ${this.assessmentReportDownloadName}`,

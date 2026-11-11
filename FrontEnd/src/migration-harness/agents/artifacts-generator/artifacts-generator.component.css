@@ -352,3 +352,142 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ---------------------------------------------------------------------------
+   Live Deployment Telemetry Logs Screen
+   --------------------------------------------------------------------------- */
+.deployment-logs-card {
+  margin: 14px 0 10px;
+  border-radius: 12px;
+  background: #0b0f19;
+  border: 1px solid #1e293b;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  animation: fadeInLogs 0.25s ease-out;
+}
+
+@keyframes fadeInLogs {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.logs-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #111827;
+  border-bottom: 1px solid #1e293b;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.logs-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logs-terminal-title {
+  color: #f1f5f9;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.logs-badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.logs-badge-status.running {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+.logs-badge-status.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.logs-badge-status.failed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.logs-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-log-action {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.btn-log-action:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+
+.logs-progress-track {
+  width: 100%;
+  height: 4px;
+  background: #1e293b;
+  position: relative;
+  overflow: hidden;
+}
+.logs-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ec4899, #8b5cf6, #38bdf8);
+  transition: width 0.3s ease;
+}
+
+.logs-body-terminal {
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.terminal-line {
+  word-break: break-all;
+  white-space: pre-wrap;
+  color: #94a3b8;
+}
+.terminal-line.log-info {
+  color: #e2e8f0;
+}
+.terminal-line.log-success {
+  color: #34d399;
+}
+.terminal-line.log-warn {
+  color: #fbbf24;
+}
+.terminal-line.log-error {
+  color: #f87171;
+}
+.terminal-line.log-dry {
+  color: #c084fc;
+}

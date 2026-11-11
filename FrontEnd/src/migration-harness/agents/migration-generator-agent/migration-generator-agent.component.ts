@@ -76,7 +76,6 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
 
   readonly quickPrompts: QuickPrompt[] = [
     { label: 'Re-generate Migration Plan', query: 'Generate the Migration Plan (.docx) and Fabric contract again', icon: 'bi-arrow-clockwise' },
-    { label: 'Medallion Layers', query: 'Inspect Bronze, Silver, and Gold Lakehouse layer allocations', icon: 'bi-layers' },
     { label: 'Migration Waves', query: 'Show the topological DAG execution waves', icon: 'bi-diagram-3' },
     { label: 'Risk Mitigations', query: 'Analyze migration risks and Fabric governance mitigations', icon: 'bi-shield-check' },
     { label: 'Fabric Contract', query: 'Inspect the migration_plan.json endpoint and schema contract', icon: 'bi-filetype-json' }
@@ -295,10 +294,6 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
     const destPlatform = planRes.destination_info?.platform || 'Microsoft Fabric (OneLake)';
     const destLakehouse = planRes.destination_info?.lakehouse || 'Fabric Lakehouse';
 
-    const bronzeCount = planRes.medallion_architecture?.bronze?.length ?? 0;
-    const silverCount = planRes.medallion_architecture?.silver?.length ?? 0;
-    const goldCount = planRes.medallion_architecture?.gold?.length ?? 0;
-
     const intro = fromCache
       ? `Loaded compiled Migration Plan from earlier in this session for **${src} (${srcDb})**.`
       : `Compiled the complete 9-section migration roadmap, embedded Dependency ER Diagram, and generated the Fabric OneLake deployment contract.`;
@@ -312,7 +307,6 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
       `${intro}\n\n` +
       `- **Source**: **${src}** · Database: \`${srcDb}\`\n` +
       `- **Destination**: **${destPlatform}** · Lakehouse: \`${destLakehouse}\` (Delta Parquet with V-Order)\n` +
-      `- **Medallion Layers**: **${bronzeCount}** Bronze ingestion · **${silverCount}** Silver cleansed · **${goldCount}** Gold semantic\n` +
       `- **ER Diagram**: Embedded in **Section 2 (Dependency Analysis & ER Model)**\n` +
       `- **Artifacts**: \`${planRes.plan_file}\`${this.formatGeneratedTime(planRes.generated_at, planRes.document_generated_at) ? ` (Generated: **${this.formatGeneratedTime(planRes.generated_at, planRes.document_generated_at)}**)` : ''} and \`${planRes.json_plan_file || 'migration_plan.json'}\`\n\n` +
       (wavesLines ? `**Execution Sequence Waves (${waves.length})**\n${wavesLines}` : '');
@@ -325,7 +319,6 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
     ];
 
     const actions: ChatActionItem[] = [
-      { label: 'Inspect Medallion Layers', action: 'medallion', icon: 'bi-layers' },
       { label: 'Migration Waves', action: 'waves', icon: 'bi-diagram-3' },
       ...(planRes.plan_file ? [
         { label: 'View Plan', action: 'view_doc', icon: 'bi-box-arrow-up-right' },

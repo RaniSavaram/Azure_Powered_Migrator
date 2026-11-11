@@ -23,12 +23,14 @@
       </div>
     </div>
     <div class="header-right-actions">
-      <button type="button" class="btn-toolbar-ghost" (click)="openResultsDialog()" title="View Assessment & Pipeline Results" style="background: #ffffff; border: 1px solid #bae6fd; color: #0284c7; padding: 7px 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-        <i class="bi bi-bar-chart-steps" style="color: #0ea5e9;"></i>
-        <span>View Results</span>
-      </button>
+      @if (isWorkflowCompleted) {
+        <button type="button" class="btn-toolbar-ghost" (click)="openResultsDialog()" title="View Assessment & Pipeline Results" style="background: #ffffff; border: 1px solid #bae6fd; color: #0284c7; padding: 7px 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+          <i class="bi bi-bar-chart-steps" style="color: #0ea5e9;"></i>
+          <span>View Results</span>
+        </button>
+      }
       @if (isSourceConnected) {
-        <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Return to Home Dashboard">
+        <a class="btn-next-phase" [routerLink]="nextPhaseRoute" (click)="completeWorkflow()" title="Complete Workflow and Return to Dashboard">
           <span>Complete Workflow</span>
           <i class="bi bi-check-lg"></i>
         </a>
@@ -74,6 +76,13 @@
             </span>
           </div>
           <div class="chat-toolbar-actions">
+            <button type="button" class="btn-toolbar-ghost" (click)="toggleLogsScreen()" title="Toggle Deployment Telemetry Logs">
+              <i class="bi bi-terminal"></i>
+              <span>Deployment Logs</span>
+              @if (activeLogs().length > 0) {
+                <span class="badge ms-1" [ngClass]="deploymentStatus() === 'success' ? 'bg-success' : (deploymentStatus() === 'failed' ? 'bg-danger' : 'bg-primary')" style="font-size: 10px;">{{ activeLogs().length }}</span>
+              }
+            </button>
             <button type="button" class="btn-toolbar-ghost" (click)="handleActionClick('change-destination')" [disabled]="isTyping()" title="Change destination">
               <i class="bi bi-arrow-left-right"></i>
               <span>Change Destination</span>
@@ -523,6 +532,71 @@
                   </div>
                 </div>
               </div>
+            </div>
+          }
+
+          <!-- Live Deployment Telemetry & Logs Terminal -->
+          @if (showLogsScreen()) {
+            <div class="deployment-logs-card">
+              <div class="logs-card-header">
+                <div class="logs-header-left">
+                  <i class="bi bi-terminal-fill" style="color: #ec4899;"></i>
+                  <span class="logs-terminal-title">Microsoft Fabric Deployment Telemetry</span>
+                  <span class="logs-badge-status" [ngClass]="deploymentStatus()">
+                    @if (deploymentStatus() === 'running') {
+                      <span class="spinner-border spinner-border-sm me-1" style="width: 10px; height: 10px;" role="status"></span>
+                      Deploying to OneLake
+                    } @else if (deploymentStatus() === 'success') {
+                      <i class="bi bi-check-circle-fill me-1"></i>
+                      Deployed
+                    } @else if (deploymentStatus() === 'failed') {
+                      <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                      Failed
+                    } @else {
+                      <i class="bi bi-circle-fill me-1"></i>
+                      Ready
+                    }
+                  </span>
+                </div>
+                <div class="logs-header-right">
+                  <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">{{ deploymentProgress() }}%</span>
+                  <button type="button" class="btn-log-action" (click)="copyActiveLogs()" title="Copy Logs">
+                    <i class="bi" [ngClass]="copiedKey() === 'active-logs' ? 'bi-check2' : 'bi-clipboard'"></i>
+                    <span>{{ copiedKey() === 'active-logs' ? 'Copied' : 'Copy' }}</span>
+                  </button>
+                  <button type="button" class="btn-log-action" (click)="clearLogs()" title="Clear logs">
+                    <i class="bi bi-trash"></i>
+                    <span>Clear</span>
+                  </button>
+                  <button type="button" class="btn-log-action" (click)="toggleLogsExpanded()" title="Collapse / Expand">
+                    <i class="bi" [ngClass]="isLogsExpanded() ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                  </button>
+                  <button type="button" class="btn-log-action" (click)="toggleLogsScreen()" title="Close Terminal">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Animated Progress Bar -->
+              @if (deploymentStatus() === 'running') {
+                <div class="logs-progress-track">
+                  <div class="logs-progress-bar" [style.width.%]="deploymentProgress()"></div>
+                </div>
+              }
+
+              <!-- Terminal Lines -->
+              @if (isLogsExpanded()) {
+                <div class="logs-body-terminal" #logsConsole>
+                  @if (activeLogs().length === 0) {
+                    <div class="terminal-line" style="color: #64748b; font-style: italic;">
+                      Telemetry engine initialized. Awaiting deployment activity...
+                    </div>
+                  }
+                  @for (line of activeLogs(); track $index) {
+                    <div class="terminal-line" [ngClass]="getLineClass(line)">{{ line }}</div>
+                  }
+                </div>
+              }
             </div>
           }
 

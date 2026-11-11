@@ -18,7 +18,7 @@
         <div class="phase-tag purple-tag">{{ phase }}</div>
         <h1 class="workspace-title">{{ agentName }}</h1>
         <p class="workspace-subtitle">
-          Synthesizes Microsoft Fabric Lakehouse architectures (Bronze ingestion, Silver conformation, Gold semantic models), formulates execution sequence waves DAG, and generates the official Migration Plan (.docx) & migration_plan.json.
+          Synthesizes Microsoft Fabric Lakehouse architectures, formulates topological execution sequence waves DAG, and generates the official Migration Plan (.docx) & migration_plan.json.
         </p>
       </div>
     </div>
@@ -46,7 +46,7 @@
         <div class="prompt-banner-text">
           <div class="prompt-banner-tag">
             <span class="badge-dot"></span>
-            {{ plan.execution_waves?.length || 4 }} wave(s) · Medallion blueprint · ER diagram embedded
+            {{ plan.execution_waves?.length || 4 }} wave(s) · Execution Roadmap · ER diagram embedded
           </div>
           <div class="prompt-banner-title">
             Microsoft Fabric Migration Plan Compiled
@@ -69,7 +69,7 @@
         <div class="blank-state-badge">Awaiting Phase 1 Connection</div>
         <h2>No Source Database Connected</h2>
         <p>
-          Migration Generator Agent requires schema inventory, table definitions, and sizing metrics from <strong>Discovery Agent (Phase 1)</strong> before Medallion architecture mapping and execution waves can be formulated.
+          Migration Generator Agent requires schema inventory, table definitions, and sizing metrics from <strong>Discovery Agent (Phase 1)</strong> before migration roadmap and execution waves can be formulated.
         </p>
         <a routerLink="/agents/discovery" class="btn-connect-source-cta">
           <i class="bi bi-plug-fill"></i>
@@ -86,7 +86,7 @@
         <div class="chat-header-toolbar">
           <div class="chat-status-indicator">
             <span class="status-dot-pulse" style="background-color: #8b5cf6;"></span>
-            <span class="status-title">Migration Roadmap & Medallion Engine</span>
+            <span class="status-title">Migration Roadmap & Execution Engine</span>
             <span class="status-tag" style="background-color: rgba(139, 92, 246, 0.1); color: #7c3aed;">
               @if (isBusy()) {
                 synthesizing…

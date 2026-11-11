@@ -68,6 +68,17 @@ export class HarnessDataService {
 
   private destinationWorkspaceName$ = new BehaviorSubject<string | null>(null);
 
+  private isWorkflowCompleted$ = new BehaviorSubject<boolean>(false);
+  workflowCompletedObservable$: Observable<boolean> = this.isWorkflowCompleted$.asObservable();
+
+  isWorkflowCompleted(): boolean {
+    return this.isWorkflowCompleted$.value;
+  }
+
+  setWorkflowCompleted(completed: boolean = true): void {
+    this.isWorkflowCompleted$.next(completed);
+  }
+
   getSourceMetadata(): any | null {
     return this.sourceMetadata$.value;
   }
@@ -194,6 +205,7 @@ export class HarnessDataService {
     this.isDestinationConfirmed$.next(false);
     this.destinationWorkspaceName$.next(null);
     this.setDiscoveryConversationDone(false);
+    this.isWorkflowCompleted$.next(false);
   }
 
   /**

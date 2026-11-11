@@ -37,6 +37,10 @@ export class HarnessHomeComponent {
     return this.harnessDataService.isSourceConnected();
   }
 
+  get isWorkflowCompleted(): boolean {
+    return this.harnessDataService.isWorkflowCompleted();
+  }
+
   showStartPhase1Modal = false;
   showResultsDialog = false;
 

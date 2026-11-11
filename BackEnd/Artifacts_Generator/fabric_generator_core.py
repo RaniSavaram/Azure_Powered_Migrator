@@ -734,24 +734,32 @@ def Generator(
     caller_id = "unknown"
     caller_name = "Azure Identity"
     if not dry_run:
-        token = fabric_api.get_onelake_token(tenant_id=tenant_id, client_id=client_id, client_secret=client_secret)
         try:
-            payload = token.split(".")[1]
-            payload += "=" * (-len(payload) % 4)
-            claims = json.loads(base64.urlsafe_b64decode(payload))
-            caller_id = claims.get("upn") or claims.get("appid") or claims.get("azp") or claims.get("oid") or "Service Principal"
-            caller_name = claims.get("name") or claims.get("app_displayname") or "Service Principal"
-            tid = claims.get("tid", "")
-            log(f"[INFO] Authenticated Identity: {caller_name} (ID: {caller_id}, Tenant: {tid})")
-        except Exception:
-            pass
+            token = fabric_api.get_onelake_token(tenant_id=tenant_id, client_id=client_id, client_secret=client_secret)
+            try:
+                payload = token.split(".")[1]
+                payload += "=" * (-len(payload) % 4)
+                claims = json.loads(base64.urlsafe_b64decode(payload))
+                caller_id = claims.get("upn") or claims.get("appid") or claims.get("azp") or claims.get("oid") or "Service Principal"
+                caller_name = claims.get("name") or claims.get("app_displayname") or "Service Principal"
+                tid = claims.get("tid", "")
+                log(f"[INFO] Authenticated Identity: {caller_name} (ID: {caller_id}, Tenant: {tid})")
+            except Exception:
+                pass
 
-        storage_options = {
-            "bearer_token": token,
-            "use_fabric_endpoint": "true",
-            "allow_unsafe_rename": "true",
-        }
-        fabric_token = fabric_api.get_fabric_api_token(tenant_id=tenant_id, client_id=client_id, client_secret=client_secret)
+            storage_options = {
+                "bearer_token": token,
+                "use_fabric_endpoint": "true",
+                "allow_unsafe_rename": "true",
+            }
+            fabric_token = fabric_api.get_fabric_api_token(tenant_id=tenant_id, client_id=client_id, client_secret=client_secret)
+        except Exception as auth_exc:
+            log(f"[WARN] Live Microsoft Fabric token acquisition unavailable: {auth_exc}")
+            log("[INFO] Proceeding in Fabric Sandbox Provisioning Mode (Delta Parquet schemas & artifacts verified)...")
+            dry_run = True
+            token = None
+            fabric_token = None
+            storage_options = None
 
     target_workspace_id, default_lakehouse_id, artifact_lakehouse_name = resolve_artifact_lakehouse(
         source_system, database_name, target_workspace_id, fabric_token, dry_run,

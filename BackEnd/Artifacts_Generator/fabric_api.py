@@ -65,7 +65,11 @@ def _build_credential(tenant_id=None, client_id=None, client_secret=None):
     return DefaultAzureCredential(
         exclude_shared_token_cache_credential=True,
         exclude_broker_credential=True,
-        process_timeout=60,
+        exclude_azure_powershell_credential=True,
+        exclude_developer_cli_credential=True,
+        exclude_visual_studio_code_credential=True,
+        exclude_interactive_browser_credential=True,
+        process_timeout=5,
     )
 
 
@@ -80,20 +84,10 @@ def _get_credential(tenant_id=None, client_id=None, client_secret=None):
 
 def _get_token(scope, tenant_id=None, client_id=None, client_secret=None):
     """
-    Wraps credential.get_token() with a one-time reset-and-retry: if
-    whichever source DefaultAzureCredential locked onto on its first
-    successful call later goes stale mid-process, this discards the
-    cached credential and retries the full chain once from scratch.
+    Wraps credential.get_token() with fast failure and clean error propagation.
     """
-    global _credential
     cred = _get_credential(tenant_id, client_id, client_secret)
-    try:
-        return cred.get_token(scope).token
-    except Exception:
-        if not (tenant_id and client_id and client_secret):
-            _credential = None
-            return _get_credential().get_token(scope).token
-        raise
+    return cred.get_token(scope).token
 
 
 def get_onelake_token(tenant_id=None, client_id=None, client_secret=None):
