@@ -1289,8 +1289,11 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
         total: latest.total ?? 0,
         prompt: latest.prompt ?? 0,
         completion: latest.completion ?? 0,
-        cost: latest.cost ?? '-',
+        cost: typeof latest.cost === 'number' ? `$${latest.cost.toFixed(4)}` : (latest.cost ?? '-'),
       };
+      try {
+        sessionStorage.setItem('apexon_token_info', JSON.stringify(this.tokenInfo));
+      } catch {}
     }
     this.scrollToBottom();
   }
@@ -1423,16 +1426,14 @@ export class DbScannerComponent implements OnInit, AfterViewChecked, OnDestroy {
         const latestTokenEntry = logs['Token Info'][logs['Token Info'].length - 1];
 
         this.tokenInfo = {
-
           total: latestTokenEntry.total ?? 0,
-
           prompt: latestTokenEntry.prompt ?? 0,
-
           completion: latestTokenEntry.completion ?? 0,
-
-          cost: latestTokenEntry.cost ?? '-'
-
+          cost: typeof latestTokenEntry.cost === 'number' ? `$${latestTokenEntry.cost.toFixed(4)}` : (latestTokenEntry.cost ?? '-')
         };
+        try {
+          sessionStorage.setItem('apexon_token_info', JSON.stringify(this.tokenInfo));
+        } catch {}
 
         for (const entry of logs['Token Info']) {
 

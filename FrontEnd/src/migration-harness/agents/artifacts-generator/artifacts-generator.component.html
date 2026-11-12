@@ -188,7 +188,7 @@
                           <div class="dep-filter-row">
                             <div class="dep-search">
                               <i class="bi bi-search"></i>
-                              <input type="text" placeholder="Filter by table, schema or layer"
+                              <input type="text" placeholder="Filter by table or schema…"
                                      [value]="tableFilter()"
                                      (input)="tableFilter.set($any($event.target).value)" />
                               @if (tableFilter()) {
@@ -206,9 +206,6 @@
                                 <i class="bi bi-table dep-row-ico"></i>
                                 <span class="dep-row-name">{{ t.schema }}.{{ t.table }}</span>
                                 <span class="dep-chip">{{ t.columns }} cols</span>
-                                @if (t.layer) {
-                                  <span class="dep-chip dep-chip-layer">{{ t.layer }}</span>
-                                }
                                 @if (t.uri) {
                                   <button type="button" class="dep-copy"
                                           (click)="copyText(t.uri, t.schema + '.' + t.table)"
@@ -269,24 +266,39 @@
                       </div>
                     }
 
-                    <!-- Raw log -->
+                    <!-- Deployment Logs directly in Chat -->
                     @if (d.logs.length) {
-                      <div class="dep-section">
+                      <div class="dep-section dep-section-logs">
                         <button type="button" class="dep-sec-head" (click)="toggleSection('logs')"
                                 [attr.aria-expanded]="isSectionOpen('logs')">
-                          <i class="bi" [ngClass]="isSectionOpen('logs') ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-                          <span>Raw log</span>
-                          <span class="dep-count">{{ d.logs.length }}</span>
+                          <div class="d-flex align-items-center gap-2">
+                            <i class="bi" [ngClass]="isSectionOpen('logs') ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                            <i class="bi bi-terminal-fill" style="color: #ec4899;"></i>
+                            <span>Deployment Logs</span>
+                          </div>
+                          <div class="d-flex align-items-center gap-2">
+                            <span class="dep-count" style="background: #10b981; color: #ffffff;">{{ d.logs.length }} lines</span>
+                          </div>
                         </button>
                         @if (isSectionOpen('logs')) {
-                          <div class="dep-log-wrap">
-                            <button type="button" class="dep-log-copy" (click)="copyLogs(d)">
-                              <i class="bi" [ngClass]="copiedKey() === 'logs' ? 'bi-check2' : 'bi-clipboard'"></i>
-                              <span>{{ copiedKey() === 'logs' ? 'Copied' : 'Copy' }}</span>
-                            </button>
-                            <div class="dep-log">
+                          <div class="chat-terminal-shell">
+                            <div class="chat-terminal-topbar">
+                              <div class="chat-terminal-dots">
+                                <span class="dot dot-red"></span>
+                                <span class="dot dot-yellow"></span>
+                                <span class="dot dot-green"></span>
+                              </div>
+                              <span class="chat-terminal-title">fabric_deployment.log &mdash; Microsoft Fabric Deployment Logs</span>
+                              <div class="chat-terminal-actions">
+                                <button type="button" class="btn-chat-copy-logs" (click)="copyLogs(d)" title="Copy all logs">
+                                  <i class="bi" [ngClass]="copiedKey() === 'logs' ? 'bi-check2' : 'bi-clipboard'"></i>
+                                  <span>{{ copiedKey() === 'logs' ? 'Copied' : 'Copy' }}</span>
+                                </button>
+                              </div>
+                            </div>
+                            <div class="chat-terminal-body">
                               @for (line of d.logs; track $index) {
-                                <div class="dep-log-line">{{ line }}</div>
+                                <div class="terminal-line" [ngClass]="getLineClass(line)">{{ line }}</div>
                               }
                             </div>
                           </div>
@@ -310,6 +322,42 @@
                     }
                   </div>
                 }
+              </div>
+            </div>
+          }
+
+          <!-- Live Deployment Telemetry Console streaming directly inside Chat while running -->
+          @if (deploymentStatus() === 'running') {
+            <div class="chat-msg-row bot-msg">
+              <div class="msg-avatar agent-icon-box pink-box">
+                <i class="bi bi-terminal-fill"></i>
+              </div>
+              <div class="msg-bubble chat-live-telemetry-bubble">
+                <div class="chat-terminal-shell">
+                  <div class="chat-terminal-topbar">
+                    <div class="chat-terminal-dots">
+                      <span class="dot dot-red"></span>
+                      <span class="dot dot-yellow"></span>
+                      <span class="dot dot-green"></span>
+                    </div>
+                    <span class="chat-terminal-title">
+                      <span class="live-pulse"></span>
+                      fabric_deployment.log &mdash; Live Deployment Telemetry
+                    </span>
+                    <span class="chat-terminal-status"><span class="spinner-border spinner-border-sm me-1" style="width: 10px; height: 10px;"></span> Deploying ({{ deploymentProgress() }}%)</span>
+                  </div>
+                  <div class="logs-progress-track">
+                    <div class="logs-progress-bar" [style.width.%]="deploymentProgress()"></div>
+                  </div>
+                  <div class="chat-terminal-body live-scroll" #liveChatConsole>
+                    @for (line of activeLogs(); track $index) {
+                      <div class="terminal-line" [ngClass]="getLineClass(line)">{{ line }}</div>
+                    }
+                    <div class="terminal-cursor">
+                      <span class="cursor-block"></span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           }
@@ -626,7 +674,6 @@
                         <i class="bi bi-table dep-row-ico"></i>
                         <span class="dep-row-name">{{ t.schema }}.{{ t.table }}</span>
                         <span class="dep-chip">{{ t.columns }} cols</span>
-                        <span class="dep-chip dep-chip-layer">{{ t.layer || 'Bronze' }}</span>
                         @if (t.uri) {
                           <span class="dep-uri-text" [title]="t.uri">{{ t.uri }}</span>
                         }

@@ -102,6 +102,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked, OnDestroy 
   private pollTimer: any = null;
 
   @ViewChild('logsConsole') private logsConsole?: ElementRef<HTMLElement>;
+  @ViewChild('liveChatConsole') private liveChatConsole?: ElementRef<HTMLElement>;
 
   toggleLogsScreen(): void {
     this.showLogsScreen.update(s => !s);
@@ -131,6 +132,8 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked, OnDestroy 
       if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
       const logsEl = this.logsConsole?.nativeElement;
       if (logsEl) logsEl.scrollTop = logsEl.scrollHeight;
+      const liveChatEl = this.liveChatConsole?.nativeElement;
+      if (liveChatEl) liveChatEl.scrollTop = liveChatEl.scrollHeight;
     }, 40);
   }
 
@@ -211,7 +214,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked, OnDestroy 
 
   /** Results-panel state: table search, which sections are open, copy feedback. */
   tableFilter = signal('');
-  openSections = signal<Record<string, boolean>>({ tables: true, errors: true, logs: false });
+  openSections = signal<Record<string, boolean>>({ tables: true, errors: true, logs: true });
   copiedKey = signal<string | null>(null);
 
   private nextId = 1;
@@ -226,12 +229,12 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked, OnDestroy 
     return !!this.openSections()[key];
   }
 
-  /** Case-insensitive match on schema, table or layer. */
+  /** Case-insensitive match on schema or table. */
   filteredTables(d: DeploymentResult): DeploymentTable[] {
     const q = this.tableFilter().trim().toLowerCase();
     if (!q) return d.tables;
     return d.tables.filter(t =>
-      `${t.schema}.${t.table}`.toLowerCase().includes(q) || (t.layer || '').toLowerCase().includes(q)
+      `${t.schema}.${t.table}`.toLowerCase().includes(q)
     );
   }
 
@@ -445,12 +448,11 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked, OnDestroy 
       const tName = t.table_name || t.table || t.name || 'table';
       const schema = t.schema || 'dbo';
       const cols = t.columns_count || t.columns?.length || 4;
-      const layer = t.medallion_layer || 'Bronze';
       return {
         schema,
         table: tName,
         columns: cols,
-        layer,
+        layer: '',
         load_strategy: 'Full Load',
         uri: `abfss://${destWs}@onelake.dfs.fabric.microsoft.com/${lhId}/Tables/${schema}/${tName}`
       };
@@ -460,7 +462,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked, OnDestroy 
     return {
       status: 'success',
       message: `Synced ${processed.length} table(s) to Fabric Lakehouse '${destLh}' (0 error(s)).`,
-      tables: processed.map((p: any) => `${p.schema}.${p.table} (${p.columns} columns) [${p.layer}]`),
+      tables: processed.map((p: any) => `${p.schema}.${p.table} (${p.columns} columns)`),
       tables_info: processed.map((p: any) => ({ schema: p.schema, table: p.table, columns_count: p.columns })),
       processed,
       lakehouse_name: destLh,
@@ -711,7 +713,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked, OnDestroy 
         table: r.table || '',
         columns: r.columns ?? r.columns_count ?? 0,
         uri: r.uri || '',
-        layer: r.layer || 'Table'
+        layer: ''
       })),
       errors: res.errors || [],
       logs: res.logs || [],
@@ -762,11 +764,11 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked, OnDestroy 
           : 'First choose a destination below, then I can create the artifacts.',
         saved
           ? {
-              actions: [
-                { label: 'Generate artifacts now', icon: 'bi-box-seam', action: 'generate', primary: true },
-                { label: 'Open scanner page', icon: 'bi-database', action: 'go-scan' }
-              ]
-            }
+            actions: [
+              { label: 'Generate artifacts now', icon: 'bi-box-seam', action: 'generate', primary: true },
+              { label: 'Open scanner page', icon: 'bi-database', action: 'go-scan' }
+            ]
+          }
           : undefined
       );
       if (!saved) this.openDestinationCard();

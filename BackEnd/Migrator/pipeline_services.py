@@ -1741,6 +1741,14 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
 
 def get_pipeline_state_service() -> dict:
     with _pipeline_lock:
+        token_info = None
+        try:
+            from Logs import Logs
+            tokens = list(Logs.get("Token Info", []))
+            if tokens:
+                token_info = tokens[-1]
+        except Exception:
+            pass
         return _sanitize_for_json({
             "source_connected": active_pipeline["source_connected"],
             "platform": active_pipeline["platform"],
@@ -1759,4 +1767,5 @@ def get_pipeline_state_service() -> dict:
             "migration_plan_generated_at": active_pipeline["migration_plan"].get("generated_at") if active_pipeline.get("migration_plan") else None,
             "has_evaluation": active_pipeline.get("evaluation_report") is not None,
             "evaluation_decision": active_pipeline["evaluation_report"]["decision"] if active_pipeline.get("evaluation_report") else None,
+            "token_info": token_info,
         })

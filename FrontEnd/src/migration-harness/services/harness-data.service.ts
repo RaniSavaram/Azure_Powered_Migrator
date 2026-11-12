@@ -122,6 +122,27 @@ export class HarnessDataService {
   private deploymentLogs$ = new BehaviorSubject<string[]>([]);
   deploymentLogsObservable$: Observable<string[]> = this.deploymentLogs$.asObservable();
 
+  private tokenInfo$ = new BehaviorSubject<{ total: number; prompt: number; completion: number; cost: string | number } | null>(null);
+  tokenInfoObservable$: Observable<{ total: number; prompt: number; completion: number; cost: string | number } | null> = this.tokenInfo$.asObservable();
+
+  getTokenInfo(): { total: number; prompt: number; completion: number; cost: string | number } | null {
+    if (this.tokenInfo$.value) return this.tokenInfo$.value;
+    try {
+      const raw = sessionStorage.getItem('apexon_token_info');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  }
+
+  setTokenInfo(info: { total: number; prompt: number; completion: number; cost: string | number } | null): void {
+    this.tokenInfo$.next(info);
+    if (info) {
+      try {
+        sessionStorage.setItem('apexon_token_info', JSON.stringify(info));
+      } catch {}
+    }
+  }
+
   isWorkflowCompleted(): boolean {
     return this.isWorkflowCompleted$.value;
   }

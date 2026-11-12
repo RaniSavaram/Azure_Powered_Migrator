@@ -801,7 +801,7 @@ def Generator(
                 table, target_workspace_id, default_lakehouse_id
             )
 
-            layer = table.get("medallion_layer") or "(no layer assigned)"
+            layer = table.get("medallion_layer") or ""
 
             load_strategy = (
                 table.get("load_strategy")
@@ -811,7 +811,6 @@ def Generator(
             log(
                 f"=== {schema_name}.{clean_table_name} "
                 f"({len(cols)} columns) | "
-                f"Layer: {layer} | "
                 f"Load: {load_strategy} ==="
             )
 
@@ -1010,7 +1009,7 @@ def Generator(
         f"[INFO] Errors: {len(errors)}"
     )
 
-    synced_list = [f"{t['schema']}.{t['table']} ({t['columns']} columns) [{t.get('layer', 'Table')}]" for t in created_or_updated]
+    synced_list = [f"{t['schema']}.{t['table']} ({t['columns']} columns)" for t in created_or_updated]
     tables_meta = [{"schema": t["schema"], "table": t["table"], "columns_count": t["columns"]} for t in created_or_updated]
     err_list = [f"{e.get('table', 'Error')}: {str(e.get('error', '')).replace(chr(0x21b3), '->')}" for e in errors]
 
