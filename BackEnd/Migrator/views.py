@@ -1174,6 +1174,84 @@ def debug_view(request):
         })
 
 
+artifact_jobs = {}
+artifact_jobs_lock = Lock()
+
+
+def _run_fabric_generation(source_param, fabric_kwargs):
+    """Route to the source-specific *2_fabric.py wrapper and run it.
+    Returns the generator's result dict."""
+    source_clean = (source_param or "").strip().lower().replace(" ", "").replace("_", "")
+
+    # Route based on source system - each source has its own thin
+    # *2_fabric.py entry point (databricks2_fabric.py /
+    # sqlserver2_fabric.py / dynamics3652_fabric.py), all backed by the
+    # same fabric_generator_core.Generator(); only which one gets
+    # imported, and therefore the resolved pre-provisioned
+    # Lakehouse/report files, differs.
+    if "databricks" in source_clean:
+        source_display = "Databricks"
+        from Artifacts_Generator import databricks2_fabric as fabric_script
+        script_name = fabric_script.SCRIPT_NAME
+        print(f"[INFO] Routing Generate Artifacts to: {script_name} for source: {source_display}")
+        result = fabric_script.Generator(**fabric_kwargs)
+    elif "dynamics" in source_clean or source_clean == "d365":
+        source_display = "Dynamics 365"
+        from Artifacts_Generator import dynamics3652_fabric as fabric_script
+        script_name = fabric_script.SCRIPT_NAME
+        print(f"[INFO] Routing Generate Artifacts to: {script_name} for source: {source_display}")
+        result = fabric_script.Generator(**fabric_kwargs)
+    elif "snowflake" in source_clean:
+        source_display = "Snowflake"
+        from Artifacts_Generator import snowflake2_fabric as fabric_script
+        script_name = fabric_script.SCRIPT_NAME
+        print(f"[INFO] Routing Generate Artifacts to: {script_name} for source: {source_display}")
+        result = fabric_script.Generator(**fabric_kwargs)
+    else:
+        source_display = "SQL Server"
+        from Artifacts_Generator import sqlserver2_fabric as fabric_script
+        script_name = fabric_script.SCRIPT_NAME
+        print(f"[INFO] Routing Generate Artifacts to: {script_name} for source: {source_display}")
+        result = fabric_script.Generator(**fabric_kwargs)
+
+    result["generator_script"] = script_name
+    result["source_system"] = source_display
+    if "logs" in result and isinstance(result.get("logs"), list):
+        result["logs"].insert(0, f"Routing Generate Artifacts to: {script_name} for source: {source_display}")
+    return result
+
+
+def _run_artifacts_in_background(job_id, source_param, fabric_kwargs):
+    """Deploying every table into OneLake takes longer than Render's proxy
+    keeps a request open, which reached the UI as a bare "Failed to fetch".
+    Run it off the request thread and let the client poll artifacts_status()."""
+    try:
+        result = _run_fabric_generation(source_param, fabric_kwargs)
+        result.setdefault("status", "success")
+    except Exception as exc:
+        traceback.print_exc()
+        result = {
+            "status": "error",
+            "message": str(exc),
+            "logs": [f"[ERROR] {exc}"],
+            "generator_script": None,
+        }
+    with artifact_jobs_lock:
+        artifact_jobs[job_id] = {"done": True, "result": result}
+
+
+@api_view(["GET"])
+def artifacts_status(request, job_id):
+    """Result of an async Generate Artifacts run, or status 'running'."""
+    with artifact_jobs_lock:
+        job = artifact_jobs.get(str(job_id))
+    if job is None:
+        return Response({"status": "error", "message": "Artifacts job not found."}, status=404)
+    if not job.get("done"):
+        return Response({"status": "running"}, status=200)
+    return Response(job["result"], status=200)
+
+
 @api_view(["POST", "GET"])
 def generate_fabric_artifacts(request):
     """
@@ -1278,44 +1356,22 @@ def generate_fabric_artifacts(request):
             "warehouse_connection_string": warehouse_connection_string,
         }
 
-        source_clean = (source_param or "").strip().lower().replace(" ", "").replace("_", "")
+        run_async = bool(
+            (request.data.get("async") if request.method == "POST" else request.GET.get("async"))
+        )
+        if run_async:
+            job_id = str(uuid4())
+            with artifact_jobs_lock:
+                artifact_jobs[job_id] = {"done": False, "result": None}
+            ctx = contextvars.copy_context()
+            Thread(
+                target=ctx.run,
+                args=(_run_artifacts_in_background, job_id, source_param, fabric_kwargs),
+                daemon=True,
+            ).start()
+            return Response({"status": "started", "job_id": job_id}, status=202)
 
-        # Route based on source system - each source has its own thin
-        # *2_fabric.py entry point (databricks2_fabric.py /
-        # sqlserver2_fabric.py / dynamics3652_fabric.py), all backed by the
-        # same fabric_generator_core.Generator(); only which one gets
-        # imported, and therefore the resolved pre-provisioned
-        # Lakehouse/report files, differs.
-        if "databricks" in source_clean:
-            source_display = "Databricks"
-            from Artifacts_Generator import databricks2_fabric as fabric_script
-            script_name = fabric_script.SCRIPT_NAME
-            print(f"[INFO] Routing Generate Artifacts to: {script_name} for source: {source_display}")
-            result = fabric_script.Generator(**fabric_kwargs)
-        elif "dynamics" in source_clean or source_clean == "d365":
-            source_display = "Dynamics 365"
-            from Artifacts_Generator import dynamics3652_fabric as fabric_script
-            script_name = fabric_script.SCRIPT_NAME
-            print(f"[INFO] Routing Generate Artifacts to: {script_name} for source: {source_display}")
-            result = fabric_script.Generator(**fabric_kwargs)
-        elif "snowflake" in source_clean:
-            source_display = "Snowflake"
-            from Artifacts_Generator import snowflake2_fabric as fabric_script
-            script_name = fabric_script.SCRIPT_NAME
-            print(f"[INFO] Routing Generate Artifacts to: {script_name} for source: {source_display}")
-            result = fabric_script.Generator(**fabric_kwargs)
-        else:
-            source_display = "SQL Server"
-            from Artifacts_Generator import sqlserver2_fabric as fabric_script
-            script_name = fabric_script.SCRIPT_NAME
-            print(f"[INFO] Routing Generate Artifacts to: {script_name} for source: {source_display}")
-            result = fabric_script.Generator(**fabric_kwargs)
-
-        result["generator_script"] = script_name
-        result["source_system"] = source_display
-        if "logs" in result and isinstance(result.get("logs"), list):
-            result["logs"].insert(0, f"Routing Generate Artifacts to: {script_name} for source: {source_display}")
-
+        result = _run_fabric_generation(source_param, fabric_kwargs)
         return Response(result, status=200)
     except Exception as exc:
         traceback.print_exc()

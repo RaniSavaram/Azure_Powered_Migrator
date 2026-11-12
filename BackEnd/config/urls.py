@@ -29,6 +29,7 @@ urlpatterns = [
     path("api/connections/", views.saved_connections),
     path("api/debug/", views.debug_view),
     path("api/generate-fabric-artifacts/", views.generate_fabric_artifacts),
+    path("api/artifacts-status/<uuid:job_id>/", views.artifacts_status),
     path("api/er-diagram/", views.er_diagram),
     path("output/<str:filename>", views.serve_generated_document, name="generated-document"),
     re_path(r"^(?P<path>.*)$", serve_angular),

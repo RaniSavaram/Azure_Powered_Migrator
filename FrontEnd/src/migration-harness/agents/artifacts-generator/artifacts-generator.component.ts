@@ -95,6 +95,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   deploymentStatus = signal<'idle' | 'running' | 'success' | 'failed'>('idle');
   isLogsExpanded = signal(true);
   private progressTimer: any = null;
+  private pollTimer: any = null;
 
   toggleLogsScreen(): void {
     this.showLogsScreen.update(s => !s);
@@ -397,73 +398,107 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
     }, 1100);
 
     this.agentSays('Creating the artifacts in Microsoft Fabric. Live execution logs are streaming in the telemetry console below...');
-    this.scanner.generateFabricArtifacts(sourceSlug || undefined, undefined, destination).subscribe({
-      next: (res) => {
-        if (this.progressTimer) clearInterval(this.progressTimer);
-        this.isTyping.set(false);
-
-        const endTime = new Date().toLocaleTimeString();
-        const logsList: string[] = res.logs || [];
-        if (logsList.length > 0) {
-          this.activeLogs.update(prev => {
-            const combined = [...prev];
-            for (const logLine of logsList) {
-              combined.push(`[${endTime}] ${logLine}`);
-            }
-            return combined;
-          });
-        }
-
-        if (res.status === 'error') {
-          this.deploymentStatus.set('failed');
-          this.deploymentProgress.set(100);
-          this.activeLogs.update(prev => [
-            ...prev,
-            `[${endTime}] [ERROR] Deployment failed: ${res.message || 'The artifacts could not be created.'}`
-          ]);
-          this.agentSays(res.message || 'The artifacts could not be created.', { actions: this.retryActions() });
+    this.scanner.generateFabricArtifacts(sourceSlug || undefined, undefined, destination, true).subscribe({
+      next: (res: any) => {
+        // Long deployments now return a 202 job ack; poll it to completion.
+        if (res?.status === 'started' && res?.job_id) {
+          this.pollArtifactsJob(res.job_id, destLh);
           return;
         }
-
-        this.deploymentStatus.set('success');
-        this.deploymentProgress.set(100);
-        this.harnessDataService.setWorkflowCompleted(true);
-
-        const tableCount = res.tables?.length || res.processed?.length || 0;
-        this.activeLogs.update(prev => [
-          ...prev,
-          `[${endTime}] [SUCCESS] Synchronized ${tableCount} Delta table(s) to Fabric Lakehouse '${res.lakehouse_name || destLh}'.`,
-          `[${endTime}] [SUCCESS] Microsoft Fabric Data Pipeline provisioned.`,
-          `[${endTime}] [SUCCESS] Complete workflow finished! View Results is now available.`
-        ]);
-
-        this.agentSays(res.message || 'Artifacts created in Microsoft Fabric.', {
-          deployment: this.toDeployment(res)
-        });
-
-        // Generation succeeded - surface the results screen straight away
-        // instead of leaving the operator to find the toolbar button.
-        this.openResultsDialog();
+        this.onGenerationSettled(res, destLh);
       },
-      error: (err) => {
-        if (this.progressTimer) clearInterval(this.progressTimer);
-        this.isTyping.set(false);
-        this.deploymentStatus.set('failed');
-        this.deploymentProgress.set(100);
-
-        const errDetail = err?.error?.message || err?.message || 'Could not reach the artifacts generator.';
-        const endTime = new Date().toLocaleTimeString();
-        this.activeLogs.update(prev => [
-          ...prev,
-          `[${endTime}] [ERROR] Deployment failed: ${errDetail}`
-        ]);
-
-        this.agentSays(
-          errDetail,
-          { actions: this.retryActions() }
-        );
-      }
+      error: (err) => this.onGenerationFailed(err)
     });
+  }
+
+  private onGenerationFailed(err: any): void {
+    if (this.progressTimer) clearInterval(this.progressTimer);
+    if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
+    this.isTyping.set(false);
+    this.deploymentStatus.set('failed');
+    this.deploymentProgress.set(100);
+
+    const errDetail = err?.error?.message || err?.message || 'Could not reach the artifacts generator.';
+    const endTime = new Date().toLocaleTimeString();
+    this.activeLogs.update(prev => [
+      ...prev,
+      `[${endTime}] [ERROR] Deployment failed: ${errDetail}`
+    ]);
+
+    this.agentSays(
+      errDetail,
+      { actions: this.retryActions() }
+    );
+  }
+
+  private onGenerationSettled(res: any, destLh: string): void {
+    if (this.progressTimer) clearInterval(this.progressTimer);
+
+    if (this.progressTimer) clearInterval(this.progressTimer);
+    this.isTyping.set(false);
+
+    const endTime = new Date().toLocaleTimeString();
+    const logsList: string[] = res.logs || [];
+    if (logsList.length > 0) {
+      this.activeLogs.update(prev => {
+        const combined = [...prev];
+        for (const logLine of logsList) {
+          combined.push(`[${endTime}] ${logLine}`);
+        }
+        return combined;
+      });
+    }
+
+    if (res.status === 'error') {
+      this.deploymentStatus.set('failed');
+      this.deploymentProgress.set(100);
+      this.activeLogs.update(prev => [
+        ...prev,
+        `[${endTime}] [ERROR] Deployment failed: ${res.message || 'The artifacts could not be created.'}`
+      ]);
+      this.agentSays(res.message || 'The artifacts could not be created.', { actions: this.retryActions() });
+      return;
+    }
+
+    this.deploymentStatus.set('success');
+    this.deploymentProgress.set(100);
+    this.harnessDataService.setWorkflowCompleted(true);
+
+    const tableCount = res.tables?.length || res.processed?.length || 0;
+    this.activeLogs.update(prev => [
+      ...prev,
+      `[${endTime}] [SUCCESS] Synchronized ${tableCount} Delta table(s) to Fabric Lakehouse '${res.lakehouse_name || destLh}'.`,
+      `[${endTime}] [SUCCESS] Microsoft Fabric Data Pipeline provisioned.`,
+      `[${endTime}] [SUCCESS] Complete workflow finished! View Results is now available.`
+    ]);
+
+    this.agentSays(res.message || 'Artifacts created in Microsoft Fabric.', {
+      deployment: this.toDeployment(res)
+    });
+
+    // Generation succeeded - surface the results screen straight away
+    // instead of leaving the operator to find the toolbar button.
+    this.openResultsDialog();
+  }
+
+  /** Poll an async Generate Artifacts job until the backend reports a result. */
+  private pollArtifactsJob(jobId: string, destLh: string): void {
+    if (this.pollTimer) clearInterval(this.pollTimer);
+    this.pollTimer = setInterval(() => {
+      this.scanner.getArtifactsStatus(jobId).subscribe({
+        next: (res: any) => {
+          if (res?.status === 'running') return;
+          clearInterval(this.pollTimer);
+          this.pollTimer = null;
+          this.onGenerationSettled(res, destLh);
+        },
+        error: (err) => {
+          clearInterval(this.pollTimer);
+          this.pollTimer = null;
+          this.onGenerationFailed(err);
+        }
+      });
+    }, 4000);
   }
 
   private retryActions(): ArtifactsChatAction[] {

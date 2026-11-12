@@ -619,8 +619,8 @@ export class Scanner {
    * to deploy the scanned Tables, Views, Stored Procedures, and Volumes
    * directly into Microsoft Fabric.
    */
-  generateFabricArtifacts(source?: string, filename?: string, fabricConfig?: FabricConnectionDetails) {
-    const payload: any = { source, filename };
+  generateFabricArtifacts(source?: string, filename?: string, fabricConfig?: FabricConnectionDetails, runAsync = false) {
+    const payload: any = { source, filename, async: runAsync };
     if (fabricConfig) {
       payload.fabric = {
         workspace_id: fabricConfig.workspaceId,
@@ -653,6 +653,14 @@ export class Scanner {
       `${this.api.baseUrl}/generate-fabric-artifacts/`,
       payload
     );
+  }
+
+  /**
+   * Polls an async Generate Artifacts run. Returns {status:'running'} until
+   * the deployment finishes, then the same payload the sync call returned.
+   */
+  getArtifactsStatus(jobId: string) {
+    return this.http.get<any>(`${this.api.baseUrl}/artifacts-status/${jobId}/`);
   }
 
   /**
