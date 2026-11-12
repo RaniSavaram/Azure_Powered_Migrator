@@ -1208,6 +1208,13 @@ def generate_fabric_artifacts(request):
         if not source_param and Creds.get_extra("http_path"):
             source_param = "databricks"
 
+        # The agent flow records the scanned source in active_pipeline, not in
+        # this module's Creds/scan_jobs globals, so without this the routing
+        # below silently falls through to SQL Server and the generator then
+        # looks for the wrong "<source>_Assessment_Report.docx".
+        if not source_param:
+            source_param = active_pipeline.get("platform_slug") or active_pipeline.get("platform") or ""
+
         fabric_data = (request.data.get("fabric") if request.method == "POST" else None) or {}
         workspace_id = (
             fabric_data.get("workspace_id")
@@ -1253,8 +1260,13 @@ def generate_fabric_artifacts(request):
             warehouse_id = warehouse_id or extra.get("warehouse_id")
             warehouse_connection_string = warehouse_connection_string or extra.get("warehouse_connection_string")
 
+        # Same split-state problem as source_param: Creds is a separate
+        # PrivateVariables instance from the one the agent pipeline fills, so
+        # fall back to the scanned database before the lakehouse name is built.
+        database_name = Creds.get_database_name() or active_pipeline.get("database") or ""
+
         fabric_kwargs = {
-            "database_name": Creds.get_database_name(),
+            "database_name": database_name,
             "workspace_id": workspace_id,
             "tenant_id": tenant_id,
             "client_id": client_id,
