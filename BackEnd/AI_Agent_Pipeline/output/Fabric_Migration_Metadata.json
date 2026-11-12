@@ -1,11 +1,11 @@
 {
   "metadata": {
     "scan_id": null,
-    "generated_at": "2026-11-10T07:37:18.846707Z",
+    "generated_at": "2026-11-12T06:33:13.690781Z",
     "source_platform": "SQL Server",
     "target_platform": "Microsoft Fabric (OneLake)",
     "total_tables": 68,
-    "total_columns": 970,
+    "total_columns": 676,
     "total_views": 23,
     "total_procedures": 6,
     "total_functions": 0,
