@@ -440,6 +440,10 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
         this.agentSays(res.message || 'Artifacts created in Microsoft Fabric.', {
           deployment: this.toDeployment(res)
         });
+
+        // Generation succeeded - surface the results screen straight away
+        // instead of leaving the operator to find the toolbar button.
+        this.openResultsDialog();
       },
       error: (err) => {
         if (this.progressTimer) clearInterval(this.progressTimer);
