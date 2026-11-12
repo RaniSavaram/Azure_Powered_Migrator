@@ -842,3 +842,144 @@
   border-color: #94a3b8;
   transform: translateY(-1px);
 }
+
+/* Workflow Pending Banner & Styles */
+.badge-pending {
+  color: #d97706 !important;
+  background: #fffbeb !important;
+  border-color: #fde68a !important;
+}
+
+.dot-pending {
+  background: #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+  animation: pulseDot 2s infinite;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.workflow-pending-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(90deg, #eff6ff 0%, #f0fdf4 100%);
+  border-bottom: 1px solid #bfdbfe;
+  padding: 10px 28px;
+  color: #1e3a8a;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.workflow-pending-banner .banner-icon {
+  font-size: 20px;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.workflow-pending-banner .banner-body {
+  flex: 1;
+}
+
+.workflow-pending-banner .banner-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #1e40af;
+  margin-bottom: 2px;
+}
+
+.workflow-pending-banner .banner-desc {
+  font-size: 12.5px;
+  color: #334155;
+  line-height: 1.4;
+}
+
+.workflow-pending-banner .banner-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.output-pending-box {
+  background: #f8fafc;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 14px;
+  padding: 36px 28px;
+  text-align: center;
+  margin-top: 18px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.pending-icon-circle {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0284c7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin-bottom: 14px;
+}
+
+.output-pending-box h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.output-pending-box p {
+  font-size: 13.5px;
+  color: #64748b;
+  max-width: 620px;
+  margin: 0 auto 20px auto;
+  line-height: 1.5;
+}
+
+.pending-milestones {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.milestone-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.milestone-item.done {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.milestone-item.active {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1e40af;
+  font-weight: 600;
+}

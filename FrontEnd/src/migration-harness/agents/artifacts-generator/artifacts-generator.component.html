@@ -23,12 +23,10 @@
       </div>
     </div>
     <div class="header-right-actions">
-      @if (isWorkflowCompleted) {
-        <button type="button" class="btn-toolbar-ghost" (click)="openResultsDialog()" title="View Assessment & Pipeline Results" style="background: #ffffff; border: 1px solid #bae6fd; color: #0284c7; padding: 7px 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-          <i class="bi bi-bar-chart-steps" style="color: #0ea5e9;"></i>
-          <span>View Results</span>
-        </button>
-      }
+      <button type="button" class="btn-toolbar-ghost" (click)="openResultsDialog()" title="View Assessment & Pipeline Results" style="background: #ffffff; border: 1px solid #bae6fd; color: #0284c7; padding: 7px 14px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+        <i class="bi bi-bar-chart-steps" style="color: #0ea5e9;"></i>
+        <span>View Results</span>
+      </button>
       @if (isSourceConnected) {
         <a class="btn-next-phase" [routerLink]="nextPhaseRoute" (click)="completeWorkflow()" title="Complete Workflow and Return to Dashboard">
           <span>Complete Workflow</span>
@@ -535,13 +533,14 @@
             </div>
           }
 
-          <!-- Live Deployment Telemetry & Logs Terminal -->
+          <!-- Live Deployment Telemetry & Logs Terminal matching Single Step Process -->
           @if (showLogsScreen()) {
             <div class="deployment-logs-card">
               <div class="logs-card-header">
                 <div class="logs-header-left">
+                  <span class="live-pulse"></span>
                   <i class="bi bi-terminal-fill" style="color: #ec4899;"></i>
-                  <span class="logs-terminal-title">Microsoft Fabric Deployment Telemetry</span>
+                  <span class="logs-terminal-title">Live Execution: <strong>{{ activeGeneratorScript() }}</strong></span>
                   <span class="logs-badge-status" [ngClass]="deploymentStatus()">
                     @if (deploymentStatus() === 'running') {
                       <span class="spinner-border spinner-border-sm me-1" style="width: 10px; height: 10px;" role="status"></span>
@@ -584,8 +583,23 @@
                 </div>
               }
 
-              <!-- Terminal Lines -->
-              @if (isLogsExpanded()) {
+              <!-- Tab Navigation Bar for the Console (Matching Single Step Process tabs) -->
+              @if (latestDeployment(); as d) {
+                <div class="console-tab-header">
+                  <button type="button" class="console-tab-btn" [class.active]="consoleTab() === 'logs'" (click)="consoleTab.set('logs')">
+                    <i class="bi bi-terminal me-1"></i> Deployment Logs ({{ activeLogs().length }})
+                  </button>
+                  <button type="button" class="console-tab-btn" [class.active]="consoleTab() === 'tables'" (click)="consoleTab.set('tables')">
+                    <i class="bi bi-table me-1"></i> Synced Tables ({{ d.tables.length }})
+                  </button>
+                  <button type="button" class="console-tab-btn" [class.active]="consoleTab() === 'overview'" (click)="consoleTab.set('overview')">
+                    <i class="bi bi-info-circle me-1"></i> Artifacts Overview
+                  </button>
+                </div>
+              }
+
+              <!-- Terminal Lines (Logs Tab) -->
+              @if (isLogsExpanded() && consoleTab() === 'logs') {
                 <div class="logs-body-terminal" #logsConsole>
                   @if (activeLogs().length === 0) {
                     <div class="terminal-line" style="color: #64748b; font-style: italic;">
@@ -595,6 +609,56 @@
                   @for (line of activeLogs(); track $index) {
                     <div class="terminal-line" [ngClass]="getLineClass(line)">{{ line }}</div>
                   }
+                  @if (deploymentStatus() === 'running') {
+                    <div class="terminal-cursor">
+                      <span class="cursor-block"></span>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Synced Tables Tab -->
+              @if (isLogsExpanded() && consoleTab() === 'tables' && latestDeployment(); as d) {
+                <div class="console-tables-body">
+                  <div class="dep-table-list">
+                    @for (t of d.tables; track t.schema + '.' + t.table) {
+                      <div class="dep-row">
+                        <i class="bi bi-table dep-row-ico"></i>
+                        <span class="dep-row-name">{{ t.schema }}.{{ t.table }}</span>
+                        <span class="dep-chip">{{ t.columns }} cols</span>
+                        <span class="dep-chip dep-chip-layer">{{ t.layer || 'Bronze' }}</span>
+                        @if (t.uri) {
+                          <span class="dep-uri-text" [title]="t.uri">{{ t.uri }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Artifacts Overview Tab -->
+              @if (isLogsExpanded() && consoleTab() === 'overview' && latestDeployment(); as d) {
+                <div class="console-overview-body">
+                  <div class="dep-kpis" style="padding: 12px; margin-bottom: 0;">
+                    <div class="dep-kpi">
+                      <span class="dep-kpi-val">{{ d.tables.length }}</span>
+                      <span class="dep-kpi-lbl">Delta tables</span>
+                    </div>
+                    <div class="dep-kpi">
+                      <span class="dep-kpi-val">{{ totalColumns(d) }}</span>
+                      <span class="dep-kpi-lbl">Columns</span>
+                    </div>
+                    @if (d.pipelineActivities) {
+                      <div class="dep-kpi">
+                        <span class="dep-kpi-val">{{ d.pipelineActivities }}</span>
+                        <span class="dep-kpi-lbl">Pipeline activities</span>
+                      </div>
+                    }
+                    <div class="dep-kpi">
+                      <span class="dep-kpi-val text-success">0</span>
+                      <span class="dep-kpi-lbl">Errors</span>
+                    </div>
+                  </div>
                 </div>
               }
             </div>

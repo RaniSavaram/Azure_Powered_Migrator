@@ -491,3 +491,90 @@
 .terminal-line.log-dry {
   color: #c084fc;
 }
+
+/* Live Pulse animation */
+.live-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: live-pulse-anim 1.5s infinite;
+  display: inline-block;
+}
+
+@keyframes live-pulse-anim {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* Blinking terminal cursor block */
+.terminal-cursor {
+  margin-top: 4px;
+}
+
+.cursor-block {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: #ec4899;
+  vertical-align: middle;
+  animation: blink-cursor 0.8s infinite;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Console Tab Header */
+.console-tab-header {
+  display: flex;
+  align-items: center;
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+  padding: 4px 10px;
+  gap: 6px;
+}
+
+.console-tab-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.console-tab-btn:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.console-tab-btn.active {
+  color: #ec4899;
+  background: rgba(236, 72, 153, 0.12);
+}
+
+.console-tables-body, .console-overview-body {
+  padding: 12px 14px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #0b0f19;
+}
+
+.dep-uri-text {
+  font-size: 10px;
+  color: #64748b;
+  margin-left: auto;
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+}

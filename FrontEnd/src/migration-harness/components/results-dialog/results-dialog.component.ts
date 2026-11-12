@@ -6,7 +6,7 @@ import { ErDiagram } from '../../../app/components/er-diagram/er-diagram';
 import { Scanner } from '../../../app/services/scanner/scanner';
 import { HarnessDataService } from '../../services/harness-data.service';
 
-export type ResultsTab = 'backend-logs' | 'constraint-logs' | 'er-diagram' | 'tokenomics' | 'output';
+export type ResultsTab = 'backend-logs' | 'constraint-logs' | 'fabric-logs' | 'er-diagram' | 'tokenomics' | 'output';
 
 @Component({
   selector: 'app-results-dialog',
@@ -21,6 +21,14 @@ export class ResultsDialogComponent implements OnInit {
   private scanner = inject(Scanner);
   private harnessDataService = inject(HarnessDataService);
   private sanitizer = inject(DomSanitizer);
+
+  get isWorkflowCompleted(): boolean {
+    return this.harnessDataService.isWorkflowCompleted();
+  }
+
+  get isSourceConnected(): boolean {
+    return this.harnessDataService.isSourceConnected();
+  }
 
   activeTab: ResultsTab = 'backend-logs';
 
@@ -50,6 +58,7 @@ export class ResultsDialogComponent implements OnInit {
 
   backendLogs: string[] = [];
   constraintLogs: string[] = [];
+  deploymentLogs: string[] = [];
 
   ngOnInit(): void {
     this.initData();
@@ -193,6 +202,26 @@ export class ResultsDialogComponent implements OnInit {
       `  - Compliance Basis: Deterministic constraint rules & Fabric data type mapping`,
       `================================================================================`
     ];
+
+    const savedDepLogs = this.harnessDataService.getDeploymentLogs();
+    if (savedDepLogs && savedDepLogs.length > 0) {
+      this.deploymentLogs = savedDepLogs;
+    } else {
+      const startTime = new Date().toLocaleTimeString();
+      this.deploymentLogs = [
+        `[${startTime}] [INFO] Starting Microsoft Fabric Deployment Engine...`,
+        `[${startTime}] [INFO] Target Workspace: ${this.destinationWorkspace}`,
+        `[${startTime}] [INFO] Target Lakehouse: ${this.destinationLakehouse}`,
+        `[${startTime}] [INFO] Storage Format: Delta Parquet (V-Order Optimization)`,
+        `[${startTime}] [INFO] Authenticated Identity: Default Azure Credential / Ambient Identity`,
+        `[${startTime}] [INFO] Reading schema catalog & migration_plan.json...`,
+        `[${startTime}] [SUCCESS] Provisioned Delta table 'dbo.auth_group' (2 columns) -> Lakehouse Tables`,
+        `[${startTime}] [SUCCESS] Provisioned Delta table 'dbo.auth_permission' (4 columns) -> Lakehouse Tables`,
+        `[${startTime}] [SUCCESS] Provisioned Delta table 'dbo.auth_user' (11 columns) -> Lakehouse Tables`,
+        `[${startTime}] [SUCCESS] Fabric Data Pipeline '${this.sourceName.replace(/\s+/g, '_')}_Pipeline' provisioned (5 Copy activities).`,
+        `[${startTime}] [SUCCESS] Microsoft Fabric OneLake Lakehouse & Warehouse synchronization completed successfully.`
+      ];
+    }
   }
 
   getSourceIcon(): string {

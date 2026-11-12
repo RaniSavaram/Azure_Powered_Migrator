@@ -116,12 +116,34 @@ export class HarnessDataService {
     }
   }
 
+  private artifactsResult$ = new BehaviorSubject<any | null>(null);
+  artifactsResultObservable$: Observable<any | null> = this.artifactsResult$.asObservable();
+
+  private deploymentLogs$ = new BehaviorSubject<string[]>([]);
+  deploymentLogsObservable$: Observable<string[]> = this.deploymentLogs$.asObservable();
+
   isWorkflowCompleted(): boolean {
     return this.isWorkflowCompleted$.value;
   }
 
   setWorkflowCompleted(completed: boolean = true): void {
     this.isWorkflowCompleted$.next(completed);
+  }
+
+  getArtifactsResult(): any | null {
+    return this.artifactsResult$.value;
+  }
+
+  setArtifactsResult(result: any | null): void {
+    this.artifactsResult$.next(result);
+  }
+
+  getDeploymentLogs(): string[] {
+    return this.deploymentLogs$.value;
+  }
+
+  setDeploymentLogs(logs: string[]): void {
+    this.deploymentLogs$.next(logs);
   }
 
   getSourceMetadata(): any | null {
@@ -260,6 +282,8 @@ export class HarnessDataService {
     ] as AgentChatKey[]) {
       this.agentChatStates.delete(key);
     }
+    this.artifactsResult$.next(null);
+    this.deploymentLogs$.next([]);
   }
 
   /**

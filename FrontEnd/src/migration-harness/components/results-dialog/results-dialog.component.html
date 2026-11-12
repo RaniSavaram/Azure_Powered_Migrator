@@ -24,10 +24,17 @@
               <span class="sep">&bull;</span>
               <span>{{ destinationLakehouse }}</span>
             </span>
-            <span class="status-badge">
-              <span class="status-dot"></span>
-              <span>COMPLETED</span>
-            </span>
+            @if (isWorkflowCompleted) {
+              <span class="status-badge">
+                <span class="status-dot"></span>
+                <span>COMPLETED</span>
+              </span>
+            } @else {
+              <span class="status-badge badge-pending">
+                <span class="status-dot dot-pending"></span>
+                <span>IN PROGRESS</span>
+              </span>
+            }
           </div>
         </div>
       </div>
@@ -38,6 +45,25 @@
         </button>
       </div>
     </div>
+
+    <!-- Workflow Pending Notice Banner -->
+    @if (!isWorkflowCompleted) {
+      <div class="workflow-pending-banner">
+        <div class="banner-icon">
+          <i class="bi bi-info-circle-fill"></i>
+        </div>
+        <div class="banner-body">
+          <div class="banner-title">Workflow In Progress</div>
+          <div class="banner-desc">
+            Once the workflow is completed, then you can see all these results, generated assessment reports, Fabric Delta tables, and pipeline deployment logs.
+          </div>
+        </div>
+        <div class="banner-tag">
+          <i class="bi bi-hourglass-split"></i>
+          <span>Pending Completion</span>
+        </div>
+      </div>
+    }
 
     <!-- Source & Destination Selected Showcase Banner -->
     <div class="results-endpoints-showcase">
@@ -142,6 +168,13 @@
       </button>
 
       <button type="button"
+              [class.active]="activeTab === 'fabric-logs'"
+              (click)="selectTab('fabric-logs')">
+        <i class="bi bi-box-seam"></i>
+        <span>Fabric Deployment Logs</span>
+      </button>
+
+      <button type="button"
               [class.active]="activeTab === 'er-diagram'"
               (click)="selectTab('er-diagram')">
         <i class="bi bi-diagram-3-fill"></i>
@@ -193,6 +226,22 @@
           <span class="terminal-status-tag" style="color: #60a5fa;"><i class="bi bi-shield-fill-check"></i> GATE PASS</span>
         </div>
         <textarea readonly class="logs-window constraint-window">{{ constraintLogs.join('\n') }}</textarea>
+      </div>
+    </div>
+
+    <!-- Tab 3: Fabric Deployment Logs -->
+    <div *ngIf="activeTab === 'fabric-logs'" class="results-tab-body">
+      <div class="terminal-shell">
+        <div class="terminal-topbar">
+          <div class="terminal-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <span class="terminal-title">fabric_deployment.log — Microsoft Fabric OneLake &amp; Pipeline Deployment</span>
+          <span class="terminal-status-tag" style="color: #34d399;"><i class="bi bi-check-circle-fill"></i> DEPLOYED</span>
+        </div>
+        <textarea readonly class="logs-window" style="color: #67e8f9; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">{{ deploymentLogs.join('\n') }}</textarea>
       </div>
     </div>
 
@@ -270,15 +319,53 @@
           <div class="terminal-line"><span class="term-dim">Storage &amp; Engine:</span> <span class="term-highlight yellow">{{ destinationStorage }}</span> · Direct Lake Analytics Enabled</div>
           <div class="terminal-line separator">--------------------------------------------------------------------------------</div>
           <div class="terminal-line heading">REPORT SUMMARY &amp; GENERATED ARTIFACTS TELEMETRY:</div>
-          <div class="terminal-line"><span class="term-dim">Assessment Status:</span> <span class="term-highlight pass">PASSED</span></div>
-          <div class="terminal-line"><span class="term-dim">Migration Plan Status:</span> <span class="term-highlight pass">COMPILED &amp; VALIDATED (ER Diagram &amp; Destination Included)</span></div>
-          <div class="terminal-line"><span class="term-dim">Evaluator Decision:</span> <span class="term-highlight pass">PASS (0 Hallucinations)</span></div>
-          <div class="terminal-line separator">================================================================================</div>
-          <div class="terminal-line"><span class="term-tag info">[INFO]</span> All assessment reports and pipeline contracts generated successfully. Access official Word deliverables below:</div>
+          @if (isWorkflowCompleted) {
+            <div class="terminal-line"><span class="term-dim">Assessment Status:</span> <span class="term-highlight pass">PASSED</span></div>
+            <div class="terminal-line"><span class="term-dim">Migration Plan Status:</span> <span class="term-highlight pass">COMPILED &amp; VALIDATED (ER Diagram &amp; Destination Included)</span></div>
+            <div class="terminal-line"><span class="term-dim">Evaluator Decision:</span> <span class="term-highlight pass">PASS (0 Hallucinations)</span></div>
+            <div class="terminal-line separator">================================================================================</div>
+            <div class="terminal-line"><span class="term-tag info">[INFO]</span> All assessment reports and pipeline contracts generated successfully. Access official Word deliverables below:</div>
+          } @else {
+            <div class="terminal-line"><span class="term-dim">Assessment Status:</span> <span class="term-highlight yellow">PENDING COMPLETION</span></div>
+            <div class="terminal-line"><span class="term-dim">Migration Plan Status:</span> <span class="term-highlight yellow">PENDING COMPLETION</span></div>
+            <div class="terminal-line"><span class="term-dim">Evaluator Decision:</span> <span class="term-highlight yellow">AWAITING COMPLETION</span></div>
+            <div class="terminal-line separator">================================================================================</div>
+            <div class="terminal-line"><span class="term-tag info">[INFO]</span> Workflow in progress. Once the workflow is completed, then you can see and download all official Word deliverables, Delta Parquet artifacts, and deployment logs here.</div>
+          }
         </div>
 
-        <!-- Generated Documents Cards -->
-        <div class="docs-cards-container">
+        @if (!isWorkflowCompleted) {
+          <!-- Pending Notice Card inside Output Tab -->
+          <div class="output-pending-box">
+            <div class="pending-icon-circle">
+              <i class="bi bi-file-earmark-lock2-fill"></i>
+            </div>
+            <h3>Generated Deliverables Awaiting Workflow Completion</h3>
+            <p>
+              Once the workflow is completed, then you can see and download all official Word (.docx) assessment reports, migration plans, and Microsoft Fabric OneLake artifacts here.
+            </p>
+            <div class="pending-milestones">
+              <div class="milestone-item done">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                <span>Phase 1: Discovery &amp; Schema Catalog</span>
+              </div>
+              <div class="milestone-item" [ngClass]="isSourceConnected ? 'done' : 'active'">
+                <i class="bi" [ngClass]="isSourceConnected ? 'bi-check-circle-fill text-success' : 'bi-arrow-repeat text-primary'"></i>
+                <span>Phase 2: Constraints &amp; Type Rules</span>
+              </div>
+              <div class="milestone-item">
+                <i class="bi bi-circle text-muted"></i>
+                <span>Phase 3 &amp; 4: Assessment &amp; Migration Plan</span>
+              </div>
+              <div class="milestone-item">
+                <i class="bi bi-circle text-muted"></i>
+                <span>Phase 5: Artifacts Generator &amp; Fabric Deploy</span>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <!-- Generated Documents Cards -->
+          <div class="docs-cards-container">
           <!-- Document 1: Assessment Report -->
           <div class="result-doc-card">
             <div class="doc-icon-box doc-blue">
@@ -335,6 +422,7 @@
             </div>
           </div>
         </div>
+      }
       </div>
     </div>
   </div>

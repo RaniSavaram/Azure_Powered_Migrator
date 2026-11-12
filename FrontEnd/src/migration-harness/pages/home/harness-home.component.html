@@ -275,16 +275,14 @@
         </div>
 
         <div class="card-actions-row">
-          @if (isWorkflowCompleted) {
-            <!-- View Results Button -->
-            <button class="btn-view-results" 
-                    type="button" 
-                    (click)="openResultsDialog()"
-                    title="View Assessment & Pipeline Results">
-              <i class="bi bi-bar-chart-steps"></i>
-              <span>View Results</span>
-            </button>
-          }
+          <!-- View Results Button (Always visible) -->
+          <button class="btn-view-results" 
+                  type="button" 
+                  (click)="openResultsDialog()"
+                  title="View Assessment & Pipeline Results">
+            <i class="bi bi-bar-chart-steps"></i>
+            <span>View Results</span>
+          </button>
           <button class="btn-start-convo" type="button" [routerLink]="agent.route" title="Start conversation">
             <span>Start conversation</span>
             <i class="bi bi-arrow-right"></i>

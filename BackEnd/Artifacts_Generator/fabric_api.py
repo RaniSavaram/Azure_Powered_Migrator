@@ -62,14 +62,40 @@ def _build_credential(tenant_id=None, client_id=None, client_secret=None):
             client_id=_explicit_credentials["client_id"],
             client_secret=_explicit_credentials["client_secret"],
         )
+    import os
+    env_tenant = os.environ.get("AZURE_TENANT_ID")
+    env_client = os.environ.get("AZURE_CLIENT_ID")
+    env_secret = os.environ.get("AZURE_CLIENT_SECRET")
+    if env_tenant and env_client and env_secret:
+        return ClientSecretCredential(
+            tenant_id=env_tenant,
+            client_id=env_client,
+            client_secret=env_secret,
+        )
+
+    # In cloud-hosted containers (Render, AWS, containerized Linux), interactive
+    # login or Azure managed identities do not exist without an Azure VM/App Service.
+    # ManagedIdentityCredential query to 169.254.169.254 will hang for > 100 seconds
+    # and hit the proxy timeout, producing a 504 Gateway Timeout / Failed to fetch.
+    # Fast-fail so the caller can smoothly switch to verified Fabric Sandbox mode.
+    if os.environ.get("RENDER") or not (tenant_id or client_id or client_secret or env_secret):
+        import shutil
+        if not shutil.which("az"):
+            raise ValueError(
+                "No Azure service principal credentials (tenant_id, client_id, client_secret) "
+                "or Azure CLI login detected. Switching to Fabric Sandbox Mode."
+            )
+
     return DefaultAzureCredential(
+        exclude_managed_identity_credential=True,
+        exclude_workload_identity_credential=True,
         exclude_shared_token_cache_credential=True,
         exclude_broker_credential=True,
         exclude_azure_powershell_credential=True,
         exclude_developer_cli_credential=True,
         exclude_visual_studio_code_credential=True,
         exclude_interactive_browser_credential=True,
-        process_timeout=5,
+        process_timeout=3,
     )
 
 

@@ -49,8 +49,16 @@ BULLET = "•"  # the actual column-list bullet character used by the report tem
 
 
 def get_onelake_token():
-    credential = DefaultAzureCredential()
-    return credential.get_token("https://storage.azure.com/.default").token
+    try:
+        from . import fabric_api
+        return fabric_api.get_onelake_token()
+    except Exception:
+        credential = DefaultAzureCredential(
+            exclude_managed_identity_credential=True,
+            exclude_workload_identity_credential=True,
+            process_timeout=3,
+        )
+        return credential.get_token("https://storage.azure.com/.default").token
 
 
 def parse_report(doc_path):
