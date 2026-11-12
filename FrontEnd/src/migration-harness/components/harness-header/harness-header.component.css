@@ -71,6 +71,38 @@
   text-transform: uppercase;
 }
 
+.brand-slash {
+  font-size: 14px;
+  font-weight: 300;
+  color: #94a3b8;
+  margin: 0 4px;
+  user-select: none;
+}
+
+.brand-azure-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px 2px 6px;
+  border-radius: 6px;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+}
+
+.azure-brand-logo {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  display: block;
+}
+
+.azure-brand-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0284c7;
+  letter-spacing: -0.1px;
+}
+
 .header-right {
   display: flex;
   align-items: center;

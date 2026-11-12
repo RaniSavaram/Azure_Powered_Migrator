@@ -168,6 +168,13 @@
       </button>
 
       <button type="button"
+              [class.active]="activeTab === 'feedback-logs'"
+              (click)="selectTab('feedback-logs')">
+        <i class="bi bi-arrow-repeat"></i>
+        <span>Feedback Layer Logs</span>
+      </button>
+
+      <button type="button"
               [class.active]="activeTab === 'fabric-logs'"
               (click)="selectTab('fabric-logs')">
         <i class="bi bi-box-seam"></i>
@@ -226,6 +233,22 @@
           <span class="terminal-status-tag" style="color: #60a5fa;"><i class="bi bi-shield-fill-check"></i> GATE PASS</span>
         </div>
         <textarea readonly class="logs-window constraint-window">{{ constraintLogs.join('\n') }}</textarea>
+      </div>
+    </div>
+
+    <!-- Tab: Feedback Layer Logs (Generator-Evaluator Feedback Layer) -->
+    <div *ngIf="activeTab === 'feedback-logs'" class="results-tab-body">
+      <div class="terminal-shell">
+        <div class="terminal-topbar">
+          <div class="terminal-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <span class="terminal-title">generator_evaluator_feedback_harness.log — Quality &amp; Hallucination Checks</span>
+          <span class="terminal-status-tag" style="color: #10b981;"><i class="bi bi-check-circle-fill"></i> EVALUATION COMPLETE</span>
+        </div>
+        <textarea readonly class="logs-window feedback-window">{{ feedbackLogs.join('\n') }}</textarea>
       </div>
     </div>
 

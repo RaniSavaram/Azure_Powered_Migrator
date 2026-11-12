@@ -541,6 +541,10 @@
   color: #93c5fd;
 }
 
+.logs-window.feedback-window {
+  color: #a7f3d0;
+}
+
 /* ER Diagram Tab Body */
 .er-diagram-body {
   padding: 0;
