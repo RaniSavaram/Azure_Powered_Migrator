@@ -2,6 +2,19 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { AgentInfo, AgentExecutionStatus } from '../models/agent.model';
 
+export type AgentChatKey =
+  | 'discovery-agent'
+  | 'constraint-agent'
+  | 'assessment-agent'
+  | 'migration-generator-agent'
+  | 'evaluation-agent'
+  | 'artifacts-generator';
+
+export interface SavedAgentChatState<TMessage = any, TExtra = Record<string, any>> {
+  messages: TMessage[];
+  extra?: TExtra;
+}
+
 export interface SourceConnectionConfig {
   platform: string;
   server: string;
@@ -70,6 +83,38 @@ export class HarnessDataService {
 
   private isWorkflowCompleted$ = new BehaviorSubject<boolean>(false);
   workflowCompletedObservable$: Observable<boolean> = this.isWorkflowCompleted$.asObservable();
+
+  private agentChatStates = new Map<AgentChatKey, SavedAgentChatState>();
+
+  getAgentChatState<TMessage = any, TExtra = Record<string, any>>(
+    agentKey: AgentChatKey
+  ): SavedAgentChatState<TMessage, TExtra> | null {
+    const state = this.agentChatStates.get(agentKey);
+    if (!state) return null;
+    return {
+      messages: [...state.messages] as TMessage[],
+      extra: state.extra ? ({ ...state.extra } as TExtra) : undefined,
+    };
+  }
+
+  setAgentChatState<TMessage = any, TExtra = Record<string, any>>(
+    agentKey: AgentChatKey,
+    messages: TMessage[],
+    extra?: TExtra
+  ): void {
+    this.agentChatStates.set(agentKey, {
+      messages: [...messages],
+      extra: extra ? { ...extra } : undefined,
+    });
+  }
+
+  clearAgentChatState(agentKey?: AgentChatKey): void {
+    if (agentKey) {
+      this.agentChatStates.delete(agentKey);
+    } else {
+      this.agentChatStates.clear();
+    }
+  }
 
   isWorkflowCompleted(): boolean {
     return this.isWorkflowCompleted$.value;
@@ -206,6 +251,15 @@ export class HarnessDataService {
     this.destinationWorkspaceName$.next(null);
     this.setDiscoveryConversationDone(false);
     this.isWorkflowCompleted$.next(false);
+    for (const key of [
+      'constraint-agent',
+      'assessment-agent',
+      'migration-generator-agent',
+      'evaluation-agent',
+      'artifacts-generator',
+    ] as AgentChatKey[]) {
+      this.agentChatStates.delete(key);
+    }
   }
 
   /**

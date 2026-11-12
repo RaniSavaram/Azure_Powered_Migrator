@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   HostListener,
+  OnDestroy,
   OnInit,
   ViewChild,
   computed,
@@ -62,7 +63,7 @@ type RunPhase = 'idle' | 'running' | 'done' | 'error';
   templateUrl: './migration-generator-agent.component.html',
   styleUrl: './migration-generator-agent.component.css'
 })
-export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecked {
+export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('chatScroll') private chatScrollRef?: ElementRef<HTMLElement>;
 
   private router = inject(Router);
@@ -112,15 +113,48 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
     if (!this.isSourceConnected) return;
 
     const cached = this.harnessDataService.getMigrationPlanResult();
+    const saved = this.harnessDataService.getAgentChatState<ChatMessage>('migration-generator-agent');
+    if (saved && saved.messages.length > 0) {
+      this.msgSeq = saved.extra?.['msgSeq'] ?? saved.messages.length;
+      const planData = (cached?.status === 'success' ? cached : null) ?? saved.extra?.['lastPlanData'] ?? null;
+      if (planData) this.lastPlanData.set(planData);
+      const wasRunning = saved.extra?.['runPhase'] === 'running';
+      if (wasRunning && cached?.status === 'success' && cached?.plan_file) {
+        const cleaned = saved.messages.filter(m => !m.live);
+        this.messages.set([...cleaned, this.buildPlanCompiledMessage(cached)]);
+        this.runPhase.set('done');
+      } else {
+        this.messages.set(saved.messages.filter(m => !m.live));
+        this.runPhase.set(wasRunning ? (planData ? 'done' : 'idle') : (saved.extra?.['runPhase'] ?? 'done'));
+      }
+      this.persistChatState();
+      this.shouldScroll = true;
+      return;
+    }
+
     if (cached?.status === 'success' && cached?.plan_file) {
       this.lastPlanData.set(cached);
       this.runPhase.set('done');
       this.messages.set([this.buildPlanCompiledMessage(cached, 'msg-cached', true)]);
+      this.persistChatState();
       return;
     }
 
     this.addAgentGreeting();
     this.runMigrationPlan();
+  }
+
+  ngOnDestroy(): void {
+    this.persistChatState();
+  }
+
+  private persistChatState(): void {
+    if (!this.isSourceConnected) return;
+    this.harnessDataService.setAgentChatState('migration-generator-agent', this.messages(), {
+      runPhase: this.runPhase(),
+      lastPlanData: this.lastPlanData(),
+      msgSeq: this.msgSeq,
+    });
   }
 
   ngAfterViewChecked(): void {
@@ -211,6 +245,7 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
           const filtered = prev.filter(m => m.id !== liveId);
           return [...filtered, this.buildPlanCompiledMessage(res)];
         });
+        this.persistChatState();
         this.shouldScroll = true;
       },
       error: (err: HttpErrorResponse) => {
@@ -229,6 +264,7 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
                       const filtered = prev.filter(m => m.id !== liveId);
                       return [...filtered, this.buildPlanCompiledMessage(cachedRes)];
                     });
+                    this.persistChatState();
                     this.shouldScroll = true;
                     return;
                   }
@@ -284,6 +320,7 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
         }
       ];
     });
+    this.persistChatState();
     this.shouldScroll = true;
   }
 
@@ -569,6 +606,7 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
     } else {
       this.addAgentGreeting();
     }
+    this.persistChatState();
     this.shouldScroll = true;
   }
 

@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -75,7 +75,7 @@ export interface SavedProfileOption {
   templateUrl: './discovery-agent.component.html',
   styleUrl: './discovery-agent.component.css'
 })
-export class DiscoveryAgentComponent implements OnInit {
+export class DiscoveryAgentComponent implements OnInit, OnDestroy {
   @ViewChild('chatScroll') private chatScrollRef!: ElementRef;
   private router = inject(Router);
   public harnessDataService = inject(HarnessDataService);
@@ -232,7 +232,50 @@ export class DiscoveryAgentComponent implements OnInit {
     this.fetchBackendSavedProfiles();
     this.fetchBackendSavedFabricProfiles();
     this.lastExtractedMetadata = this.harnessDataService.getSourceMetadata();
+
+    const saved = this.harnessDataService.getAgentChatState<ChatMessage>('discovery-agent');
+    if (saved && saved.messages.length > 0 && Boolean(saved.extra?.['isSourceConnected']) === this.isSourceConnected) {
+      this.messages = saved.messages;
+      this.showInlineConnectCard = Boolean(saved.extra?.['showInlineConnectCard']);
+      this.showDestinationCard = Boolean(saved.extra?.['showDestinationCard']);
+      this.selectedSchemaFilter = saved.extra?.['selectedSchemaFilter'] ?? null;
+      this.tableSearchQuery = saved.extra?.['tableSearchQuery'] ?? '';
+      this.isTablesExpanded = Boolean(saved.extra?.['isTablesExpanded']);
+      this.collapsedTerminals = saved.extra?.['collapsedTerminals'] ?? {};
+      this.connectionFailed = Boolean(saved.extra?.['connectionFailed']);
+      this.connectionErrorMessage = saved.extra?.['connectionErrorMessage'] ?? '';
+      this.destinationError = saved.extra?.['destinationError'] ?? '';
+      const confirmedDest = this.scanner.getFabricDestination();
+      if (!saved.extra?.['isDestinationConfirmed'] && this.isDestinationConfirmed && confirmedDest) {
+        this.showDestinationCard = false;
+        this.renderDestinationConfirmation(confirmedDest, this.harnessDataService.getDestinationWorkspaceName());
+      }
+      this.persistChatState();
+      this.scrollToBottom(false);
+      return;
+    }
+
     this.initWelcomeMessage();
+  }
+
+  ngOnDestroy(): void {
+    this.persistChatState();
+  }
+
+  private persistChatState(): void {
+    this.harnessDataService.setAgentChatState('discovery-agent', this.messages, {
+      isSourceConnected: this.isSourceConnected,
+      isDestinationConfirmed: this.isDestinationConfirmed,
+      showInlineConnectCard: this.showInlineConnectCard,
+      showDestinationCard: this.showDestinationCard,
+      selectedSchemaFilter: this.selectedSchemaFilter,
+      tableSearchQuery: this.tableSearchQuery,
+      isTablesExpanded: this.isTablesExpanded,
+      collapsedTerminals: { ...this.collapsedTerminals },
+      connectionFailed: this.connectionFailed,
+      connectionErrorMessage: this.connectionErrorMessage,
+      destinationError: this.destinationError,
+    });
   }
 
   private loadUserSavedConnections(): void {
@@ -357,6 +400,7 @@ export class DiscoveryAgentComponent implements OnInit {
   }
 
   private scrollToBottom(smooth: boolean = true): void {
+    this.persistChatState();
     setTimeout(() => {
       try {
         if (this.chatScrollRef?.nativeElement) {
@@ -1614,6 +1658,7 @@ Please review your credentials and endpoint details above, then click **Connect*
   }
 
   clearChat(): void {
+    this.harnessDataService.clearAgentChatState('discovery-agent');
     this.initWelcomeMessage();
   }
 

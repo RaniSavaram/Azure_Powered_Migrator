@@ -123,6 +123,7 @@ export class ConstraintAgentComponent implements OnInit, AfterViewChecked, OnDes
   private streamTimer: ReturnType<typeof setInterval> | null = null;
   private shouldScroll = false;
   private msgSeq = 0;
+  private destroyed = false;
 
   get isSourceConnected(): boolean {
     return this.harnessDataService.isSourceConnected();
@@ -135,8 +136,34 @@ export class ConstraintAgentComponent implements OnInit, AfterViewChecked, OnDes
   ngOnInit(): void {
     if (!this.isSourceConnected) return;
 
-    // Reuse this session's previous run instead of re-checking on every visit.
     const previous = this.harnessDataService.getConstraintResult() as ConstraintReport | null;
+    const saved = this.harnessDataService.getAgentChatState<ChatMessage>('constraint-agent');
+    if (saved && saved.messages.length > 0) {
+      this.msgSeq = saved.extra?.['msgSeq'] ?? saved.messages.length;
+      this.logFilter.set(saved.extra?.['logFilter'] ?? 'all');
+      const savedReport = (saved.extra?.['report'] as ConstraintReport | null) ?? previous;
+      if (savedReport) this.report.set(savedReport);
+      this.consoleLines.set(saved.extra?.['consoleLines'] ?? previous?.logs ?? []);
+      const wasIncomplete = saved.extra?.['runPhase'] === 'running' || saved.extra?.['runPhase'] === 'streaming';
+      if (wasIncomplete && previous?.status === 'success' && previous.rules) {
+        const finalized = saved.messages.map(m => (m.live ? { ...m, live: false, logs: previous.logs } : m));
+        this.messages.set(finalized);
+        this.report.set(previous);
+        this.consoleLines.set(previous.logs || []);
+        this.runPhase.set('done');
+        if (!finalized.some(m => (m.metrics?.length ?? 0) > 0)) {
+          this.pushResultMessage(previous);
+        }
+        this.persistChatState();
+      } else {
+        this.messages.set(saved.messages.map(m => (m.live ? { ...m, live: false } : m)));
+        this.runPhase.set(wasIncomplete ? 'done' : (saved.extra?.['runPhase'] ?? 'done'));
+      }
+      this.shouldScroll = true;
+      return;
+    }
+
+    // Reuse this session's previous run instead of re-checking on every visit.
     if (previous?.status === 'success' && previous.rules) {
       this.report.set(previous);
       this.runPhase.set('done');
@@ -160,7 +187,20 @@ export class ConstraintAgentComponent implements OnInit, AfterViewChecked, OnDes
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     this.stopStream();
+    this.persistChatState();
+  }
+
+  private persistChatState(): void {
+    if (!this.isSourceConnected) return;
+    this.harnessDataService.setAgentChatState('constraint-agent', this.messages(), {
+      runPhase: this.runPhase(),
+      consoleLines: [...this.consoleLines()],
+      logFilter: this.logFilter(),
+      msgSeq: this.msgSeq,
+      report: this.report(),
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -231,7 +271,7 @@ export class ConstraintAgentComponent implements OnInit, AfterViewChecked, OnDes
   private streamLogs(lines: ConstraintLogLine[], done: () => void): void {
     this.runPhase.set('streaming');
     const reduceMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion || lines.length === 0) {
+    if (this.destroyed || reduceMotion || lines.length === 0) {
       this.consoleLines.set(lines);
       this.freezeLiveConsole();
       done();
@@ -541,6 +581,7 @@ export class ConstraintAgentComponent implements OnInit, AfterViewChecked, OnDes
 
   clearChat(): void {
     this.stopStream();
+    this.harnessDataService.clearAgentChatState('constraint-agent');
     this.messages.set([]);
     this.runPhase.set('idle');
     this.runAudit(false);
@@ -595,6 +636,7 @@ export class ConstraintAgentComponent implements OnInit, AfterViewChecked, OnDes
       { ...msg, id: `msg-${++this.msgSeq}`, timestamp: new Date() }
     ]);
     this.shouldScroll = true;
+    this.persistChatState();
   }
 
   formatMessageText(rawText: string): string {

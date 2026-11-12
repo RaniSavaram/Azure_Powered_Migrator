@@ -98,13 +98,32 @@ export class EvaluationAgentComponent implements OnInit, AfterViewChecked, OnDes
       return;
     }
 
-    // Check cached result in harnessDataService
     const cached = this.harnessDataService.getEvaluationResult();
+    const saved = this.harnessDataService.getAgentChatState<ChatMessage>('evaluation-agent');
+    if (saved && saved.messages.length > 0) {
+      const rep = cached ?? saved.extra?.['report'] ?? null;
+      if (rep) this.report.set(rep);
+      this.consoleLines.set(saved.extra?.['consoleLines'] ?? rep?.logs ?? []);
+      const wasRunning = saved.extra?.['runPhase'] === 'running';
+      if (wasRunning && cached) {
+        const cleaned = saved.messages.filter(m => !m.live);
+        this.messages.set([...cleaned, this.createAuditCompleteMessage(cached)]);
+        this.runPhase.set('done');
+      } else {
+        this.messages.set(saved.messages.filter(m => !m.live));
+        this.runPhase.set(wasRunning ? (rep ? 'done' : 'idle') : (saved.extra?.['runPhase'] ?? 'done'));
+      }
+      this.persistChatState();
+      return;
+    }
+
+    // Check cached result in harnessDataService
     if (cached) {
       this.report.set(cached);
       this.consoleLines.set(cached.logs || []);
       this.runPhase.set('done');
       this.addCachedReportMessage(cached);
+      this.persistChatState();
       return;
     }
 
@@ -117,7 +136,18 @@ export class EvaluationAgentComponent implements OnInit, AfterViewChecked, OnDes
     this.scrollToBottom();
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void {
+    this.persistChatState();
+  }
+
+  private persistChatState(): void {
+    if (!this.isSourceConnected) return;
+    this.harnessDataService.setAgentChatState('evaluation-agent', this.messages(), {
+      runPhase: this.runPhase(),
+      report: this.report(),
+      consoleLines: [...this.consoleLines()],
+    });
+  }
 
   private scrollToBottom(): void {
     if (this.chatScrollRef?.nativeElement) {
@@ -222,6 +252,7 @@ export class EvaluationAgentComponent implements OnInit, AfterViewChecked, OnDes
             this.createAuditCompleteMessage(res)
           ];
         });
+        this.persistChatState();
       },
       error: (err: HttpErrorResponse) => {
         this.runPhase.set('error');
@@ -242,6 +273,7 @@ export class EvaluationAgentComponent implements OnInit, AfterViewChecked, OnDes
             }
           ];
         });
+        this.persistChatState();
       }
     });
   }
@@ -348,6 +380,7 @@ export class EvaluationAgentComponent implements OnInit, AfterViewChecked, OnDes
     } else {
       this.addAgentGreeting();
     }
+    this.persistChatState();
   }
 
   copyConsole(): void {

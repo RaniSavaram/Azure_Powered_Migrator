@@ -163,6 +163,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
   private streamTimer: ReturnType<typeof setInterval> | null = null;
   private shouldScroll = false;
   private msgSeq = 0;
+  private destroyed = false;
 
   get isSourceConnected(): boolean {
     return this.harnessDataService.isSourceConnected();
@@ -175,6 +176,36 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
   ngOnInit(): void {
     if (!this.isSourceConnected) return;
     const previous = this.harnessDataService.getAssessmentResult() as AssessmentReport | null;
+    const saved = this.harnessDataService.getAgentChatState<ChatMessage>('assessment-agent');
+    if (saved && saved.messages.length > 0) {
+      this.msgSeq = saved.extra?.['msgSeq'] ?? saved.messages.length;
+      this.logFilter.set(saved.extra?.['logFilter'] ?? 'all');
+      this.tierFilter.set(saved.extra?.['tierFilter'] ?? 'all');
+      this.readinessFilter.set(saved.extra?.['readinessFilter'] ?? 'all');
+      this.search.set(saved.extra?.['search'] ?? '');
+      this.sortKey.set(saved.extra?.['sortKey'] ?? 'score');
+      const savedReport = (saved.extra?.['report'] as AssessmentReport | null) ?? previous;
+      if (savedReport) this.report.set(savedReport);
+      this.consoleLines.set(saved.extra?.['consoleLines'] ?? previous?.logs ?? []);
+      const wasIncomplete = saved.extra?.['runPhase'] === 'running' || saved.extra?.['runPhase'] === 'streaming';
+      if (wasIncomplete && previous?.status === 'success' && previous.tables) {
+        const finalized = saved.messages.map(m => (m.live ? { ...m, live: false, logs: previous.logs } : m));
+        this.messages.set(finalized);
+        this.report.set(previous);
+        this.consoleLines.set(previous.logs || []);
+        this.runPhase.set('done');
+        if (!finalized.some(m => (m.metrics?.length ?? 0) > 0)) {
+          this.pushResultMessage(previous);
+        }
+        this.persistChatState();
+      } else {
+        this.messages.set(saved.messages.map(m => (m.live ? { ...m, live: false } : m)));
+        this.runPhase.set(wasIncomplete ? 'done' : (saved.extra?.['runPhase'] ?? 'done'));
+      }
+      this.shouldScroll = true;
+      return;
+    }
+
     if (previous?.status === 'success' && previous.tables) {
       this.report.set(previous);
       this.runPhase.set('done');
@@ -196,7 +227,24 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     this.stopStream();
+    this.persistChatState();
+  }
+
+  private persistChatState(): void {
+    if (!this.isSourceConnected) return;
+    this.harnessDataService.setAgentChatState('assessment-agent', this.messages(), {
+      runPhase: this.runPhase(),
+      consoleLines: [...this.consoleLines()],
+      logFilter: this.logFilter(),
+      tierFilter: this.tierFilter(),
+      readinessFilter: this.readinessFilter(),
+      search: this.search(),
+      sortKey: this.sortKey(),
+      msgSeq: this.msgSeq,
+      report: this.report(),
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -266,7 +314,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
   private streamLogs(lines: ConstraintLogLine[], done: () => void): void {
     this.runPhase.set('streaming');
     const reduceMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion || lines.length === 0) {
+    if (this.destroyed || reduceMotion || lines.length === 0) {
       this.consoleLines.set(lines);
       this.freezeLiveConsole();
       done();
@@ -648,6 +696,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
   clearChat(): void {
     this.closeReportDropdown();
     this.stopStream();
+    this.harnessDataService.clearAgentChatState('assessment-agent');
     this.messages.set([]);
     this.runPhase.set('idle');
     this.tierFilter.set('all');
@@ -697,6 +746,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
       { ...msg, id: `msg-${++this.msgSeq}`, timestamp: new Date() }
     ]);
     this.shouldScroll = true;
+    this.persistChatState();
   }
 
   formatGeneratedTime(iso?: string | null, fallback?: string | null): string {

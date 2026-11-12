@@ -1,4 +1,4 @@
-import { AfterViewChecked, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -81,7 +81,7 @@ import { ResultsDialogComponent } from '../../components/results-dialog/results-
   templateUrl: './artifacts-generator.component.html',
   styleUrl: './artifacts-generator.component.css'
 })
-export class ArtifactsGeneratorComponent implements AfterViewChecked {
+export class ArtifactsGeneratorComponent implements AfterViewChecked, OnDestroy {
   private harnessDataService = inject(HarnessDataService);
   private scanner = inject(Scanner);
   private router = inject(Router);
@@ -234,6 +234,55 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   }
 
   constructor() {
+    this.restoreOrStartConversation();
+  }
+
+  ngOnDestroy(): void {
+    if (this.progressTimer) {
+      clearInterval(this.progressTimer);
+      this.progressTimer = null;
+    }
+    if (this.copyTimer) {
+      clearTimeout(this.copyTimer);
+      this.copyTimer = null;
+    }
+    this.persistChatState();
+  }
+
+  private destSignature(d: FabricConnectionDetails | null | undefined): string {
+    return d ? `${d.workspaceId || ''}|${d.lakehouseId || ''}|${d.lakehouseName || ''}` : '';
+  }
+
+  private persistChatState(): void {
+    this.harnessDataService.setAgentChatState('artifacts-generator', this.messages(), {
+      nextId: this.nextId,
+      showLogsScreen: this.showLogsScreen(),
+      activeLogs: [...this.activeLogs()],
+      deploymentProgress: this.deploymentProgress(),
+      deploymentStatus: this.deploymentStatus(),
+      isLogsExpanded: this.isLogsExpanded(),
+      destSignature: this.destSignature(this.scanner.getFabricDestination()),
+    });
+  }
+
+  private restoreOrStartConversation(): void {
+    const saved = this.harnessDataService.getAgentChatState<ArtifactsChatMessage>('artifacts-generator');
+    const currentSig = this.destSignature(this.scanner.getFabricDestination());
+    if (saved && saved.messages.length > 0) {
+      if (!saved.extra?.['destSignature'] && currentSig && saved.messages.length <= 2) {
+        this.startConversation();
+        return;
+      }
+      this.messages.set(saved.messages);
+      this.nextId = saved.extra?.['nextId'] ?? saved.messages.length + 1;
+      this.showLogsScreen.set(Boolean(saved.extra?.['showLogsScreen']));
+      this.activeLogs.set(saved.extra?.['activeLogs'] ?? []);
+      this.deploymentProgress.set(saved.extra?.['deploymentProgress'] ?? 0);
+      this.deploymentStatus.set(saved.extra?.['deploymentStatus'] ?? 'idle');
+      this.isLogsExpanded.set(saved.extra?.['isLogsExpanded'] ?? true);
+      this.shouldScroll = true;
+      return;
+    }
     this.startConversation();
   }
 
@@ -258,6 +307,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   // ---------------------------------------------------------------------------
 
   startConversation(): void {
+    this.harnessDataService.clearAgentChatState('artifacts-generator');
     this.messages.set([]);
     this.connectionError.set(null);
     this.fieldErrors.set({});
@@ -697,6 +747,7 @@ export class ArtifactsGeneratorComponent implements AfterViewChecked {
   private push(msg: Omit<ArtifactsChatMessage, 'id' | 'timestamp'>): void {
     this.messages.update(list => [...list, { ...msg, id: this.nextId++, timestamp: new Date() }]);
     this.shouldScroll = true;
+    this.persistChatState();
   }
 
 
