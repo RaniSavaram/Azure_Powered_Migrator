@@ -281,7 +281,7 @@ def build_assessment(
             {"label": "Tables Ready", "value": f"{readiness_counts['ready']}/{len(tables)}",
              "color": "#16a34a" if readiness_counts["ready"] == len(tables) else "#f97316"},
             {"label": "Complexity", "value": f"{tier_counts['Simple']}S / {tier_counts['Medium']}M / {tier_counts['Complex']}C"},
-            {"label": "Migration Waves", "value": str(len(waves))},
+            {"label": "Execution Waves", "value": str(len(waves))},
             {"label": "Source Volume", "value": f"{total_size:,} MB"},
         ],
         "logs": _logs(source, summary, tables, waves, cycles, dependency_source, verdict),
@@ -324,7 +324,7 @@ def _logs(source, summary, tables, waves, cycles, dependency_source, verdict) ->
     add("FAIL" if rb["blocked"] else "PASS",
         f"Readiness: {rb['ready']} ready, {rb['needs_review']} need review, {rb['blocked']} blocked", "4/5")
 
-    add("STEP", "Migration waves", "5/5")
+    add("STEP", "Execution waves", "5/5")
     add("INFO", f"Dependencies: {dependency_source}", "5/5")
     for idx, wave in enumerate(waves, start=1):
         preview = ", ".join(wave[:6]) + (f" +{len(wave) - 6} more" if len(wave) > 6 else "")
@@ -333,7 +333,7 @@ def _logs(source, summary, tables, waves, cycles, dependency_source, verdict) ->
         add("WARN", f"{len(cycles)} table(s) reference each other in a cycle; loaded together in the last wave", "5/5")
 
     add("RESULT", {
-        "ready": "Assessment complete: all tables ready for migration",
+        "ready": "Assessment complete: all tables analyzed and ready",
         "ready_with_review": "Assessment complete: ready, with tables that need review",
         "blocked": "Assessment complete: blocked until constraint errors are fixed",
     }[verdict])

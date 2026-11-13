@@ -24,14 +24,14 @@
     </div>
     <div class="header-right-actions">
       @if (canProceed()) {
-        <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Migration Generator Agent">
-          <span>Proceed to Migration Generator</span>
+        <a class="btn-next-phase" [routerLink]="nextPhaseRoute" title="Proceed to Next Phase">
+          <span>Proceed to Next Phase</span>
           <i class="bi bi-arrow-right"></i>
         </a>
       } @else {
         <button type="button" class="btn-next-phase btn-next-phase-locked" disabled [title]="getLockReason()">
           <i class="bi bi-lock-fill me-1"></i>
-          <span>Proceed to Migration Generator</span>
+          <span>Proceed to Next Phase</span>
         </button>
       }
     </div>
@@ -49,13 +49,13 @@
             {{ r.summary.readiness_breakdown.ready }}/{{ r.summary.total_tables }} ready · {{ r.summary.wave_count }} wave(s) · constraint gate {{ r.summary.constraints_gate }}
           </div>
           <div class="prompt-banner-title">
-            {{ r.verdict === 'ready' ? 'Ready to migrate' : (r.verdict === 'ready_with_review' ? 'Ready, with tables to review' : 'Assessment blocked') }}
+            {{ r.verdict === 'ready' ? 'Assessment Complete & Ready' : (r.verdict === 'ready_with_review' ? 'Ready, with tables to review' : 'Assessment blocked') }}
           </div>
           <div class="prompt-banner-sub">
             @if (r.verdict === 'blocked') {
               Fix the Layer 1 errors in the <strong>Constraint Agent</strong>, then re-run the assessment.
             } @else {
-              {{ r.summary.complexity_breakdown.simple }} simple · {{ r.summary.complexity_breakdown.medium }} medium · {{ r.summary.complexity_breakdown.complex }} complex. Continue to the <strong>Migration Generator Agent</strong>.
+              {{ r.summary.complexity_breakdown.simple }} simple · {{ r.summary.complexity_breakdown.medium }} medium · {{ r.summary.complexity_breakdown.complex }} complex. Continue to <strong>Phase 4</strong>.
             }
           </div>
         </div>
@@ -81,7 +81,7 @@
         <div class="blank-state-badge">Awaiting Phase 1 Connection</div>
         <h2>No Source Database Connected</h2>
         <p>
-          Assessment Agent requires schema catalog, table definitions, and sizing metrics from <strong>Discovery Agent (Phase 1)</strong> before migration complexity scores and Fabric SKU sizing can be evaluated.
+          Assessment Agent requires schema catalog, table definitions, and sizing metrics from <strong>Discovery Agent (Phase 1)</strong> before complexity scores and Fabric SKU sizing can be evaluated.
         </p>
         <a routerLink="/agents/discovery" class="btn-connect-source-cta">
           <i class="bi bi-plug-fill"></i>
@@ -349,7 +349,7 @@
                   </div>
                 }
 
-                <!-- Migration waves -->
+                <!-- Execution waves -->
                 @if (msg.waves && report(); as r) {
                   <div class="waves">
                     @for (w of r.waves; track w.wave) {

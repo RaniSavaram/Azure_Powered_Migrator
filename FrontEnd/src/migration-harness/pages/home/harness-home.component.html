@@ -133,47 +133,29 @@
       </div>
     }
 
-    <!-- 3. Combined Box: Assessment Agent & Migration Generator Agent with Evaluator Feedback Agent in the Middle -->
+    <!-- 3. Dual Agent Group: Assessment Agent & Migration Generator Agent (Aligned with other agents, no combined header) -->
     <div class="agent-card combined-agent-card">
-      <div class="combined-top-bar">
-        <div class="combined-header-left">
-          <span class="combined-eyebrow">
-            <i class="bi bi-diagram-3-fill"></i>
-            <span>Assessment & Migration Generator Agent</span>
-          </span>
-        </div>
-        <div class="card-badges-group">
-          @if (!isSourceConnected) {
-            <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 11px; font-weight: 700; border-radius: 20px;">
-              <i class="bi bi-lock-fill me-1"></i> Awaiting Phase 1
-            </span>
-          }
-          <span class="phase-pill" [style.background-color]="assessmentAgent?.bgTint" [style.color]="assessmentAgent?.color">
-            {{ assessmentAgent?.badgeText }}
-          </span>
-          <span class="phase-connector">
-            <i class="bi bi-arrow-right"></i>
-          </span>
-          <span class="phase-pill" [style.background-color]="migrationAgent?.bgTint" [style.color]="migrationAgent?.color">
-            {{ migrationAgent?.badgeText }}
-          </span>
-        </div>
-      </div>
-
       <div class="combined-dual-body">
         <!-- Sub-Agent 1: Assessment Agent (Phase 3) -->
         @if (assessmentAgent; as agent) {
           <div class="combined-agent-pane assessment-pane">
-            <div class="pane-header-row">
+            <div class="card-top-row">
               <div class="agent-icon-square" [style.background-color]="agent.bgTint" [style.color]="agent.color">
                 <i class="bi" [ngClass]="agent.icon"></i>
               </div>
-              <span class="pane-phase-chip" [style.background-color]="agent.bgTint" [style.color]="agent.color">
-                {{ agent.badgeText }}
-              </span>
+              <div class="card-badges-group">
+                @if (!isSourceConnected) {
+                  <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 11px; font-weight: 700; border-radius: 20px;">
+                    <i class="bi bi-lock-fill me-1"></i> Awaiting Phase 1
+                  </span>
+                }
+                <span class="phase-pill" [style.background-color]="agent.bgTint" [style.color]="agent.color">
+                  {{ agent.badgeText }}
+                </span>
+              </div>
             </div>
 
-            <div class="pane-body-content">
+            <div class="card-body-content">
               <h3 class="agent-name" [routerLink]="agent.route" [title]="'Open ' + agent.name">{{ agent.name }}</h3>
               <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
               <p class="agent-description-text">{{ agent.description }}</p>
@@ -181,22 +163,29 @@
           </div>
         }
 
-        <!-- Clean Divider (Double arrows removed) -->
+        <!-- Clean Divider -->
         <div class="combined-divider"></div>
 
         <!-- Sub-Agent 2: Migration Generator Agent (Phase 4) -->
         @if (migrationAgent; as agent) {
           <div class="combined-agent-pane migration-pane">
-            <div class="pane-header-row">
+            <div class="card-top-row">
               <div class="agent-icon-square" [style.background-color]="agent.bgTint" [style.color]="agent.color">
                 <i class="bi" [ngClass]="agent.icon"></i>
               </div>
-              <span class="pane-phase-chip" [style.background-color]="agent.bgTint" [style.color]="agent.color">
-                {{ agent.badgeText }}
-              </span>
+              <div class="card-badges-group">
+                @if (!isSourceConnected) {
+                  <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 11px; font-weight: 700; border-radius: 20px;">
+                    <i class="bi bi-lock-fill me-1"></i> Awaiting Phase 1
+                  </span>
+                }
+                <span class="phase-pill" [style.background-color]="agent.bgTint" [style.color]="agent.color">
+                  {{ agent.badgeText }}
+                </span>
+              </div>
             </div>
 
-            <div class="pane-body-content">
+            <div class="card-body-content">
               <h3 class="agent-name" [routerLink]="agent.route" [title]="'Open ' + agent.name">{{ agent.name }}</h3>
               <div class="agent-phase-tag" [style.color]="agent.color">{{ agent.phaseTag }}</div>
               <p class="agent-description-text">{{ agent.description }}</p>

@@ -87,9 +87,9 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
   private scanner = inject(Scanner);
 
   agentName = 'Assessment Agent';
-  phase = 'Phase 3 · Migration Readiness & Sizing';
+  phase = 'Phase 3 · Schema Assessment & Sizing';
   nextPhaseRoute = '/agents/migration-generator';
-  nextPhaseName = 'Migration Generator Agent';
+  nextPhaseName = 'Next Phase (Phase 4)';
 
   readonly readinessLabel = READINESS_LABEL;
 
@@ -263,7 +263,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
     this.agentSays(
       refresh
         ? `Re-extracting metadata from **${target}** and assessing every table…`
-        : `Assessing migration readiness for **${target}**: sizing, complexity, load strategy and migration waves…`,
+        : `Assessing schema structure and sizing for **${target}**: complexity, dependencies, load strategy and execution waves…`,
       { live: true }
     );
 
@@ -347,8 +347,8 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
   private pushResultMessage(r: AssessmentReport): void {
     const s = r.summary;
     const verdictText = {
-      ready: '**Ready to migrate.** Every table passed the readiness checks.',
-      ready_with_review: `**Ready, with review.** ${s.readiness_breakdown.needs_review} table(s) need attention before or during migration.`,
+      ready: '**Assessment Complete.** Every table passed the readiness and sizing checks.',
+      ready_with_review: `**Ready, with review.** ${s.readiness_breakdown.needs_review} table(s) need attention.`,
       blocked: `**Blocked.** ${s.readiness_breakdown.blocked ? s.readiness_breakdown.blocked + ' table(s) have Layer 1 errors' : 'The Phase 2 constraint gate failed'}. Fix them in the Constraint Agent and re-run.`
     }[r.verdict];
     const origin = r.source?.metadata_origin;
@@ -368,7 +368,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
       `- Scope: **${s.total_tables}** tables, **${s.total_columns}** columns, **${s.total_rows.toLocaleString()}** rows, **${s.total_size_mb.toLocaleString()} MB** (~${s.est_onelake_size_mb.toLocaleString()} MB in OneLake, estimated)\n` +
       `- Complexity: **${s.complexity_breakdown.simple}** simple, **${s.complexity_breakdown.medium}** medium, **${s.complexity_breakdown.complex}** complex\n` +
       `- Readiness: **${s.readiness_breakdown.ready}** ready, **${s.readiness_breakdown.needs_review}** need review, **${s.readiness_breakdown.blocked}** blocked\n` +
-      `- Migration waves: **${s.wave_count}** (dependencies: ${s.dependency_source})\n` +
+      `- Execution waves: **${s.wave_count}** (dependencies: ${s.dependency_source})\n` +
       `- Constraint gate (Phase 2): **${s.constraints_gate}**${docNote}${originNote}`,
       {
         metrics: r.metrics,
@@ -399,7 +399,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
         if (this.canProceed()) {
           this.router.navigate([this.nextPhaseRoute]);
         } else {
-          this.agentSays('The assessment is blocked, so the Migration Generator stays locked. Fix the Layer 1 errors in the Constraint Agent, then re-run.');
+          this.agentSays('The assessment is blocked, so Phase 4 stays locked. Fix the Layer 1 errors in the Constraint Agent, then re-run.');
         }
         break;
       case 'constraints':
@@ -493,7 +493,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
     const q = text.toLowerCase();
     if (/(re-?run|again|repeat|run (the )?assessment)/.test(q)) return this.runAssessment(false);
     if (/(re-?extract|reconnect|refresh)/.test(q)) return this.runAssessment(true);
-    if (/(proceed|next phase|migration generator)/.test(q)) return this.handleActionClick('next');
+    if (/(proceed|next phase|phase 4|next)/.test(q)) return this.handleActionClick('next');
     this.answer(this.intentOf(q), q);
   }
 
@@ -529,7 +529,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
         return;
       case 'waves':
         this.agentSays(
-          `### Migration waves\n\nTables are ordered so each one loads after the tables it references (dependencies: **${s.dependency_source}**).` +
+          `### Execution waves\n\nTables are ordered so each one loads after the tables it references (dependencies: **${s.dependency_source}**).` +
           (s.tables_in_cycles.length ? ` **${s.tables_in_cycles.length}** table(s) reference each other in a cycle and load together in the last wave.` : '') +
           ' Click a table for details.',
           { waves: true }
@@ -605,7 +605,7 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
           return;
         }
         this.agentSays(
-          'I can answer from the latest assessment: **complex tables**, **needs review**, **migration waves**, **load strategy**, **largest tables**, **Direct Lake**, the **report**, or any **table name**. Or open the **table explorer**.'
+          'I can answer from the latest assessment: **complex tables**, **needs review**, **execution waves**, **load strategy**, **largest tables**, **Direct Lake**, the **report**, or any **table name**. Or open the **table explorer**.'
         );
       }
     }

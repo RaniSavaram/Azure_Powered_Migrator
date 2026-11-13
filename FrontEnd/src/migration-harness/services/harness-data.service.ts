@@ -353,7 +353,7 @@ export class HarnessDataService {
       name: 'Assessment Agent',
       sidebarName: 'Assessment Agent',
       sidebarSubtext: 'AI Foundry • Sizing • Object Readiness',
-      phaseTag: 'PHASE 3 · MIGRATION READINESS & SIZING',
+      phaseTag: 'PHASE 3 · SCHEMA ASSESSMENT & SIZING',
       category: 'Assessment & Strategy',
       color: '#10b981',
       accentBorder: '#10b981',
@@ -362,7 +362,7 @@ export class HarnessDataService {
       status: 'live',
       executionStatus: 'idle',
       badgeText: 'Phase 3',
-      description: 'Powered by Azure AI Foundry Table Summarizer — analyzes object structures, data volume sizing, column definitions, and dependencies to produce structured migration readiness assessments.',
+      description: 'Powered by Azure AI Foundry Table Summarizer — analyzes object structures, data volume sizing, column definitions, and dependencies to produce structured readiness assessments.',
       route: '/agents/assessment'
     },
     {

@@ -501,7 +501,7 @@
   grid-column: span 2;
   position: relative;
   border-top: none !important;
-  padding-top: 18px;
+  padding: 24px 24px 20px 24px;
 }
 
 .agent-card.combined-agent-card::before {
