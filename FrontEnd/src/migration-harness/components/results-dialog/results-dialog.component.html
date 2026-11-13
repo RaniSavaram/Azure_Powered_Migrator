@@ -19,10 +19,10 @@
               <i class="bi bi-arrow-right-short"></i>
             </span>
             <span class="target-tag">
-              <img src="assets/logo/azure_logo.svg" alt="Azure" class="header-azure-icon" />
-              <span>Microsoft Fabric OneLake</span>
-              <span class="sep">&bull;</span>
-              <span>{{ destinationLakehouse }}</span>
+              <img src="assets/logo/fabric_logo.svg" alt="Microsoft Fabric" class="header-fabric-icon" />
+              <span>Microsoft Fabric</span>
+              <span class="sep" *ngIf="destinationLakehouse">&bull;</span>
+              <span *ngIf="destinationLakehouse">{{ destinationLakehouse }}</span>
             </span>
             @if (isWorkflowCompleted) {
               <span class="status-badge">
@@ -64,92 +64,6 @@
         </div>
       </div>
     }
-
-    <!-- Source & Destination Selected Showcase Banner -->
-    <div class="results-endpoints-showcase">
-      <!-- Source Card -->
-      <div class="endpoint-card source-card">
-        <div class="endpoint-header">
-          <div class="endpoint-badge source-badge">
-            <span class="pulse-dot"></span>
-            <span>SOURCE SELECTED</span>
-          </div>
-          <span class="endpoint-type-tag">Source Engine</span>
-        </div>
-        <div class="endpoint-main">
-          <div class="endpoint-icon-box source-icon">
-            <i class="bi" [ngClass]="getSourceIcon()"></i>
-          </div>
-          <div class="endpoint-meta">
-            <h3 class="endpoint-name">{{ sourceName }}</h3>
-            <div class="endpoint-db-pill">
-              <i class="bi bi-hdd-network"></i>
-              <span>Database: <strong>{{ databaseName }}</strong></span>
-            </div>
-          </div>
-        </div>
-        <div class="endpoint-details-grid">
-          <div class="detail-item">
-            <span class="detail-label">Endpoint:</span>
-            <span class="detail-val" [title]="sourceEndpoint">{{ sourceEndpoint }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Objects:</span>
-            <span class="detail-val">68 Tables · 13 Views · 24 SPs</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Migration Flow Indicator -->
-      <div class="migration-flow-indicator">
-        <div class="flow-pill">
-          <i class="bi bi-cpu-fill flow-ai-icon"></i>
-          <span>AI AGENT PIPELINE</span>
-        </div>
-        <div class="flow-line">
-          <span class="flow-dot dot-1"></span>
-          <span class="flow-dot dot-2"></span>
-          <span class="flow-dot dot-3"></span>
-          <i class="bi bi-arrow-right-circle-fill flow-arrow"></i>
-        </div>
-        <div class="flow-medallion-badge">
-          <span>Delta OneLake Sync</span>
-        </div>
-      </div>
-
-      <!-- Destination Card -->
-      <div class="endpoint-card destination-card">
-        <div class="endpoint-header">
-          <div class="endpoint-badge destination-badge">
-            <span class="pulse-dot dest-dot"></span>
-            <span>DESTINATION SELECTED</span>
-          </div>
-          <span class="endpoint-type-tag dest-tag">Target Lakehouse</span>
-        </div>
-        <div class="endpoint-main">
-          <div class="endpoint-icon-box dest-icon">
-            <img src="assets/logo/azure_logo.svg" alt="Microsoft Fabric / Azure" class="dest-azure-img" />
-          </div>
-          <div class="endpoint-meta">
-            <h3 class="endpoint-name">{{ destinationPlatform }}</h3>
-            <div class="endpoint-db-pill dest-pill">
-              <i class="bi bi-cloud-check-fill"></i>
-              <span>Lakehouse: <strong>{{ destinationLakehouse }}</strong></span>
-            </div>
-          </div>
-        </div>
-        <div class="endpoint-details-grid">
-          <div class="detail-item">
-            <span class="detail-label">Warehouse:</span>
-            <span class="detail-val" [title]="destinationWarehouse">{{ destinationWarehouse }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Storage:</span>
-            <span class="detail-val">{{ destinationStorage }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Navigation Tabs -->
     <div class="tab-header">

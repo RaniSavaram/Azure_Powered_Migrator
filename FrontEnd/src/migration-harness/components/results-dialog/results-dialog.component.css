@@ -100,11 +100,13 @@
   opacity: 0.6;
 }
 
-.header-azure-icon {
-  width: 14px;
-  height: 14px;
+.header-azure-icon,
+.header-fabric-icon {
+  width: 15px;
+  height: 15px;
   object-fit: contain;
   vertical-align: -2px;
+  display: inline-block;
 }
 
 .flow-arrow-tag {
