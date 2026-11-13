@@ -3,16 +3,15 @@
 import os
 import sys
 from pathlib import Path
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 
 
 def main():
     """Run administrative tasks."""
-    # Automatically load .env from BackEnd and project root
-    load_dotenv(find_dotenv(usecwd=True), override=True)
+    # Load .env strictly from inside the repository (project root, then BackEnd override)
     base = Path(__file__).resolve().parent
-    for env_path in [base / ".env", base.parent / ".env"]:
-        if env_path.exists():
+    for env_path in [base.parent / ".env", base / ".env"]:
+        if env_path.is_file():
             load_dotenv(dotenv_path=env_path, override=True)
 
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')

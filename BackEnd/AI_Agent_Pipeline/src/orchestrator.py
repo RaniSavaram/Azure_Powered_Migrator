@@ -1,17 +1,39 @@
 import os
 import json
 import time
+import ssl
 import sys
 import uuid
+import threading
 import pandas as pd
-from dotenv import load_dotenv, find_dotenv
+from dotenv import dotenv_values
+from pathlib import Path
+
+
+def _ensure_clean_ssl_for_truststore() -> None:
+    """
+    Prevent a RecursionError on Windows when pip_system_certs injects
+    pip._vendor.truststore into stdlib ssl.SSLContext before httpx2/openai
+    loads the standalone truststore package.
+    """
+    if "truststore" in sys.modules:
+        return
+    if getattr(ssl.SSLContext, "__module__", "").startswith("pip._vendor.truststore"):
+        try:
+            from pip._vendor import truststore as _pip_ts
+            _pip_ts.extract_from_ssl()
+        except Exception:
+            pass
+
+
+_ensure_clean_ssl_for_truststore()
 
 # Import agent definitions from the agents directory
 from agents import TableSummarizerAgent, MigrationGeneratorAgent
 
 # Import metadata, document generation, and tools
-from metadataProcessor import collect_metadata, read_csv_robust, infer_sql_type
-from docx_generator import create_table_summary_document, create_migration_plan_document, set_cell_margins
+from metadataProcessor import collect_metadata, count_table_columns, read_csv_robust, infer_sql_type
+from docx_generator import create_table_summary_document, create_migration_plan_document, set_cell_margins, get_source_display_name
 from tools.database_tools import (
     table_summary_tool,
     view_summary_tool,
@@ -30,52 +52,165 @@ except AttributeError:
     pass
 
 
+class FoundryAuthError(RuntimeError):
+    """Raised when Azure AI Foundry authentication or RBAC authorization fails."""
+
+
+class FoundryContentFilterError(RuntimeError):
+    """Raised when an Azure AI Foundry deployment guardrail blocks or truncates output."""
+
+
+def is_foundry_content_filter_error(exc: Exception) -> bool:
+    if isinstance(exc, FoundryContentFilterError):
+        return True
+    msg = str(exc).lower()
+    return any(
+        token in msg
+        for token in (
+            "content_filter",
+            "personallyidentifiableinformation",
+            "response content blocked",
+        )
+    )
+
+
+def is_foundry_auth_error(exc: Exception) -> bool:
+    if isinstance(exc, FoundryAuthError):
+        return True
+    cls_name = type(exc).__name__
+    if cls_name in ("ClientAuthenticationError", "CredentialUnavailableError", "AuthenticationError"):
+        return True
+    msg = str(exc).lower()
+    return any(
+        token in msg
+        for token in (
+            "clientauthenticationerror",
+            "credentialunavailableerror",
+            "defaultazurecredential failed",
+            "az login",
+            "authenticationfailed",
+            "unauthorized",
+            "401",
+            "403",
+            "permission denied",
+            "authorizationfailed",
+        )
+    )
+
+
+def _build_auth_error_message(exc: Exception) -> str:
+    return (
+        f"Azure AI Foundry authentication/permission failed: {exc}. "
+        "Local dev: run 'az login' (or set AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET in BackEnd/.env). "
+        "Render/Cloud: verify AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET env vars and grant that Service Principal "
+        "the Azure AI Developer / Cognitive Services User role on your Foundry project."
+    )
+
+
+def build_metadata_summary_str(tables_df, columns_df, stats_df, dep_df) -> str:
+    total_tables = len(tables_df) if tables_df is not None else 0
+    total_columns = count_table_columns(columns_df, tables_df)
+    distinct_schemas = ", ".join(tables_df["schema_name"].unique()) if tables_df is not None and not tables_df.empty and "schema_name" in tables_df.columns else "dbo"
+
+    stats_summary_list = []
+    if stats_df is not None and not stats_df.empty:
+        for _, r in stats_df.iterrows():
+            stats_summary_list.append(
+                f"- Table: {r['table_name']}, Schema: {r['schema_name']}, Rows: {r['row_count']}, Size: {r['size_mb']} MB"
+            )
+
+    cols_summary_list = []
+    if columns_df is not None and not columns_df.empty:
+        for _, r in columns_df.head(100).iterrows():
+            dtype = r.get('SourceDataType') or r.get('data_type') or 'unknown'
+            cols_summary_list.append(f"- Col: {r['TableName']}.{r['ColumnName']} ({dtype})")
+
+    dep_summary_list = []
+    if dep_df is not None and not dep_df.empty:
+        for _, r in dep_df.iterrows():
+            dep_summary_list.append(
+                f"- ForeignKey: {r['parent_table']}({r['fk_name']}) -> {r['referenced_table']}"
+            )
+
+    stats_summary_str = "\n".join(stats_summary_list) if stats_summary_list else "None"
+    dep_summary_str = "\n".join(dep_summary_list) if dep_summary_list else "None"
+    cols_summary_str = "\n".join(cols_summary_list) if cols_summary_list else "None"
+    return f"""Overall Stats:
+- Total tables: {total_tables}
+- Total columns: {total_columns}
+- Distinct schemas: {distinct_schemas}
+
+Tables and sizes:
+{stats_summary_str}
+
+Dependencies:
+{dep_summary_str}
+
+Columns Sample:
+{cols_summary_str}
+"""
+
+
 class AzureAIOrchestrator:
     """
     Orchestrates agent creation, prompt execution, and function tool invocations
     using the Microsoft Azure AI Projects SDK.
     """
+    @staticmethod
+    def _load_strict_foundry_config():
+        """
+        Reads Azure AI Foundry settings strictly from project-local .env files
+        (phase_1/.env, BackEnd/.env, AI_Agent_Pipeline/.env) without walking above
+        the repository. Falls back to container os.environ only when no project
+        .env file exists (e.g. Render/Docker deployments).
+        """
+        curr = Path(__file__).resolve()
+        repo_root = curr.parents[3]
+        backend_dir = curr.parents[2]
+        pipeline_dir = curr.parents[1]
+        env_candidates = [repo_root / ".env", backend_dir / ".env", pipeline_dir / ".env"]
+        existing_envs = [p for p in env_candidates if p.is_file()]
+
+        if existing_envs:
+            raw_cfg = {}
+            for env_file in existing_envs:
+                for k, v in dotenv_values(env_file).items():
+                    if v is not None:
+                        raw_cfg[k] = str(v)
+            source_desc = ", ".join(str(p) for p in existing_envs)
+        else:
+            raw_cfg = dict(os.environ)
+            source_desc = "container environment (no project .env found)"
+
+        required_keys = [
+            "AZURE_AI_FOUNDRY_PROJECT_ENDPOINT",
+            "AZURE_AI_FOUNDRY_AGENT_NAME",
+            "AZURE_AI_FOUNDRY_TABLE_SUMMARIZER_MODEL",
+            "AZURE_AI_FOUNDRY_MIGRATION_PLAN_MODEL",
+        ]
+        config = {key: (raw_cfg.get(key) or "").strip() for key in required_keys}
+        missing = [key for key, val in config.items() if not val]
+        if missing:
+            raise ValueError(
+                f"[STRICT CONFIG ERROR] Missing required Azure AI Foundry setting(s) in {source_desc}: "
+                f"{', '.join(missing)}. Set all required keys inside BackEnd/.env or project root .env."
+            )
+        for sp_key in ("AZURE_TENANT_ID", "AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET"):
+            config[sp_key] = (raw_cfg.get(sp_key) or os.environ.get(sp_key) or "").strip()
+        return config
+
     def __init__(self, tables_df, columns_df, stats_df, views_df, procedures_df, dep_df, source_hint=None, functions_df=None, volumes_df=None, scan_id=None):
-        # Load .env from CWD, BackEnd, and project root with override=True
-        load_dotenv(find_dotenv(usecwd=True), override=True)
-        try:
-            from pathlib import Path
-            curr = Path(__file__).resolve()
-            # Check up to 4 parent levels for .env
-            for p in [curr.parent, curr.parents[1], curr.parents[2], curr.parents[3]]:
-                env_file = p / ".env"
-                if env_file.exists():
-                    load_dotenv(dotenv_path=env_file, override=True)
-        except Exception:
-            pass
-        self.endpoint = os.getenv("AZURE_AI_FOUNDRY_PROJECT_ENDPOINT")
-        self.base_agent_name = os.getenv("AZURE_AI_FOUNDRY_AGENT_NAME", "MyAgent")
+        self._token_lock = threading.Lock()
+        cfg = self._load_strict_foundry_config()
+        self._sp_tenant_id = cfg["AZURE_TENANT_ID"]
+        self._sp_client_id = cfg["AZURE_CLIENT_ID"]
+        self._sp_client_secret = cfg["AZURE_CLIENT_SECRET"]
+        self.endpoint = cfg["AZURE_AI_FOUNDRY_PROJECT_ENDPOINT"]
+        self.base_agent_name = cfg["AZURE_AI_FOUNDRY_AGENT_NAME"]
 
-        # Two distinct AI Foundry model deployments for the two agents
-        self.table_summarizer_model = (
-            os.getenv("AZURE_AI_FOUNDRY_TABLE_SUMMARIZER_MODEL")
-            or os.getenv("AZURE_AI_FOUNDRY_MODEL_DEPLOYMENT_NAME")
-            or ""
-        ).strip()
-
-        self.migration_generator_model = (
-            os.getenv("AZURE_AI_FOUNDRY_MIGRATION_PLAN_MODEL")
-            or os.getenv("AZURE_AI_FOUNDRY_MODEL_DEPLOYMENT_NAME")
-            or ""
-        ).strip()
-
-        # Strict validation: both models must be explicitly configured
-        if not self.table_summarizer_model:
-            raise ValueError(
-                "[STRICT CONFIG ERROR] No model deployment specified for Table Summarizer Agent! "
-                "Please set AZURE_AI_FOUNDRY_TABLE_SUMMARIZER_MODEL (or AZURE_AI_FOUNDRY_MODEL_DEPLOYMENT_NAME) in your .env."
-            )
-
-        if not self.migration_generator_model:
-            raise ValueError(
-                "[STRICT CONFIG ERROR] No model deployment specified for Migration Generator Agent! "
-                "Please set AZURE_AI_FOUNDRY_MIGRATION_PLAN_MODEL (or AZURE_AI_FOUNDRY_MODEL_DEPLOYMENT_NAME) in your .env."
-            )
+        # Strictly use the exact model deployment specified per agent (no shared fallback)
+        self.table_summarizer_model = cfg["AZURE_AI_FOUNDRY_TABLE_SUMMARIZER_MODEL"]
+        self.migration_generator_model = cfg["AZURE_AI_FOUNDRY_MIGRATION_PLAN_MODEL"]
 
         # Retain self.model_name for backward compatibility
         self.model_name = self.table_summarizer_model
@@ -150,25 +285,31 @@ class AzureAIOrchestrator:
 
         Logs["Scan Info"].append(f"[INFO] Initializing Azure AI Projects Client...")
         print("[INFO] Initializing Azure AI Projects Client...")
-        from azure.identity import DefaultAzureCredential
+        from azure.identity import ClientSecretCredential, DefaultAzureCredential
         from azure.ai.projects import AIProjectClient
-        # exclude_shared_token_cache_credential/exclude_broker_credential:
-        # these two Windows OS-cache-backed sources (SharedTokenCacheCredential,
-        # and this azure-identity version's default-included BrokerCredential/
-        # WAM) are prone to going stale after e.g. a Windows update, surfacing
-        # as "Couldn't complete the operation due to a system update..." -
-        # stale on-disk state that persists across process restarts. See the
-        # matching exclusion in Artifacts_Generator/fabric_api.py for the
-        # same fix on the Fabric-token path.
-        self.client = AIProjectClient(
-            endpoint=self.endpoint,
-            credential=DefaultAzureCredential(
-                exclude_shared_token_cache_credential=True,
-                exclude_broker_credential=True,
-                # Same `az` timeout headroom as fabric_api.py's credential.
-                process_timeout=60,
+        try:
+            if self._sp_tenant_id and self._sp_client_id and self._sp_client_secret:
+                credential = ClientSecretCredential(
+                    tenant_id=self._sp_tenant_id,
+                    client_id=self._sp_client_id,
+                    client_secret=self._sp_client_secret,
+                )
+            else:
+                # exclude_shared_token_cache_credential/exclude_broker_credential:
+                # prevent stale Windows WAM / shared token cache errors.
+                credential = DefaultAzureCredential(
+                    exclude_shared_token_cache_credential=True,
+                    exclude_broker_credential=True,
+                    process_timeout=60,
+                )
+            self.client = AIProjectClient(
+                endpoint=self.endpoint,
+                credential=credential,
             )
-        )
+        except Exception as exc:
+            if is_foundry_auth_error(exc):
+                raise FoundryAuthError(_build_auth_error_message(exc)) from exc
+            raise
         self.client_type = "projects"
         Logs["Scan Info"].append(f"[INFO] Azure AI Projects Client initialized successfully.")
         print("[INFO] Azure AI Projects Client initialized successfully.")
@@ -243,30 +384,50 @@ class AzureAIOrchestrator:
         except Exception:
             pass  # nothing to delete - this is the expected case
 
+    def create_table_summarizer_agent(self):
+        Logs["Scan Info"].append(
+            f"[INFO] Initializing Table_summarizer agent version '{self.table_summarizer_name}' using model '{self.table_summarizer_model}' on Azure AI Foundry..."
+        )
+        print(f"[INFO] Initializing Table_summarizer agent version '{self.table_summarizer_name}' using model '{self.table_summarizer_model}' on Azure AI Foundry...")
+        self._delete_if_exists(self.table_summarizer_name)
+        try:
+            self.table_summarizer_agent = self.table_summarizer_builder.create(self.client)
+        except Exception as exc:
+            if is_foundry_auth_error(exc):
+                raise FoundryAuthError(_build_auth_error_message(exc)) from exc
+            raise
+        Logs["Scan Info"].append(
+            f"[INFO] Table_summarizer agent version created (ID: {self.table_summarizer_agent.id}, Version: {self.table_summarizer_agent.version}, Model: {self.table_summarizer_model})."
+        )
+        print(f"[INFO] Table_summarizer agent version created (ID: {self.table_summarizer_agent.id}, Version: {self.table_summarizer_agent.version}, Model: {self.table_summarizer_model}).")
+        return self.table_summarizer_agent
+
+    def create_migration_generator_agent(self):
+        Logs["Scan Info"].append(
+            f"[INFO] Initializing Migration_plan_generator agent version '{self.migration_plan_name}' using model '{self.migration_generator_model}' on Azure AI Foundry..."
+        )
+        print(f"[INFO] Initializing Migration_plan_generator agent version '{self.migration_plan_name}' using model '{self.migration_generator_model}' on Azure AI Foundry...")
+        self._delete_if_exists(self.migration_plan_name)
+        try:
+            self.migration_plan_agent = self.migration_generator_builder.create(self.client)
+        except Exception as exc:
+            if is_foundry_auth_error(exc):
+                raise FoundryAuthError(_build_auth_error_message(exc)) from exc
+            raise
+        Logs["Scan Info"].append(
+            f"[INFO] Migration_plan_generator agent version created (ID: {self.migration_plan_agent.id}, Version: {self.migration_plan_agent.version}, Model: {self.migration_generator_model})."
+        )
+        print(f"[INFO] Migration_plan_generator agent version created (ID: {self.migration_plan_agent.id}, Version: {self.migration_plan_agent.version}, Model: {self.migration_generator_model}).")
+        return self.migration_plan_agent
+
     def create_agents(self):
         """
         Creates both Table_summarizer and Migration_plan_generator agents using Microsoft AI Foundry SDK
         """
-        Logs["Scan Info"].append(f"[INFO] Creating agents using Microsoft AI Foundry SDK...")
+        Logs["Scan Info"].append("[INFO] Creating agents using Microsoft AI Foundry SDK...")
         print("[INFO] Creating agents using Microsoft AI Foundry SDK...")
-
-        Logs["Scan Info"].append(f"[INFO] Initializing Table_summarizer agent version '{self.table_summarizer_name}' using model '{self.table_summarizer_model}' on Azure AI Foundry...")
-        print(f"[INFO] Initializing Table_summarizer agent version '{self.table_summarizer_name}' using model '{self.table_summarizer_model}' on Azure AI Foundry...")
-
-        self._delete_if_exists(self.table_summarizer_name)
-        self.table_summarizer_agent = self.table_summarizer_builder.create(self.client)
-
-        Logs["Scan Info"].append(f"[INFO] Table_summarizer agent version created (ID: {self.table_summarizer_agent.id}, Version: {self.table_summarizer_agent.version}, Model: {self.table_summarizer_model}).")
-        print(f"[INFO] Table_summarizer agent version created (ID: {self.table_summarizer_agent.id}, Version: {self.table_summarizer_agent.version}, Model: {self.table_summarizer_model}).")
-
-        Logs["Scan Info"].append(f"[INFO] Initializing Migration_plan_generator agent version '{self.migration_plan_name}' using model '{self.migration_generator_model}' on Azure AI Foundry...")
-        print(f"[INFO] Initializing Migration_plan_generator agent version '{self.migration_plan_name}' using model '{self.migration_generator_model}' on Azure AI Foundry...")
-
-        self._delete_if_exists(self.migration_plan_name)
-        self.migration_plan_agent = self.migration_generator_builder.create(self.client)
-
-        Logs["Scan Info"].append(f"[INFO] Migration_plan_generator agent version created (ID: {self.migration_plan_agent.id}, Version: {self.migration_plan_agent.version}, Model: {self.migration_generator_model}).")
-        print(f"[INFO] Migration_plan_generator agent version created (ID: {self.migration_plan_agent.id}, Version: {self.migration_plan_agent.version}, Model: {self.migration_generator_model}).")
+        self.create_table_summarizer_agent()
+        self.create_migration_generator_agent()
         return True
 
     def _accumulate_usage(self, response):
@@ -277,9 +438,10 @@ class AzureAIOrchestrator:
         comp_tok = getattr(usage, "completion_tokens", 0) or getattr(usage, "output_tokens", 0) or 0
         total_tok = getattr(usage, "total_tokens", 0) or (prompt_tok + comp_tok)
         
-        self.tokens_used["prompt"] += prompt_tok
-        self.tokens_used["completion"] += comp_tok
-        self.tokens_used["total"] += total_tok
+        with self._token_lock:
+            self.tokens_used["prompt"] += prompt_tok
+            self.tokens_used["completion"] += comp_tok
+            self.tokens_used["total"] += total_tok
 
     def run_agent_with_tool_calling(self, agent_name: str, user_msg: str, tool_map: dict = None) -> str:
         try:
@@ -370,11 +532,33 @@ class AzureAIOrchestrator:
             except Exception as cleanup_err:
                 print(f"[INFO] Could not delete the agent conversation (non-fatal): {cleanup_err}")
             output_text = response.output_text
+            incomplete_reason = getattr(getattr(response, "incomplete_details", None), "reason", None)
+            if (
+                getattr(response, "status", None) == "incomplete"
+                and incomplete_reason == "content_filter"
+                and len((output_text or "").strip()) < 1500
+            ):
+                raise FoundryContentFilterError(
+                    f"Azure AI Foundry content_filter truncated output for {agent_name} "
+                    f"at {len((output_text or '').strip())} characters."
+                )
             Logs["Harness Layer2"].append(
                 f"[AGENT COMPLETE] {agent_name}: generated {len(output_text or '')} characters."
             )
             return output_text
         except Exception as exc:
+            if is_foundry_auth_error(exc):
+                auth_msg = _build_auth_error_message(exc)
+                Logs["Scan Info"].append(f"  [AUTH ERROR] {auth_msg}")
+                Logs["Harness Layer2"].append(f"  [AUTH ERROR] {auth_msg}")
+                raise FoundryAuthError(auth_msg) from exc
+            if is_foundry_content_filter_error(exc):
+                cf_msg = (
+                    f"Azure AI Foundry content filter blocked/truncated output for {agent_name}: {exc}"
+                )
+                Logs["Scan Info"].append(f"  [CONTENT FILTER] {cf_msg}")
+                Logs["Harness Layer2"].append(f"  [CONTENT FILTER] {cf_msg}")
+                raise FoundryContentFilterError(cf_msg) from exc
             err_msg = f"[STRICT ERROR] Azure AI Foundry invocation failed for {agent_name}: {exc}"
             Logs["Scan Info"].append(f"  {err_msg}")
             Logs["Harness Layer2"].append(f"  {err_msg}")
@@ -497,6 +681,15 @@ Generated with AI Foundry agents and Microsoft Fabric best practices.
             )
         return summary
 
+    def _build_safe_architectural_migration_prompt(self) -> str:
+        source_label = get_source_display_name(self.source_hint)
+        total_tables = len(self.tables_df) if self.tables_df is not None else 0
+        return (
+            f"Summarize a Microsoft Fabric OneLake Lakehouse Medallion (Bronze, Silver, Gold) "
+            f"migration architecture for a {total_tables}-table {source_label} source database "
+            f"in 5 short bullet points labeled SECTION 1, SECTION 2, SECTION 5, SECTION 6, SECTION 8."
+        )
+
     def run_migration_generator_agent(self, metadata_summary_str):
         self._log_agent("        * [SUCCESS]: Synthesized target architecture mapping for Microsoft Fabric OneLake")
         self._log_agent("        * [SUCCESS]: Verified Lakehouse Delta Parquet storage format rules")
@@ -517,10 +710,21 @@ Generated with AI Foundry agents and Microsoft Fabric best practices.
 
         user_msg = rag_block + "Here is the database metadata summary gathered from files:\n\n" + metadata_summary_str + "\n\nPlease generate the detailed text content and write-ups for Sections 1 to 7 of the Database Migration Plan."
 
-        writeups = self.run_agent_with_tool_calling(
-            agent_name=self.migration_plan_name,
-            user_msg=user_msg
-        )
+        try:
+            writeups = self.run_agent_with_tool_calling(
+                agent_name=self.migration_plan_name,
+                user_msg=user_msg
+            )
+        except FoundryContentFilterError as cf_err:
+            Logs["Scan Info"].append(
+                f"[WARN] Foundry content_filter triggered for '{self.migration_generator_model}'; retrying with PII-safe architectural prompt..."
+            )
+            print(f"[WARN] Foundry content_filter triggered ({cf_err}); retrying {self.migration_generator_model} with PII-safe architectural prompt...")
+            safe_prompt = self._build_safe_architectural_migration_prompt()
+            writeups = self.run_agent_with_tool_calling(
+                agent_name=self.migration_plan_name,
+                user_msg=safe_prompt
+            )
         if not writeups or len(writeups.strip()) < 50:
             raise RuntimeError(
                 f"[STRICT ERROR] Migration Generator Agent failed to synthesize migration roadmap "
@@ -529,19 +733,25 @@ Generated with AI Foundry agents and Microsoft Fabric best practices.
         self._log_agent("        * [SUCCESS]: Evaluator verified migration plan integrity and Fabric OneLake compatibility")
         return writeups
 
+    def _safe_delete_agent(self, label: str, agent_name: str) -> None:
+        try:
+            try:
+                self.client.agents.delete(agent_name, force=True)
+            except TypeError:
+                self.client.agents.delete(agent_name)
+            Logs["Scan Info"].append(f"  Deleted {label} ({agent_name})")
+            print(f"  Deleted {label} ({agent_name})")
+        except Exception as e:
+            Logs["Scan Info"].append(f"[WARNING] Error deleting {label} ({agent_name}): {e}")
+            print(f"[WARNING] Error deleting {label} ({agent_name}): {e}")
+
     def cleanup_agents(self):
         """Cleans up the agents created on Microsoft AI Foundry to release resources."""
-        Logs["Scan Info"].append(f"[INFO] Cleaning up agents on Microsoft AI Foundry...")
+        Logs["Scan Info"].append("[INFO] Cleaning up agents on Microsoft AI Foundry...")
         print("[INFO] Cleaning up agents on Microsoft AI Foundry...")
-        try:
-            if self.table_summarizer_agent:
-                self.client.agents.delete(self.table_summarizer_name)
-                Logs["Scan Info"].append(f"  Deleted TableSummarizer Agent ({self.table_summarizer_name})")
-                print(f"  Deleted TableSummarizer Agent ({self.table_summarizer_name})")
-            if self.migration_plan_agent:
-                self.client.agents.delete(self.migration_plan_name)
-                Logs["Scan Info"].append(f"  Deleted MigrationPlan Agent ({self.migration_plan_name})")
-                print(f"  Deleted MigrationPlan Agent ({self.migration_plan_name})")
-        except Exception as e:
-            Logs["Scan Info"].append(f"[WARNING] Error during agent deletion: {e}")
-            print(f"[WARNING] Error during agent deletion: {e}")
+        if self.table_summarizer_agent:
+            self._safe_delete_agent("TableSummarizer Agent", self.table_summarizer_name)
+            self.table_summarizer_agent = None
+        if self.migration_plan_agent:
+            self._safe_delete_agent("MigrationPlan Agent", self.migration_plan_name)
+            self.migration_plan_agent = None

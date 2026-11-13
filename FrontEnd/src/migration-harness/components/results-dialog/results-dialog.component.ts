@@ -153,9 +153,23 @@ export class ResultsDialogComponent implements OnInit {
       if (migrationRes.generated_at) this.migrationPlanGeneratedAt = migrationRes.generated_at;
     }
 
-    // Dynamic Tokenomics matching Single Step Process
+    // Dynamic Tokenomics: prioritize real tokens from Foundry pipeline runs, then saved tokens, then pipeline state, fallback to dynamic estimate
+    const tokenSrc = migrationRes?.tokens_used || assessmentRes?.tokens_used;
     const savedTokenInfo = this.harnessDataService.getTokenInfo();
-    if (savedTokenInfo && (savedTokenInfo.total > 0 || savedTokenInfo.prompt > 0)) {
+
+    if (tokenSrc && (tokenSrc.total || tokenSrc.prompt || tokenSrc.completion)) {
+      const prompt = Number(tokenSrc.prompt || 0);
+      const completion = Number(tokenSrc.completion || 0);
+      const total = Number(tokenSrc.total || prompt + completion);
+      const estCost = (prompt / 1000000) * 0.15 + (completion / 1000000) * 0.60;
+      this.tokenInfo = {
+        total,
+        prompt,
+        completion,
+        cost: `$${estCost.toFixed(5)}`,
+      };
+      this.harnessDataService.setTokenInfo(this.tokenInfo);
+    } else if (savedTokenInfo && (savedTokenInfo.total > 0 || savedTokenInfo.prompt > 0)) {
       const rawCost: any = savedTokenInfo.cost;
       this.tokenInfo = {
         total: savedTokenInfo.total,

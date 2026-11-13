@@ -1,11 +1,11 @@
 {
   "metadata": {
     "scan_id": null,
-    "generated_at": "2026-11-02T06:21:54.355795Z",
+    "generated_at": "2026-11-12T18:08:08.964283Z",
     "source_platform": "Databricks",
     "target_platform": "Microsoft Fabric (OneLake)",
     "total_tables": 25,
-    "total_columns": 453,
+    "total_columns": 448,
     "total_views": 1,
     "total_procedures": 1,
     "total_functions": 0,

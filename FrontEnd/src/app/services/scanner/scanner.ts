@@ -1,5 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable, of, timer } from 'rxjs';
+import { filter, switchMap, take } from 'rxjs/operators';
 import { Api } from '../api/api';
 
 export interface ConnectionDetails {
@@ -224,7 +226,9 @@ export interface AssessmentTable {
 /** Response of POST /api/assessment-report/ (BackEnd/Migrator/assessment_analysis.py). */
 export interface AssessmentReport {
   status: 'success' | 'error';
-  code?: 'SOURCE_NOT_CONNECTED' | 'CONNECTION_FAILED';
+  code?: 'SOURCE_NOT_CONNECTED' | 'CONNECTION_FAILED' | 'FOUNDRY_AUTH_FAILED' | 'FOUNDRY_CONFIG_ERROR' | 'FOUNDRY_EXECUTION_ERROR';
+  model_used?: string | null;
+  tokens_used?: { prompt: number; completion: number; total: number } | null;
   message?: string;
   generated_at?: string;
   duration_ms?: number;
@@ -726,16 +730,50 @@ export class Scanner {
    * `connection` / `refresh` work as for validateConstraints();
    * `generate_document: false` refreshes the analysis without rebuilding the Word file.
    */
-  generateAssessmentReport(options: { connection?: Record<string, unknown>; refresh?: boolean; generate_document?: boolean } = {}) {
-    return this.http.post<AssessmentReport>(`${this.api.baseUrl}/assessment-report/`, options);
+  private postWithAsyncPolling<T extends { status?: string; job_id?: string }>(
+    startUrl: string,
+    payload: Record<string, unknown>,
+    statusUrlPrefix: string,
+    intervalMs = 2500
+  ): Observable<T> {
+    return this.http.post<T>(startUrl, payload).pipe(
+      switchMap(res => {
+        if (res?.status === 'started' && res?.job_id) {
+          return timer(intervalMs, intervalMs).pipe(
+            switchMap(() => this.http.get<T>(`${statusUrlPrefix}${res.job_id}/`)),
+            filter(poll => poll?.status !== 'running'),
+            take(1)
+          );
+        }
+        return of(res);
+      })
+    );
+  }
+
+  generateAssessmentReport(
+    options: { connection?: Record<string, unknown>; refresh?: boolean; generate_document?: boolean; async?: boolean } = {}
+  ): Observable<AssessmentReport> {
+    return this.postWithAsyncPolling<AssessmentReport>(
+      `${this.api.baseUrl}/assessment-report/`,
+      { async: true, ...options },
+      `${this.api.baseUrl}/assessment-status/`
+    );
   }
 
   /**
-   * Phase 4/5 (Migration Plan Generator): Synthesizes Medallion architecture, execution waves, Word Migration Plan, and migration_plan.json.
+   * Phase 4/5 (Migration Plan Generator): Synthesizes architecture roadmap, execution waves, Word Migration Plan, and migration_plan.json.
    */
-  generateMigrationPlan() {
-    return this.http.post<{
+  generateMigrationPlan(options: { force?: boolean; refresh?: boolean; async?: boolean } = {}) {
+    return this.postWithAsyncPolling<{
       status: string;
+      code?: string;
+      message?: string;
+      job_id?: string;
+      generated_at?: string | null;
+      document_generated_at?: string | null;
+      model_used?: string | null;
+      table_summarizer_model?: string | null;
+      tokens_used?: { prompt: number; completion: number; total: number } | null;
       plan_file: string;
       plan_url: string;
       download_url: string;
@@ -754,7 +792,11 @@ export class Scanner {
         risk: string;
         mitigation: string;
       }>;
-    }>(`${this.api.baseUrl}/migration-plan/`, {});
+    }>(
+      `${this.api.baseUrl}/migration-plan/`,
+      { async: true, ...options },
+      `${this.api.baseUrl}/migration-plan-status/`
+    );
   }
 
   /**

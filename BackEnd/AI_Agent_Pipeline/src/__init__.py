@@ -14,7 +14,12 @@ from .agents import (
     TableSummarizerAgent,
     MigrationGeneratorAgent
 )
-from .orchestrator import AzureAIOrchestrator
+from .orchestrator import (
+    AzureAIOrchestrator,
+    FoundryAuthError,
+    FoundryContentFilterError,
+    build_metadata_summary_str,
+)
 from .docx_generator import (
     create_table_summary_document,
     create_migration_plan_document
@@ -35,6 +40,8 @@ __all__ = [
     "TableSummarizerAgent",
     "MigrationGeneratorAgent",
     "AzureAIOrchestrator",
+    "FoundryAuthError",
+    "build_metadata_summary_str",
     "create_table_summary_document",
     "create_migration_plan_document"
 ]

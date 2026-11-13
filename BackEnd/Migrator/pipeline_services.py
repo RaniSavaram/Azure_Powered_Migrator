@@ -4,6 +4,7 @@ import time
 import traceback
 from datetime import datetime
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
 from config.Credentials import PrivateVariables
@@ -23,6 +24,12 @@ from HarnessLayers.layer2.Layer import (
 )
 from Logs import Logs
 
+from AI_Agent_Pipeline.src import (
+    AzureAIOrchestrator,
+    FoundryAuthError,
+    FoundryContentFilterError,
+    build_metadata_summary_str,
+)
 from AI_Agent_Pipeline.src.metadataProcessor import metadata_to_dataframes, build_dataframes, count_table_columns
 from AI_Agent_Pipeline.src.timezone_utils import now_in_client_tz, format_doc_timestamp
 from AI_Agent_Pipeline.src.docx_generator import (
@@ -77,6 +84,10 @@ active_pipeline = {
     "migration_plan": None,
     "table_summaries": None,
     "agent_writeups": None,
+    "assessment_tokens": None,
+    "migration_tokens": None,
+    "table_summarizer_model": None,
+    "migration_generator_model": None,
     "evaluation_report": None,
 }
 
@@ -860,8 +871,16 @@ def extract_metadata_service(data: dict = None) -> dict:
         active_pipeline["dataframes"] = dfs
         active_pipeline["metadata_origin"] = metadata_origin
         active_pipeline["metadata_extracted_at"] = now_in_client_tz().isoformat(timespec="seconds")
-        # New metadata invalidates the previous constraint run.
+        # New metadata invalidates downstream generated artifacts.
         active_pipeline["constraints_report"] = None
+        active_pipeline["assessment_report"] = None
+        active_pipeline["migration_plan"] = None
+        active_pipeline["table_summaries"] = None
+        active_pipeline["agent_writeups"] = None
+        active_pipeline["assessment_tokens"] = None
+        active_pipeline["migration_tokens"] = None
+        active_pipeline["table_summarizer_model"] = None
+        active_pipeline["migration_generator_model"] = None
 
     connection_logs = [
         f"[INFO] Connect request received for source platform: {display_name}",
@@ -1048,6 +1067,44 @@ def validate_constraints_service(data: dict = None) -> dict:
     return _sanitize_for_json(report_payload)
 
 
+def _classify_foundry_error(exc: Exception) -> tuple[str, str]:
+    if isinstance(exc, FoundryAuthError):
+        return "FOUNDRY_AUTH_FAILED", str(exc)
+    if isinstance(exc, FoundryContentFilterError):
+        return "FOUNDRY_CONTENT_FILTER", str(exc)
+    if isinstance(exc, ValueError) and "[STRICT CONFIG ERROR]" in str(exc):
+        return "FOUNDRY_CONFIG_ERROR", str(exc)
+    return "FOUNDRY_EXECUTION_ERROR", str(exc)
+
+
+def _combine_token_usage(*token_dicts) -> dict | None:
+    combined = {"prompt": 0, "completion": 0, "total": 0}
+    has_any = False
+    for td in token_dicts:
+        if isinstance(td, dict) and (td.get('total') or td.get('prompt') or td.get('completion')):
+            has_any = True
+            combined["prompt"] += int(td.get("prompt") or 0)
+            combined["completion"] += int(td.get("completion") or 0)
+            combined["total"] += int(td.get("total") or 0)
+    return combined if has_any else None
+
+
+def _summarize_secondary_objects_foundry(orchestrator, df, obj_type: str, name_field: str, max_workers: int) -> list:
+    if df is None or df.empty:
+        return []
+    items = [(idx, r[name_field], r['schema_name']) for idx, (_, r) in enumerate(df.iterrows())]
+    results = [None] * len(items)
+    workers = max(1, min(max_workers, len(items)))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {
+            pool.submit(orchestrator.run_secondary_object_summarizer_agent, obj_type, name, schema_name=schema): idx
+            for idx, name, schema in items
+        }
+        for fut, idx in futures.items():
+            results[idx] = fut.result()
+    return results
+
+
 def generate_assessment_report_service(data: dict = None) -> dict:
     """
     Phase 3 (Assessment Agent): readiness, complexity, load strategy and
@@ -1130,17 +1187,51 @@ Metadata Refresh Date: {refresh_date}
     doc_generated_str = format_doc_timestamp(doc_now)
 
     document_error = None
+    foundry_model_used = None
+    assessment_tokens = None
     if data.get("generate_document", True):
+        orchestrator = None
         try:
-            table_summaries = [
-                table_summary_tool(
-                    r["table_name"], columns_df, tables_df, stats_df, views_df, procedures_df, dep_df,
-                    schema_name=r["schema_name"],
-                )
-                for _, r in tables_df.iterrows()
-            ]
+            orchestrator = AzureAIOrchestrator(
+                tables_df, columns_df, stats_df, views_df, procedures_df, dep_df,
+                source_hint=slug,
+                functions_df=functions_df,
+                volumes_df=volumes_df,
+            )
+            foundry_model_used = orchestrator.table_summarizer_model
+            orchestrator.create_table_summarizer_agent()
+
+            max_workers = max(1, min(6, int(os.environ.get("FOUNDRY_SUMMARY_WORKERS", "4") or 4)))
+            table_rows = list(tables_df.iterrows())
+            table_summaries = [None] * len(table_rows)
+            if table_rows:
+                def _summarize_one_table(idx_and_row):
+                    idx, (_, r) = idx_and_row
+                    t_name = r["table_name"]
+                    s_name = r["schema_name"]
+                    t_stats = stats_df[stats_df["table_name"].astype(str).str.lower() == str(t_name).lower()] if stats_df is not None and not stats_df.empty else None
+                    r_cnt = t_stats["row_count"].iloc[0] if t_stats is not None and not t_stats.empty and "row_count" in t_stats.columns else 0
+                    sz_mb = t_stats["size_mb"].iloc[0] if t_stats is not None and not t_stats.empty and "size_mb" in t_stats.columns else 0.0
+                    col_cnt = len(columns_df[columns_df["TableName"].astype(str).str.lower() == str(t_name).lower()]) if columns_df is not None and not columns_df.empty else 0
+                    return idx, orchestrator.run_table_summarizer_agent(
+                        t_name, schema_name=s_name, col_cnt=col_cnt, r_cnt=r_cnt, sz_mb=sz_mb
+                    )
+
+                with ThreadPoolExecutor(max_workers=min(max_workers, len(table_rows))) as pool:
+                    for idx, summary in pool.map(_summarize_one_table, enumerate(table_rows)):
+                        table_summaries[idx] = summary
+
+            view_summaries = _summarize_secondary_objects_foundry(orchestrator, views_df, "view", "view_name", max_workers)
+            function_summaries = _summarize_secondary_objects_foundry(orchestrator, functions_df, "function", "function_name", max_workers)
+            procedure_summaries = _summarize_secondary_objects_foundry(orchestrator, procedures_df, "procedure", "procedure_name", max_workers)
+            volume_summaries = _summarize_secondary_objects_foundry(orchestrator, volumes_df, "volume", "volume_name", max_workers)
+
+            assessment_tokens = dict(orchestrator.tokens_used)
             with _pipeline_lock:
                 active_pipeline["table_summaries"] = table_summaries
+                active_pipeline["assessment_tokens"] = assessment_tokens
+                active_pipeline["table_summarizer_model"] = foundry_model_used
+
             doc_now = now_in_client_tz(data.get("client_timezone"), data.get("client_tz_offset"))
             doc_generated_str = format_doc_timestamp(doc_now)
             create_table_summary_document(
@@ -1155,12 +1246,30 @@ Metadata Refresh Date: {refresh_date}
                 procedures_df=procedures_df,
                 functions_df=functions_df,
                 volumes_df=volumes_df,
+                view_summaries=view_summaries,
+                function_summaries=function_summaries,
+                procedure_summaries=procedure_summaries,
+                volume_summaries=volume_summaries,
                 generated_at=doc_generated_str,
             )
-        except Exception as doc_exc:
-            # The analysis is still valid without the Word file; report why it's missing.
+        except Exception as foundry_exc:
             traceback.print_exc()
-            document_error = str(doc_exc)
+            err_code, err_msg = _classify_foundry_error(foundry_exc)
+            now_err = now_in_client_tz(data.get("client_timezone"), data.get("client_tz_offset")).strftime("%H:%M:%S")
+            err_logs = analysis.get("logs", [])
+            if connection_logs:
+                err_logs = [{"time": now_err, "level": _log_level(l), "step": "connect", "text": l} for l in connection_logs] + err_logs
+            err_logs.append({"time": now_err, "level": "ERROR", "step": "foundry", "text": err_msg})
+            return _sanitize_for_json({
+                "status": "error",
+                "code": err_code,
+                "message": err_msg,
+                "source": source,
+                "logs": err_logs,
+            })
+        finally:
+            if orchestrator is not None:
+                orchestrator.cleanup_agents()
     has_document = report_path.exists() and document_error is None
 
     duration_ms = int((time.perf_counter() - started) * 1000)
@@ -1168,9 +1277,9 @@ Metadata Refresh Date: {refresh_date}
     now = doc_now.strftime("%H:%M:%S")
     if connection_logs:
         logs = [{"time": now, "level": _log_level(l), "step": "connect", "text": l} for l in connection_logs] + logs
-    if document_error:
-        logs.insert(-1, {"time": now, "level": "ERROR", "step": "report", "text": f"Assessment Report (.docx) failed: {document_error}"})
-    elif has_document:
+    if has_document and foundry_model_used:
+        tok_total = (assessment_tokens or {}).get("total", 0)
+        logs.insert(-1, {"time": now, "level": "PASS", "step": "foundry", "text": f"Azure AI Foundry Table Summarizer ({foundry_model_used}) summarized {len(tables_df)} table(s) ({tok_total:,} tokens)."})
         logs.insert(-1, {"time": now, "level": "PASS", "step": "report", "text": f"Assessment Report written: {report_filename}"})
 
     tables = analysis["tables"]
@@ -1190,6 +1299,8 @@ Metadata Refresh Date: {refresh_date}
         "tables": tables,
         "waves": analysis["waves"],
         "logs": logs,
+        "model_used": foundry_model_used,
+        "tokens_used": assessment_tokens,
         "reconnected": bool(connection_logs),
         # Kept for existing consumers (test_endpoints.py, older UI code).
         "table_assessments": [
@@ -1284,45 +1395,37 @@ def generate_migration_plan_service(data: dict = None) -> dict:
     if procedures_df is not None and not procedures_df.empty:
         wave4_tables.extend(procedures_df["procedure_name"].tolist())
 
-    medallion_table_lines = []
-    for t in tables_df["table_name"].tolist():
-        layer = "Gold" if t in gold_tables else ("Silver" if t in silver_tables else "Bronze")
-        medallion_table_lines.append(f"• {t} - {layer}: Fabric Delta Lakehouse Lake table")
+    orchestrator = None
+    migration_model_used = None
+    migration_tokens = None
+    try:
+        orchestrator = AzureAIOrchestrator(
+            tables_df, columns_df, stats_df, views_df, procedures_df, dep_df,
+            source_hint=slug,
+            functions_df=functions_df,
+            volumes_df=volumes_df,
+        )
+        migration_model_used = orchestrator.migration_generator_model
+        orchestrator.create_migration_generator_agent()
+        metadata_summary_str = build_metadata_summary_str(tables_df, columns_df, stats_df, dep_df)
+        agent_writeups = orchestrator.run_migration_generator_agent(metadata_summary_str)
+        migration_tokens = dict(orchestrator.tokens_used)
+    except Exception as foundry_exc:
+        traceback.print_exc()
+        err_code, err_msg = _classify_foundry_error(foundry_exc)
+        return _sanitize_for_json({
+            "status": "error",
+            "code": err_code,
+            "message": err_msg,
+        })
+    finally:
+        if orchestrator is not None:
+            orchestrator.cleanup_agents()
 
-    agent_writeups = f"""SECTION 2: TARGET ARCHITECTURE SELECTION
-• Azure Microsoft Fabric OneLake Lakehouse & SQL Warehouse dual-engine architecture.
-• Direct Lake query connectivity for high-speed Power BI dimensional analysis.
-• Medallion architecture (Bronze Ingestion -> Silver Cleansed -> Gold Analytical Aggregations).
-
-SECTION 3: FABRIC CAPACITY & SIZING RECOMMENDATIONS
-• Target Microsoft Fabric SKU: F64 capacity (auto-scaling enabled).
-• V-Order Parquet zstandard compression reduces raw uncompressed storage footprint by ~76%.
-• Memory allocation structured for concurrent Direct Lake columncache retention.
-
-SECTION 4: PIPELINE & INGESTION DESIGN
-• Azure Data Factory / Fabric Data Pipelines for automated scheduled synchronization.
-• Fabric Spark Notebooks for complex Silver layer entity transformations.
-• Copy Activities using high-throughput binary Lakehouse streams.
-
-SECTION 5: MEDALLION ARCHITECTURE MAPPING
-{chr(10).join(medallion_table_lines)}
-
-SECTION 6: DIRECT LAKE PERFORMANCE OPTIMIZATION
-• Cardinality bounded on high-volume dimension attributes.
-• Non-enforced Primary & Foreign Key constraints declared for Direct Lake query planner optimization.
-
-SECTION 7: ENTERPRISE SECURITY & GOVERNANCE
-• Row-Level Security (RLS) and Column-Level Security (CLS) mapped to Microsoft Entra security groups.
-• Microsoft Purview lineage and sensitivity label synchronization.
-
-SECTION 8: PRE-FLIGHT & POST-MIGRATION VALIDATION
-• Automated row-count verification and hash-sum integrity checks across source and Lakehouse tables.
-• Schema drift monitoring with automated alert triggers.
-
-SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
-• Dual-run pipeline synchronization during parallel testing window.
-• Zero-downtime cutover strategy via DNS / connection string aliases.
-"""
+    with _pipeline_lock:
+        prior_assessment_tokens = active_pipeline.get("assessment_tokens")
+        summarizer_model_used = active_pipeline.get("table_summarizer_model")
+    combined_tokens = _combine_token_usage(prior_assessment_tokens, migration_tokens)
 
     plan_filename = f"{slug}_Migration_Plan.docx"
     plan_path = OUTPUT_DIR / plan_filename
@@ -1347,6 +1450,8 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
 
     with _pipeline_lock:
         active_pipeline["agent_writeups"] = agent_writeups
+        active_pipeline["migration_tokens"] = migration_tokens
+        active_pipeline["migration_generator_model"] = migration_model_used
 
     plan_now = now_in_client_tz(data.get("client_timezone"), data.get("client_tz_offset"))
     plan_generated_str = format_doc_timestamp(plan_now)
@@ -1359,6 +1464,7 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
         procedures_df=procedures_df,
         agent_writeups=agent_writeups,
         output_path=str(plan_path),
+        tokens_used=combined_tokens,
         functions_df=functions_df,
         volumes_df=volumes_df,
         source_hint=slug,
@@ -1425,6 +1531,9 @@ SECTION 9: RISK MITIGATION & ROLLBACK STRATEGY
             "silver": silver_tables,
             "gold": gold_tables,
         },
+        "model_used": migration_model_used,
+        "table_summarizer_model": summarizer_model_used or (orchestrator.table_summarizer_model if orchestrator else None),
+        "tokens_used": combined_tokens,
         "execution_waves": waves,
         "risk_mitigations": risks,
     }

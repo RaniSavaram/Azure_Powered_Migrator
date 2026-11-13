@@ -356,8 +356,11 @@ export class AssessmentAgentComponent implements OnInit, AfterViewChecked, OnDes
       ? '\n\n**Note:** live extraction failed, so this assessment used the built-in sample catalog, not your database.'
       : origin === 'demo' ? '\n\n**Note:** Demo Simulation Mode data, not a live database.' : '';
     const genTs = this.formatGeneratedTime(r.generated_at, r.document_generated_at);
+    const modelNote = r.model_used
+      ? `\n- AI Foundry Model: \`${r.model_used}\`${r.tokens_used?.total ? ` (${r.tokens_used.total.toLocaleString()} tokens)` : ''}`
+      : '';
     const docNote = r.report_file
-      ? `\n- Assessment Report: \`${r.report_file}\`${genTs ? ` (Generated: **${genTs}**)` : ''}`
+      ? `\n- Assessment Report: \`${r.report_file}\`${genTs ? ` (Generated: **${genTs}**)` : ''}${modelNote}`
       : r.document_error ? `\n- Assessment Report (.docx) failed: ${r.document_error}` : '';
 
     this.agentSays(

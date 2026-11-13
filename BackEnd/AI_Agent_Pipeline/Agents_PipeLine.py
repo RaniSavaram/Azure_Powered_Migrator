@@ -12,6 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
 from AI_Agent_Pipeline.src import (
     AzureAIOrchestrator,
+    build_metadata_summary_str,
     collect_metadata,
     count_table_columns,
     metadata_to_dataframes,
@@ -380,37 +381,8 @@ Metadata Refresh Date (if available): {refresh_date}\n"""
     print("Phase 2: Generating Migration Assessment Plan")
     print("--------------------------------------------------")
     
-    # Prepare text summary of all local metadata to feed the assessment agent
-    stats_summary_list = []
-    for _, r in stats_df.iterrows():
-        stats_summary_list.append(f"- Table: {r['table_name']}, Schema: {r['schema_name']}, Rows: {r['row_count']}, Size: {r['size_mb']} MB")
-        
-    cols_summary_list = []
-    for _, r in columns_df.head(100).iterrows(): # first 100 columns for context size stability
-        cols_summary_list.append(f"- Col: {r['TableName']}.{r['ColumnName']} ({r['SourceDataType']})")
-        
-    dep_summary_list = []
-    if not dep_df.empty:
-        for _, r in dep_df.iterrows():
-            dep_summary_list.append(f"- ForeignKey: {r['parent_table']}({r['fk_name']}) -> {r['referenced_table']}")
-            
-    stats_summary_str = "\n".join(stats_summary_list)
-    dep_summary_str = "\n".join(dep_summary_list) if dep_summary_list else "None"
-    cols_summary_str = "\n".join(cols_summary_list)
-    metadata_summary_str = f"""Overall Stats:
-- Total tables: {total_tables}
-- Total columns: {total_columns}
-- Distinct schemas: {distinct_schemas}
-
-Tables and sizes:
-{stats_summary_str}
-
-Dependencies:
-{dep_summary_str}
-
-Columns Sample:
-{cols_summary_str}
-"""
+    # Prepare text summary of all local metadata to feed the migration generator agent
+    metadata_summary_str = build_metadata_summary_str(tables_df, columns_df, stats_df, dep_df)
     
     section_roadmap = (
         "\n[SUCCESS]: migration_plan_evaluation\n"

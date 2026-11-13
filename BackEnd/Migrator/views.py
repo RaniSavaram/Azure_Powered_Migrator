@@ -38,6 +38,8 @@ from Migrator.pipeline_services import (
     evaluate_agent_service,
     get_pipeline_state_service,
     set_active_fabric_destination,
+    _pipeline_lock,
+    _sanitize_for_json,
     active_pipeline
 )
 
@@ -651,6 +653,50 @@ def validate_constraints(request):
         return Response({"status": "error", "message": str(exc)}, status=400)
 
 
+_service_jobs = {}
+_service_jobs_lock = Lock()
+
+
+def _error_http_status(result: dict) -> int:
+    code = result.get("code")
+    if code == "SOURCE_NOT_CONNECTED":
+        return 409
+    if code == "FOUNDRY_AUTH_FAILED":
+        return 401
+    if code in ("FOUNDRY_CONFIG_ERROR", "FOUNDRY_CONTENT_FILTER"):
+        return 400
+    return 502
+
+
+def _run_service_job(job_id: str, service_fn, data: dict) -> None:
+    try:
+        result = service_fn(data)
+    except Exception as exc:
+        traceback.print_exc()
+        result = {"status": "error", "message": str(exc)}
+    with _service_jobs_lock:
+        _service_jobs[job_id] = {"done": True, "result": result}
+
+
+def _launch_service_job(service_fn, data: dict) -> Response:
+    job_id = str(uuid4())
+    with _service_jobs_lock:
+        _service_jobs[job_id] = {"done": False, "result": None}
+    ctx = contextvars.copy_context()
+    Thread(target=ctx.run, args=(_run_service_job, job_id, service_fn, data), daemon=True).start()
+    return Response({"status": "started", "job_id": job_id}, status=202)
+
+
+def _poll_service_job(job_id, not_found_message: str) -> Response:
+    with _service_jobs_lock:
+        job = _service_jobs.get(str(job_id))
+    if job is None:
+        return Response({"status": "error", "message": not_found_message}, status=404)
+    if not job.get("done"):
+        return Response({"status": "running"}, status=200)
+    return Response(job["result"], status=200)
+
+
 @api_view(["GET", "POST"])
 def generate_assessment(request):
     """
@@ -658,14 +704,21 @@ def generate_assessment(request):
     to produce structured migration readiness assessments and generates the Assessment Report (.docx).
     """
     try:
-        data = request.data if request.method == "POST" else {}
+        data = dict(request.data) if request.method == "POST" and isinstance(request.data, dict) else {}
+        if data.get("async"):
+            return _launch_service_job(generate_assessment_report_service, data)
         result = generate_assessment_report_service(data)
         if result.get("status") == "error":
-            return Response(result, status=409 if result.get("code") == "SOURCE_NOT_CONNECTED" else 502)
+            return Response(result, status=_error_http_status(result))
         return Response(result, status=200)
     except Exception as exc:
         traceback.print_exc()
         return Response({"status": "error", "message": str(exc)}, status=400)
+
+
+@api_view(["GET"])
+def assessment_status(request, job_id):
+    return _poll_service_job(job_id, "Assessment job not found.")
 
 
 @api_view(["GET", "POST"])
@@ -691,16 +744,37 @@ def evaluate_agent(request):
 @api_view(["GET", "POST"])
 def generate_migration_plan_view(request):
     """
-    Generates the comprehensive Medallion Architecture roadmap (Bronze, Silver, Gold),
-    execution waves DAG, risk mitigations, Migration Plan document (.docx), and migration_plan.json.
+    Generates the comprehensive migration roadmap, execution waves DAG, risk mitigations,
+    Migration Plan document (.docx), and migration_plan.json.
     """
     try:
-        data = request.data if request.method == "POST" else {}
+        data = dict(request.data) if request.method == "POST" and isinstance(request.data, dict) else {}
+        force_refresh = bool(data.get("force") or data.get("refresh"))
+        if data.get("async"):
+            if not force_refresh:
+                with _pipeline_lock:
+                    cached = active_pipeline.get("migration_plan")
+                    slug = active_pipeline.get("platform_slug") or "sqlserver"
+                out_dir = Path(__file__).resolve().parent.parent / "AI_Agent_Pipeline" / "output"
+                if (
+                    isinstance(cached, dict) and cached.get("status") == "success"
+                    and (out_dir / f"{slug}_Migration_Plan.docx").exists()
+                    and (out_dir / "migration_plan.json").exists()
+                ):
+                    return Response(_sanitize_for_json(cached), status=200)
+            return _launch_service_job(generate_migration_plan_service, data)
         result = generate_migration_plan_service(data)
+        if result.get("status") == "error":
+            return Response(result, status=_error_http_status(result))
         return Response(result, status=200)
     except Exception as exc:
         traceback.print_exc()
         return Response({"status": "error", "message": str(exc)}, status=400)
+
+
+@api_view(["GET"])
+def migration_plan_status(request, job_id):
+    return _poll_service_job(job_id, "Migration plan job not found.")
 
 
 @api_view(["GET"])

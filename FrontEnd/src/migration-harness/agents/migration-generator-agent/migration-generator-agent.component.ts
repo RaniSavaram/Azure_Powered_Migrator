@@ -339,13 +339,16 @@ export class MigrationGeneratorAgentComponent implements OnInit, AfterViewChecke
       .map((w: any) => `- **Wave ${w.wave} (${w.name})**: ${w.tables.slice(0, 4).join(', ')}${w.tables.length > 4 ? ` (+${w.tables.length - 4} more)` : ''}`)
       .join('\n');
 
+    const modelNote = planRes.model_used
+      ? `\n- **AI Foundry Model**: \`${planRes.model_used}\`${planRes.tokens_used?.total ? ` (${planRes.tokens_used.total.toLocaleString()} cumulative tokens)` : ''}`
+      : '';
     const text =
       `### Migration Plan & Execution Roadmap Compiled\n\n` +
       `${intro}\n\n` +
       `- **Source**: **${src}** · Database: \`${srcDb}\`\n` +
       `- **Destination**: **${destPlatform}** · Lakehouse: \`${destLakehouse}\` (Delta Parquet with V-Order)\n` +
       `- **ER Diagram**: Embedded in **Section 2 (Dependency Analysis & ER Model)**\n` +
-      `- **Artifacts**: \`${planRes.plan_file}\`${this.formatGeneratedTime(planRes.generated_at, planRes.document_generated_at) ? ` (Generated: **${this.formatGeneratedTime(planRes.generated_at, planRes.document_generated_at)}**)` : ''} and \`${planRes.json_plan_file || 'migration_plan.json'}\`\n\n` +
+      `- **Artifacts**: \`${planRes.plan_file}\`${this.formatGeneratedTime(planRes.generated_at, planRes.document_generated_at) ? ` (Generated: **${this.formatGeneratedTime(planRes.generated_at, planRes.document_generated_at)}**)` : ''} and \`${planRes.json_plan_file || 'migration_plan.json'}\`${modelNote}\n\n` +
       (wavesLines ? `**Execution Sequence Waves (${waves.length})**\n${wavesLines}` : '');
 
     const metrics: ChatMetricItem[] = [
